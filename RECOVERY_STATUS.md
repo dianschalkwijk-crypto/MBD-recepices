@@ -1,7 +1,9 @@
 # MadeByDian broncodeherstel
 
-Deze repository bevat nog niet de volledige broncode van de bestaande Vercel-app. Publiceer deze repository niet naar productie totdat alle bestanden compleet en gecontroleerd zijn.
+Bron: Vercel deployment dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK.
 
-Bron: Vercel deployment `dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK` (22 oktober 2026).
+Herstelbranch: recovery/vercel-2026-10-22. Niet gereed voor productie.
 
-De bronbestanden worden stapsgewijs veilig teruggezet op branch `recovery/vercel-2026-10-22`.
+De deployment bevat 55 bronbestanden. Negen daarvan zijn volledig teruggehaald; 46 antwoorden bevatten letterlijk ...[truncated] in de base64-data en zijn daarom niet als bestanden opgeslagen. Onder andere index.html en de overige API-routes ontbreken nog. De vijf extra bestanden zijn ongewijzigd hersteld. Geen volledige build of functionele app-test mogelijk zolang de bronset onvolledig is.
+
+Vervolg: haal de volledige bronset op via een niet-afkappende download/export; controleer daarna alle imports, scripts, assets en API-routes en voer typecheck en preview-tests uit vóór productie.

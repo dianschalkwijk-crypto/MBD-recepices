@@ -1,0 +1,3 @@
+(()=>{const s=document.createElement('script');s.src='/save-sync-original-v10.js';s.onload=()=>{for(const f of ['/allergy-integration-v2.js','/main-preferences-v1.js','/week-select-fix-v1.js','/friend-watch-v2.js','/library-phase1-v1.js','/account-library-backup-v1.js']){const x=document.createElement('script');x.async=false;x.src=f;document.body.append(x)}};document.body.append(s)})();
+;(function(){var s=document.createElement('script');s.async=false;s.src='/mbd-notion-live-bridge-v1.js';document.body.appendChild(s)})();
+;(function(){if(window.__mbdForceLoaderV16)return;window.__mbdForceLoaderV16=true;var s=document.createElement('script');s.async=false;s.src='/notion-force-sync-v1.js?v=16';document.body.appendChild(s)})();
