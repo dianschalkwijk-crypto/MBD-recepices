@@ -1,9 +1,7 @@
-# MadeByDian broncodeherstel
+# Broncodeherstel
 
-Bron: Vercel deployment dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK.
+Brondeployment: dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK.
 
-Herstelbranch: recovery/vercel-2026-10-22. Niet gereed voor productie.
+46 van de 55 oorspronkelijke bronbestanden zijn hersteld. De 38 statische tekstbestanden en drie PNG-iconen zijn via de immutable deployment opgehaald; hun SHA-1 hashes komen exact overeen met de Vercel-bronbestandslijst. De overige vijf zijn de eerder herstelde API- en configuratiebestanden.
 
-De deployment bevat 55 bronbestanden. Negen daarvan zijn volledig teruggehaald; 46 antwoorden bevatten letterlijk ...[truncated] in de base64-data en zijn daarom niet als bestanden opgeslagen. Onder andere index.html en de overige API-routes ontbreken nog. De vijf extra bestanden zijn ongewijzigd hersteld. Geen volledige build of functionele app-test mogelijk zolang de bronset onvolledig is.
-
-Vervolg: haal de volledige bronset op via een niet-afkappende download/export; controleer daarna alle imports, scripts, assets en API-routes en voer typecheck en preview-tests uit vóór productie.
+Nog ontbreken negen serverbestanden: api/admin/normalize-recipes.ts, api/notion/books.ts, api/notion/catalog.ts, api/notion/full.ts, api/notion/health.ts, api/notion/photo.ts, api/notion/save.ts, api/recipes/import.ts, api/recipes/source.ts. De servercode wordt door de connector afgekapt. Geen volledige bronexport of werkende build: niet naar productie publiceren.
