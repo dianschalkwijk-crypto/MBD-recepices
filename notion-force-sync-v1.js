@@ -50,8 +50,8 @@ function applyToState(r){
    for(const f of ['title','originalTitle','ingredients','steps','notionURL','category','portions','time','photoURL']){
      if(present(r[f])&&x[f]!==r[f]){x[f]=r[f];changed=true}
    }
-   if(x.sourceURL!==(r.sourceURL||'')){x.sourceURL=r.sourceURL||'';changed=true}
-   if(x.sourcePlatform!==(r.sourcePlatform||'')){x.sourcePlatform=r.sourcePlatform||'';changed=true}
+   if(present(r.sourceURL)&&!present(x.sourceURL)){x.sourceURL=r.sourceURL;changed=true}
+   if(present(r.sourcePlatform)&&!present(x.sourcePlatform)){x.sourcePlatform=r.sourcePlatform;changed=true}
    if(r.hasPhoto&&!x.hasPhoto){x.hasPhoto=true;changed=true}
    if(present(r.ingredients)&&present(r.steps)&&!x.contentSynced){x.contentSynced=true;changed=true}
    if(changed)x.syncedFrom='Notion'
@@ -68,7 +68,7 @@ async function syncOne(id){
      patchTitle(r);
      replaceSection('ingrediënten',r.ingredients);
      replaceSection('bereiding',r.steps);
-     patchSource(r);
+     patchSource({...r,sourceURL:recipes().find(x=>code(x.mdb||x.id)===id)?.sourceURL||r.sourceURL});
    }
  }catch(e){console.warn('Notion force sync',id,e.message)}
 }
