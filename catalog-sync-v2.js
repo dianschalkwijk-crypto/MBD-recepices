@@ -25,7 +25,7 @@ if(old){
  let c=false;
  if(origin==='Notion'){
   for(const p of ['title','originalTitle','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
-   if(p==='sourceURL'){if(present(r[p])&&old[p]!==r[p]){old[p]=r[p];c=true}continue}
+   if(p==='sourceURL'){if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}continue}
    if(present(r[p])&&old[p]!==r[p]){old[p]=r[p];c=true}
   }
   if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
