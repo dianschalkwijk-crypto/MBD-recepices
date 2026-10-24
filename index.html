@@ -49,6 +49,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
     .detail-pills{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
     .detail-pill{font-size:12px;background:#f7f3f5;border-radius:999px;padding:5px 8px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -135,7 +136,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <div class="eyebrow">Maandag t/m vrijdag</div>
           <h2>Weekmenu</h2>
           <div id="weekPlanner" class="stack"></div>
-          <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><button id="shoppingBtn" class="secondary">🛒 Maak boodschappenlijst</button>
+          <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><p id="weekSyncStatus" class="muted">Weekmenu’s worden lokaal bewaard.</p><button id="syncWeekBtn" class="secondary" type="button">Synchroniseer weekmenu’s online</button><button id="shoppingBtn" class="secondary">🛒 Maak boodschappenlijst</button>
         </div>
         <div id="shoppingCard" class="card hidden">
           <div class="section-heading"><h2>Boodschappen</h2><button id="copyShoppingBtn" class="text-btn">Kopieer</button></div>
@@ -499,11 +500,33 @@ function renderCollections(){
   box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>(r.collections||[]).includes(name)).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
+const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
+let cloudUser=null;
+async function syncWeekMenus(){
+  const status=document.querySelector('#weekSyncStatus');
+  if(!weekCloud){if(status)status.textContent='Online verbinding niet beschikbaar; lokaal bewaard.';return;}
+  const {data:{user},error:authError}=await weekCloud.auth.getUser();
+  if(authError||!user){if(status)status.textContent='Lokaal bewaard. Log in via Accounts voor online synchronisatie.';return;}
+  cloudUser=user;
+  const {data:remote,error}=await weekCloud.from('mbd_week_menu_archive').select('menu_number,meals,created_at').eq('owner_id',user.id).order('menu_number');
+  if(error){if(status)status.textContent='Synchronisatie mislukt: '+error.message;return;}
+  state.weekArchive=Array.isArray(state.weekArchive)?state.weekArchive:[];
+  const remoteNums=new Set(remote.map(x=>x.menu_number));
+  for(const row of remote){const idx=state.weekArchive.findIndex(m=>m.number===row.menu_number);const value={number:row.menu_number,week:row.meals,savedAt:row.created_at};if(idx<0)state.weekArchive.push(value);else if(JSON.stringify(state.weekArchive[idx].week)!==JSON.stringify(row.meals)){
+    const next=Math.max(0,...state.weekArchive.map(x=>x.number),...remote.map(x=>x.menu_number))+1;
+    state.weekArchive[idx].number=next;state.weekArchive.push(value);
+  }}
+  for(const m of state.weekArchive.filter(m=>!remoteNums.has(m.number))){
+    const {error:writeError}=await weekCloud.from('mbd_week_menu_archive').insert({owner_id:user.id,menu_number:m.number,meals:m.week});
+    if(writeError){if(status)status.textContent='Online bewaren niet gelukt: '+writeError.message;persist();renderWeekArchive();return;}
+  }
+  persist();renderWeekArchive();if(status)status.textContent='Weekmenu-archief online gesynchroniseerd.';
+}
 function saveWeekMenu(){
   state.weekArchive=Array.isArray(state.weekArchive)?state.weekArchive:[];
   if(!Object.values(state.week||{}).some(Boolean)){alert('Kies eerst gerechten voor je weekmenu.');return;}
   const next=Math.max(0,...state.weekArchive.map(x=>Number(x.number)||0))+1;
-  state.weekArchive.push({number:next,week:{...state.week},savedAt:new Date().toISOString()});persist();renderWeek();
+  state.weekArchive.push({number:next,week:{...state.week},savedAt:new Date().toISOString()});persist();renderWeek();syncWeekMenus().catch(e=>{document.querySelector('#weekSyncStatus').textContent='Online sync mislukt: '+e.message;});
 }
 function repeatWeekMenu(number){
   const saved=(state.weekArchive||[]).find(x=>x.number===number);if(!saved)return;
@@ -580,6 +603,8 @@ document.querySelector('#pasteTextBtn').onclick=()=>pasteInto('#sourceText');
 document.querySelector('#recipeSearch').oninput=renderRecipes;
 document.querySelector('#shoppingBtn').onclick=makeShopping;
 document.querySelector('#saveWeekMenuBtn').onclick=saveWeekMenu;
+document.querySelector('#syncWeekBtn').onclick=()=>syncWeekMenus().catch(e=>alert(e.message));
+setTimeout(()=>syncWeekMenus().catch(console.warn),1200);
 document.querySelector('#copyShoppingBtn').onclick=copyShopping;
 document.querySelector('#exportBtn').onclick=exportData;
 document.querySelector('#exportJsonBtn').onclick=exportData;
