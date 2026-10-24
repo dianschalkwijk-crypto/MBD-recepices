@@ -507,17 +507,19 @@ function renderWeek(){
   box.querySelectorAll('select').forEach(s=>{s.value=state.week[s.dataset.day]||'';s.onchange=()=>{if(s.value)state.week[s.dataset.day]=s.value;else delete state.week[s.dataset.day];persist();};});
 }
 function makeShopping(){
+  state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
   const selected=Object.values(state.week).map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
-  const lines=selected.flatMap(r=>(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({recipe:r.title,line:x})));
+  const planned=selected.flatMap(r=>String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean).map(line=>({recipe:r.title,line,checked:true})));
+  const all=[...state.shoppingItems];for(const x of planned)if(!all.some(y=>y.line===x.line))all.push(x);
   const box=document.querySelector('#shoppingList');
-  if(!lines.length){ const hasPlanned=selected.length>0; box.innerHTML=`<div class="empty">${hasPlanned?'Voor de gekozen recepten zijn geen ingrediënten gevonden.':'Kies eerst recepten in je weekmenu.'}</div>`; }
-  else box.innerHTML=lines.map((x,i)=>`<label class="check-item"><input type="checkbox"><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe)}</small></span></label>`).join('');
+  box.innerHTML=all.length?all.map((x,i)=>`<label class="check-item"><input type="checkbox" data-shopping-row="${i}" ${x.checked!==false?'checked':''}><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe||'')}</small></span></label>`).join(''):'<div class="empty">Voeg ingrediënten toe vanuit een recept of kies een weekmenu.</div>';
+  box.querySelectorAll('[data-shopping-row]').forEach(el=>el.onchange=()=>{const x=all[Number(el.dataset.shoppingRow)];x.checked=el.checked;const saved=state.shoppingItems.find(y=>y.line===x.line);if(saved)saved.checked=x.checked;else state.shoppingItems.push({...x});persist()});
   document.querySelector('#shoppingCard').classList.remove('hidden');
 }
 async function copyShopping(){
-  const selected=Object.values(state.week).map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
-  const lines=selected.flatMap(r=>(r.ingredients||'').split('\n').filter(Boolean));
-  await navigator.clipboard?.writeText(lines.map(x=>`☐ ${x}`).join('\n')); alert('Boodschappenlijst gekopieerd.');
+  makeShopping();const labels=[...document.querySelectorAll('#shoppingList label')];
+  const lines=labels.filter(x=>x.querySelector('input')?.checked).map(x=>x.querySelector('span')?.textContent.trim());
+  await navigator.clipboard?.writeText(lines.map(x=>'☐ '+x).join('\\n'));alert('Aangevinkte boodschappen gekopieerd.');
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MadeByDian_Recepten_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
