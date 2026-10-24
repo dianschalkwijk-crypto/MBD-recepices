@@ -243,10 +243,10 @@ function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collection
 function loadState(){
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if(saved && Array.isArray(saved.recipes)){if(!saved.week || !Object.keys(saved.week).length){try{const backup=JSON.parse(localStorage.getItem('mbd-week-planning-backup'));if(backup && backup.week)saved.week=backup.week;}catch{}}return saved;}return freshSeedState();
+    if(saved && Array.isArray(saved.recipes)){if(!saved.week || !Object.keys(saved.week).length){try{const backup=JSON.parse(localStorage.getItem('mbd-week-planning-backup'));if(backup && backup.week)saved.week=backup.week;}catch{}}try{const archive=JSON.parse(localStorage.getItem('mbd-week-archive-backup'));if(Array.isArray(archive)&&archive.length>(saved.weekArchive||[]).length)saved.weekArchive=archive;}catch{}return saved;}return freshSeedState();
   } catch { return freshSeedState(); }
 }
-function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()})); }
+function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()})); localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[])); }
 function uid(){ return crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function esc(s=''){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normalizeSourceText(text){
@@ -502,8 +502,12 @@ function renderCollections(){
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
 let cloudUser=null;
+let weekSyncInProgress=false;
 async function syncWeekMenus(){
   const status=document.querySelector('#weekSyncStatus');
+  if(weekSyncInProgress)return;
+  weekSyncInProgress=true;
+  try{
   if(!weekCloud){if(status)status.textContent='Online verbinding niet beschikbaar; lokaal bewaard.';return;}
   const {data:{user},error:authError}=await weekCloud.auth.getUser();
   if(authError||!user){if(status)status.textContent='Lokaal bewaard. Log in via Accounts voor online synchronisatie.';return;}
@@ -521,10 +525,12 @@ async function syncWeekMenus(){
     if(writeError){if(status)status.textContent='Online bewaren niet gelukt: '+writeError.message;persist();renderWeekArchive();return;}
   }
   persist();renderWeekArchive();if(status)status.textContent='Weekmenu-archief online gesynchroniseerd.';
+  }finally{weekSyncInProgress=false;}
 }
 function saveWeekMenu(){
   state.weekArchive=Array.isArray(state.weekArchive)?state.weekArchive:[];
   if(!Object.values(state.week||{}).some(Boolean)){alert('Kies eerst gerechten voor je weekmenu.');return;}
+  const existing=state.weekArchive.find(m=>JSON.stringify(m.week)===JSON.stringify(state.week));if(existing){alert('Dit menu is al opgeslagen als Weekmenu '+existing.number);return;}
   const next=Math.max(0,...state.weekArchive.map(x=>Number(x.number)||0))+1;
   state.weekArchive.push({number:next,week:{...state.week},savedAt:new Date().toISOString()});persist();renderWeek();syncWeekMenus().catch(e=>{document.querySelector('#weekSyncStatus').textContent='Online sync mislukt: '+e.message;});
 }
