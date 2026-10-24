@@ -135,7 +135,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <div class="eyebrow">Maandag t/m vrijdag</div>
           <h2>Weekmenu</h2>
           <div id="weekPlanner" class="stack"></div>
-          <button id="shoppingBtn" class="secondary">🛒 Maak boodschappenlijst</button>
+          <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><button id="shoppingBtn" class="secondary">🛒 Maak boodschappenlijst</button>
         </div>
         <div id="shoppingCard" class="card hidden">
           <div class="section-heading"><h2>Boodschappen</h2><button id="copyShoppingBtn" class="text-btn">Kopieer</button></div>
@@ -499,12 +499,30 @@ function renderCollections(){
   box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>(r.collections||[]).includes(name)).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
+function saveWeekMenu(){
+  state.weekArchive=Array.isArray(state.weekArchive)?state.weekArchive:[];
+  if(!Object.values(state.week||{}).some(Boolean)){alert('Kies eerst gerechten voor je weekmenu.');return;}
+  const next=Math.max(0,...state.weekArchive.map(x=>Number(x.number)||0))+1;
+  state.weekArchive.push({number:next,week:{...state.week},savedAt:new Date().toISOString()});persist();renderWeek();
+}
+function repeatWeekMenu(number){
+  const saved=(state.weekArchive||[]).find(x=>x.number===number);if(!saved)return;
+  if(!confirm('Weekmenu '+number+' herhalen? Je huidige weekplanning wordt vervangen; het opgeslagen menu blijft bewaard.'))return;
+  state.week={...saved.week};persist();renderWeek();
+}
+function renderWeekArchive(){
+  const box=document.querySelector('#weekMenuArchive');if(!box)return;
+  const menus=Array.isArray(state.weekArchive)?state.weekArchive:[];
+  box.innerHTML=menus.length?'<h3>Opgeslagen weekmenu’s</h3>'+menus.map(m=>`<div class="week-row"><span><b>Weekmenu ${m.number}</b><br><small>${Object.entries(m.week||{}).map(([day,id])=>day+': '+(state.recipes.find(r=>r.id===id)?.title||id)).map(esc).join(' · ')}</small></span><button type="button" data-repeat-menu="${m.number}">Herhaal</button></div>`).join(''):'<p class="muted">Nog geen opgeslagen weekmenu’s.</p>';
+  box.querySelectorAll('[data-repeat-menu]').forEach(b=>b.onclick=()=>repeatWeekMenu(Number(b.dataset.repeatMenu)));
+}
 function renderWeek(){
   const days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
   const options=state.recipes.map(r=>`<option value="${r.id}">${esc((r.mdb?`${r.mdb} · `:``)+r.title)}</option>`).join('');
   const box=document.querySelector('#weekPlanner');
   box.innerHTML=days.map(d=>`<div class="week-row"><b>${d}</b><select data-day="${d}"><option value="">Kies recept</option>${options}</select></div>`).join('');
   box.querySelectorAll('select').forEach(s=>{s.value=state.week[s.dataset.day]||'';s.onchange=()=>{if(s.value)state.week[s.dataset.day]=s.value;else delete state.week[s.dataset.day];persist();};});
+  renderWeekArchive();
 }
 function makeShopping(){
   state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
@@ -561,6 +579,7 @@ document.querySelector('#pasteUrlBtn').onclick=()=>pasteInto('#sourceUrl');
 document.querySelector('#pasteTextBtn').onclick=()=>pasteInto('#sourceText');
 document.querySelector('#recipeSearch').oninput=renderRecipes;
 document.querySelector('#shoppingBtn').onclick=makeShopping;
+document.querySelector('#saveWeekMenuBtn').onclick=saveWeekMenu;
 document.querySelector('#copyShoppingBtn').onclick=copyShopping;
 document.querySelector('#exportBtn').onclick=exportData;
 document.querySelector('#exportJsonBtn').onclick=exportData;
