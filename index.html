@@ -242,10 +242,10 @@ function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collection
 function loadState(){
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved && Array.isArray(saved.recipes) ? saved : freshSeedState();
+    if(saved && Array.isArray(saved.recipes)){if(!saved.week || !Object.keys(saved.week).length){try{const backup=JSON.parse(localStorage.getItem('mbd-week-planning-backup'));if(backup && backup.week)saved.week=backup.week;}catch{}}return saved;}return freshSeedState();
   } catch { return freshSeedState(); }
 }
-function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()})); }
 function uid(){ return crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function esc(s=''){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normalizeSourceText(text){
