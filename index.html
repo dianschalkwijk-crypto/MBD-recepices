@@ -535,9 +535,7 @@ function importDataFile(file){
   reader.readAsText(file);
 }
 function clearAllData(){
-  if(!confirm('Alle eigen wijzigingen en weekmenu-keuzes wissen en de werkkopie terugzetten naar de vaste 352-receptenindex?')) return;
-  if(!confirm('Zeker weten? Zelf toegevoegde recepten verdwijnen lokaal. Notion wordt niet gewijzigd.')) return;
-  state=freshSeedState(); persist(); renderAll(); alert('Werkkopie teruggezet naar de vaste 352-receptenindex.');
+  alert('Veiligheidsblokkade: terugzetten naar de oude 352-receptenindex is uitgeschakeld. Je actuele Supabase-catalogus en nieuwere lokale recepten blijven behouden. Gebruik de exportfunctie om eerst een back-up te bewaren.');
 }
 function renderAll(){renderRecipes();renderCollections();renderWeek();renderSettings();}
 
