@@ -54,7 +54,7 @@ for(const r of candidates.slice(0,40)){try{
  const d=await get('/api/notion/full?mdb='+encodeURIComponent(r.mdb));
  if(d.ok&&d.recipe&&!suspicious(d.recipe))merge({...d.recipe,book:r.book,bookNo:r.bookNo},'Notion');
 }catch(e){console.warn('Notion recept',r.mdb,e.message)}}
-if(changed){try{if(typeof persist!=='function')throw Error('persist unavailable');persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
+if(changed){try{if(typeof persist!=='function')throw Error('persist unavailable');const stamp=new Date().toISOString();localStorage.setItem('mbd-pre-sync-snapshot-'+stamp,JSON.stringify({recipes:state.recipes,week:state.week||{},savedAt:stamp}));persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
 tell('Supabase: '+server.length+' · Notion: '+notion.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
