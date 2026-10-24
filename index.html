@@ -136,7 +136,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <div class="eyebrow">Maandag t/m vrijdag</div>
           <h2>Weekmenu</h2>
           <div id="weekPlanner" class="stack"></div>
-          <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><p id="weekSyncStatus" class="muted">Weekmenu’s worden lokaal bewaard.</p><button id="syncWeekBtn" class="secondary" type="button">Synchroniseer weekmenu’s online</button><button id="shoppingBtn" class="secondary">🛒 Maak boodschappenlijst</button>
+          <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><p id="weekSyncStatus" class="muted">Weekmenu’s worden lokaal bewaard.</p><button id="syncWeekBtn" class="secondary" type="button">Synchroniseer weekmenu’s online</button><button id="shoppingBtn" class="secondary">🛒 Boodschappenlijst van weekmenu maken</button>
         </div>
         <div id="shoppingCard" class="card hidden">
           <div class="section-heading"><h2>Boodschappen</h2><button id="copyShoppingBtn" class="text-btn">Kopieer</button></div>
@@ -560,14 +560,22 @@ function renderWeek(){
   box.querySelectorAll('select').forEach(s=>{s.value=state.week[s.dataset.day]||'';s.onchange=()=>{if(s.value)state.week[s.dataset.day]=s.value;else delete state.week[s.dataset.day];persist();};});
   renderWeekArchive();
 }
+function ingredientLines(recipe){
+  const raw=recipe?.ingredients;
+  return (Array.isArray(raw)?raw:String(raw||'').split(/\\n|\n/)).map(x=>String(x).replace(/^\\s*[•*–-]\\s*/,'').trim()).filter(Boolean);
+}
 function makeShopping(){
   state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
-  const selected=Object.values(state.week).map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
-  const planned=[]; // Only explicitly selected ingredients belong on the shopping list.
-  const all=[...state.shoppingItems];for(const x of planned)if(!all.some(y=>y.line===x.line))all.push(x);
+  const recipes=Object.entries(state.week||{}).map(([day,id])=>({day,recipe:state.recipes.find(r=>r.id===id)})).filter(x=>x.recipe);
+  for(const {day,recipe} of recipes){
+    for(const line of ingredientLines(recipe)){
+      if(!state.shoppingItems.some(x=>x.line===line&&x.recipe===recipe.title))state.shoppingItems.push({line,recipe:recipe.title,day,checked:true});
+    }
+  }
+  persist();
   const box=document.querySelector('#shoppingList');
-  box.innerHTML=all.length?all.map((x,i)=>`<label class="check-item"><input type="checkbox" data-shopping-row="${i}" ${x.checked!==false?'checked':''}><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe||'')}</small></span></label>`).join(''):'<div class="empty">Voeg ingrediënten toe vanuit een recept of kies een weekmenu.</div>';
-  box.querySelectorAll('[data-shopping-row]').forEach(el=>el.onchange=()=>{const x=all[Number(el.dataset.shoppingRow)];x.checked=el.checked;const saved=state.shoppingItems.find(y=>y.line===x.line);if(saved)saved.checked=x.checked;else state.shoppingItems.push({...x});persist()});
+  box.innerHTML=state.shoppingItems.length?state.shoppingItems.map((x,i)=>`<label class="check-item"><input type="checkbox" data-shopping-row="${i}" ${x.checked!==false?'checked':''}><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe||'')}</small></span></label>`).join(''):'<div class="empty">Kies eerst gerechten in je weekmenu. Daarna verschijnen de ingrediënten hier.</div>';
+  box.querySelectorAll('[data-shopping-row]').forEach(el=>el.onchange=()=>{state.shoppingItems[Number(el.dataset.shoppingRow)].checked=el.checked;persist();});
   document.querySelector('#shoppingCard').classList.remove('hidden');
 }
 async function copyShopping(){
