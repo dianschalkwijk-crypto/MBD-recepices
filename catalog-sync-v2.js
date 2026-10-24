@@ -15,7 +15,7 @@ if(typeof state==='undefined'||!Array.isArray(state.recipes))return;
 const by=new Map();for(const r of state.recipes)if(r?.mdb&&!by.has(String(r.mdb).toUpperCase()))by.set(String(r.mdb).toUpperCase(),r);
 let server=[],notion=[];try{[server,notion]=await Promise.all([
 get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}}),
-get('/api/notion/catalog').then(x=>x.items||[])
+get('/api/notion/catalog').then(x=>x.items||[]).catch(e=>{console.warn('Notion niet bereikbaar, Supabase blijft beschikbaar',e);return []})
 ])}catch(e){tell('Synchronisatie niet bereikbaar: '+e.message,true);return}
 let add=0,fill=0,repair=0,changed=false;
 const merge=(r,origin)=>{
@@ -55,7 +55,7 @@ for(const r of candidates.slice(0,40)){try{
  if(d.ok&&d.recipe&&!suspicious(d.recipe))merge({...d.recipe,book:r.book,bookNo:r.bookNo},'Notion');
 }catch(e){console.warn('Notion recept',r.mdb,e.message)}}
 if(changed){try{if(typeof persist!=='function')throw Error('persist unavailable');persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
-tell('Notion online: '+notion.length+' · recepten lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
+tell('Supabase: '+server.length+' · Notion: '+notion.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
 document.addEventListener('DOMContentLoaded',boot);boot();let t=setInterval(()=>{boot();if(started)clearInterval(t)},300);setTimeout(()=>clearInterval(t),12000);
