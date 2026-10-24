@@ -497,7 +497,7 @@ function deleteRecipe(id){
 function renderCollections(){
   const box=document.querySelector('#collectionOverview');
   box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>(r.collections||[]).includes(name)).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
-  box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes');activeCollectionFilter=name;renderRecipes();document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
+  box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 function renderWeek(){
   const days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
@@ -525,11 +525,11 @@ function exportData(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MadeByDian_Recepten_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
 }
 async function pasteInto(selector){try{const txt=await navigator.clipboard.readText();document.querySelector(selector).value=txt;}catch{alert('Plakken is door de browser geblokkeerd. Houd het veld ingedrukt en kies Plak.');}}
-function setScreen(name){
+function setScreen(name,collection=null){
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.dataset.screen===name));
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.target===name));
   const titles={inbox:'Recepten-inbox',recipes:'Mijn recepten',collections:'Collecties',week:'Weekmenu',settings:'Instellingen'};document.querySelector('#pageTitle').textContent=titles[name];
-  if(name==='recipes'){activeCollectionFilter=null;renderRecipes();}if(name==='collections')renderCollections();if(name==='week')renderWeek();if(name==='settings')renderSettings();window.scrollTo({top:0,behavior:'smooth'});
+  if(name==='recipes'){activeCollectionFilter=collection;renderRecipes();}if(name==='collections')renderCollections();if(name==='week')renderWeek();if(name==='settings')renderSettings();window.scrollTo({top:0,behavior:'smooth'});
 }
 function renderSettings(){
   const box=document.querySelector('#statsBox');
