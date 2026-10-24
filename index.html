@@ -509,7 +509,7 @@ function renderWeek(){
 function makeShopping(){
   state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
   const selected=Object.values(state.week).map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
-  const planned=selected.flatMap(r=>String(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean).map(line=>({recipe:r.title,line,checked:true})));
+  const planned=[]; // Only explicitly selected ingredients belong on the shopping list.
   const all=[...state.shoppingItems];for(const x of planned)if(!all.some(y=>y.line===x.line))all.push(x);
   const box=document.querySelector('#shoppingList');
   box.innerHTML=all.length?all.map((x,i)=>`<label class="check-item"><input type="checkbox" data-shopping-row="${i}" ${x.checked!==false?'checked':''}><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe||'')}</small></span></label>`).join(''):'<div class="empty">Voeg ingrediënten toe vanuit een recept of kies een weekmenu.</div>';
