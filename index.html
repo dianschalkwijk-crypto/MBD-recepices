@@ -448,6 +448,10 @@ function showRecipeDetails(id){
   if(r.intro) blocks.push(`<div class="detail-section"><div class="detail-text">${esc(r.intro)}</div></div>`);
   if(pills.length) blocks.push(`<div class="detail-pills">${pills.map(x=>`<span class="detail-pill">${esc(String(x))}</span>`).join('')}</div>`);
   blocks.push(`<div class="detail-section"><h3>Ingrediënten</h3><div class="detail-text">${esc(r.ingredients||'Nog niet beschikbaar').replace(/\n/g,'<br>')}</div></div>`);
+  const ingredientLines=String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean);
+  if(ingredientLines.length){
+    blocks.push(`<div class="detail-section"><h3>Boodschappenlijst</h3><p>Alles is aangevinkt. Vink uit wat je al in huis hebt.</p><div id="modalShoppingItems">${ingredientLines.map((line,i)=>`<label class="check-item"><input type="checkbox" data-shopping-index="${i}" checked><span>${esc(line)}</span></label>`).join('')}</div><button type="button" id="modalShoppingAdd">Voeg aangevinkte ingrediënten toe</button></div>`);
+  }
   blocks.push(`<div class="detail-section"><h3>Bereiding</h3><div class="detail-text">${esc(r.steps||'Nog niet beschikbaar').replace(/\n/g,'<br>')}</div></div>`);
   if(r.prepSlim) blocks.push(`<div class="detail-section"><h3>Prep Slim</h3><div class="detail-text">${esc(r.prepSlim)}</div></div>`);
   if(r.kidsSwitch) blocks.push(`<div class="detail-section"><h3>Kids Switch</h3><div class="detail-text">${esc(r.kidsSwitch)}</div></div>`);
@@ -464,6 +468,15 @@ function showRecipeDetails(id){
   body.querySelector('[data-modal-content]')?.addEventListener('click',()=>window.open(r.contentURL,'_blank','noopener'));
   body.querySelector('[data-modal-notion]')?.addEventListener('click',()=>window.open(r.notionURL,'_blank','noopener'));
   body.querySelector('[data-modal-copy]')?.addEventListener('click',()=>copyRecipe(r.id));
+  body.querySelector('#modalShoppingAdd')?.addEventListener('click',()=>{
+    const lines=String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean);
+    const chosen=[...body.querySelectorAll('[data-shopping-index]:checked')].map(el=>lines[Number(el.dataset.shoppingIndex)]).filter(Boolean);
+    if(!chosen.length){alert('Vink minimaal één ingrediënt aan.');return;}
+    state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
+    for(const line of chosen)if(!state.shoppingItems.some(x=>x.line===line))state.shoppingItems.push({line,recipe:r.title,checked:true});
+    persist();alert(chosen.length+' ingrediënten toegevoegd aan je boodschappenlijst.');
+  });
+
   document.querySelector('#recipeModal').classList.remove('hidden');
 }
 function closeRecipeDetails(){ document.querySelector('#recipeModal').classList.add('hidden'); }
