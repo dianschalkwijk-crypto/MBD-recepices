@@ -448,7 +448,7 @@ function showRecipeDetails(id){
   if(r.intro) blocks.push(`<div class="detail-section"><div class="detail-text">${esc(r.intro)}</div></div>`);
   if(pills.length) blocks.push(`<div class="detail-pills">${pills.map(x=>`<span class="detail-pill">${esc(String(x))}</span>`).join('')}</div>`);
   blocks.push(`<div class="detail-section"><h3>Ingrediënten</h3><div class="detail-text">${esc(r.ingredients||'Nog niet beschikbaar').replace(/\n/g,'<br>')}</div></div>`);
-  const ingredientLines=String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean);
+  const ingredientLines=String(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean);
   if(ingredientLines.length){
     blocks.push(`<div class="detail-section"><h3>Boodschappenlijst</h3><p>Alles is aangevinkt. Vink uit wat je al in huis hebt.</p><div id="modalShoppingItems">${ingredientLines.map((line,i)=>`<label class="check-item"><input type="checkbox" data-shopping-index="${i}" checked><span>${esc(line)}</span></label>`).join('')}</div><button type="button" id="modalShoppingAdd">Voeg aangevinkte ingrediënten toe</button></div>`);
   }
@@ -469,7 +469,7 @@ function showRecipeDetails(id){
   body.querySelector('[data-modal-notion]')?.addEventListener('click',()=>window.open(r.notionURL,'_blank','noopener'));
   body.querySelector('[data-modal-copy]')?.addEventListener('click',()=>copyRecipe(r.id));
   body.querySelector('#modalShoppingAdd')?.addEventListener('click',()=>{
-    const lines=String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean);
+    const lines=String(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean);
     const chosen=[...body.querySelectorAll('[data-shopping-index]:checked')].map(el=>lines[Number(el.dataset.shoppingIndex)]).filter(Boolean);
     if(!chosen.length){alert('Vink minimaal één ingrediënt aan.');return;}
     state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
@@ -509,7 +509,7 @@ function renderWeek(){
 function makeShopping(){
   state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
   const selected=Object.values(state.week).map(id=>state.recipes.find(r=>r.id===id)).filter(Boolean);
-  const planned=selected.flatMap(r=>String(r.ingredients||'').split('\\n').map(x=>x.trim()).filter(Boolean).map(line=>({recipe:r.title,line,checked:true})));
+  const planned=selected.flatMap(r=>String(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean).map(line=>({recipe:r.title,line,checked:true})));
   const all=[...state.shoppingItems];for(const x of planned)if(!all.some(y=>y.line===x.line))all.push(x);
   const box=document.querySelector('#shoppingList');
   box.innerHTML=all.length?all.map((x,i)=>`<label class="check-item"><input type="checkbox" data-shopping-row="${i}" ${x.checked!==false?'checked':''}><span>${esc(x.line)} <small class="muted">· ${esc(x.recipe||'')}</small></span></label>`).join(''):'<div class="empty">Voeg ingrediënten toe vanuit een recept of kies een weekmenu.</div>';
