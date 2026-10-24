@@ -474,7 +474,7 @@ function showRecipeDetails(id){
     if(!chosen.length){alert('Vink minimaal één ingrediënt aan.');return;}
     state.shoppingItems=Array.isArray(state.shoppingItems)?state.shoppingItems:[];
     for(const line of chosen)if(!state.shoppingItems.some(x=>x.line===line))state.shoppingItems.push({line,recipe:r.title,checked:true});
-    persist();alert(chosen.length+' ingrediënten toegevoegd aan je boodschappenlijst.');
+    persist();closeRecipeDetails();setScreen('week');makeShopping();
   });
 
   document.querySelector('#recipeModal').classList.remove('hidden');
