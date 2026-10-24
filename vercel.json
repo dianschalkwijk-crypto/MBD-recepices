@@ -1,15 +1,38 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/recipes/import.ts": {"maxDuration": 60},
-    "api/app.ts": {"maxDuration": 20},
-    "api/notion/save.ts": {"maxDuration": 30},
-    "api/notion/photo.ts": {"maxDuration": 20},
-    "api/notion/health.ts": {"maxDuration": 20}
+    "api/recipes/import.ts": {
+      "maxDuration": 60
+    }
   },
-  "rewrites": [{"source": "/", "destination": "/api/app"}],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/app"
+    }
+  ],
   "headers": [
-    {"source": "/service-worker.js", "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]},
-    {"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]}
+    {
+      "source": "/service-worker.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
   ]
 }
