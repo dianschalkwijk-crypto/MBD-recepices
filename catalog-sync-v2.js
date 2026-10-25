@@ -17,7 +17,7 @@ let server=[],notion=[];try{[server,notion]=await Promise.all([
 get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}}),
 get('/api/notion/catalog').then(x=>x.items||[]).catch(e=>{console.warn('Notion niet bereikbaar, Supabase blijft beschikbaar',e);return []})
 ])}catch(e){tell('Synchronisatie niet bereikbaar: '+e.message,true);return}
-let add=0,fill=0,repair=0,changed=false;
+let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
 const old=by.get(id);
@@ -32,10 +32,10 @@ if(old){
   if(Array.isArray(r.collections)&&r.collections.length&&JSON.stringify(old.collections||[])!==JSON.stringify(r.collections)){old.collections=[...r.collections];c=true}
   if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom='Notion';repair++;changed=true}
  }else{
-  for(const p of ['ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL'])if(!present(old[p])&&present(r[p])){old[p]=r[p];c=true}
+  for(const p of ['title','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL','contentSynced','warnings'])if(r[p]!==undefined&&r[p]!==null&&((p==='contentSynced'||p==='warnings')||present(r[p]))&&JSON.stringify(old[p])!==JSON.stringify(r[p])){old[p]=r[p];c=true}
   if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
   if((!Array.isArray(old.collections)||!old.collections.length)&&Array.isArray(r.collections)&&r.collections.length){old.collections=[...r.collections];c=true}
-  if(c){if(present(old.ingredients)&&present(old.steps))old.contentSynced=true;fill++;changed=true}
+  if(c){fill++;changed=true}
  }
 }else{
  const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
