@@ -430,15 +430,28 @@ function renderRecipes(){
         <button data-view="${r.id}">Bekijk</button>
         ${r.sourceURL?`<button data-open="${r.id}">Bron</button>`:''}
         ${r.notionURL?`<button data-notion="${r.id}">Notion</button>`:''}
-        <button data-copy="${r.id}">Kopieer</button><button data-delete="${r.id}">Verwijder</button>
+        <button data-plan="${r.id}">📅 Voeg toe</button><button data-copy="${r.id}">Kopieer</button><button data-delete="${r.id}">Verwijder</button>
       </div>
     </article>`;
   }).join('');
   box.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showRecipeDetails(b.dataset.view));
   box.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const r=state.recipes.find(x=>x.id===b.dataset.open); if(r?.sourceURL) window.open(r.sourceURL,'_blank','noopener');});
   box.querySelectorAll('[data-notion]').forEach(b=>b.onclick=()=>{const r=state.recipes.find(x=>x.id===b.dataset.notion); if(r?.notionURL) window.open(r.notionURL,'_blank','noopener');});
+  box.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>planRecipeDate(b.dataset.plan));
   box.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyRecipe(b.dataset.copy));
   box.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteRecipe(b.dataset.delete));
+}
+function planRecipeDate(id){
+ const r=state.recipes.find(x=>x.id===id);if(!r)return;
+ let panel=document.getElementById('mbd-date-plan');
+ if(!panel){panel=document.createElement('section');panel.id='mbd-date-plan';panel.className='card';panel.style='position:fixed;z-index:9999;inset:auto 12px 12px;max-width:520px;margin:auto;max-height:85vh;overflow:auto;box-shadow:0 8px 40px #0005;background:white;padding:20px;border-radius:16px';document.body.appendChild(panel)}
+ panel.replaceChildren();
+ const title=document.createElement('h2');title.textContent='📅 Voeg toe: '+(r.title||'Recept');
+ const label=document.createElement('label');label.textContent='Datum';const date=document.createElement('input');date.type='date';date.value=new Date().toLocaleDateString('en-CA');date.style='display:block;width:100%;padding:10px';label.append(date);
+ const mealLabel=document.createElement('label');mealLabel.textContent='Eetmoment';const meal=document.createElement('select');meal.style='display:block;width:100%;padding:10px';for(const m of ['Ontbijt','Lunch','Avondeten','Tussendoortje']){const o=document.createElement('option');o.value=m;o.textContent=m;meal.append(o)}meal.value='Avondeten';mealLabel.append(meal);
+ const save=document.createElement('button');save.textContent='Voeg toe aan planning';const cancel=document.createElement('button');cancel.textContent='Annuleren';cancel.className='secondary';cancel.onclick=()=>panel.remove();
+ const msg=document.createElement('p');save.onclick=()=>{if(!date.value){msg.textContent='Kies eerst een datum.';return}const key='mbd-dated-meals-v1';let items=[];try{items=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(items))items=[];const existing=items.findIndex(x=>x.date===date.value&&x.meal===meal.value);const entry={date:date.value,meal:meal.value,recipeId:r.id,mdb:r.mdb||'',title:r.title||'',savedAt:new Date().toISOString()};if(existing>=0){if(!confirm('Er staat al een recept op dit eetmoment. Vervangen?'))return;items[existing]=entry}else items.push(entry);localStorage.setItem(key,JSON.stringify(items));msg.textContent='Toegevoegd: '+date.value+' · '+meal.value+'. Op dit apparaat bewaard.';setTimeout(()=>panel.remove(),1800)};
+ panel.append(title,label,mealLabel,save,cancel,msg);
 }
 function showRecipeDetails(id){
   const r=state.recipes.find(x=>x.id===id); if(!r) return;
