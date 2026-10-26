@@ -148,8 +148,8 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
         <div class="card">
           <div class="eyebrow">Gevulde kopie</div>
           <h2>Instellingen</h2>
-          <p class="muted">Deze werkkopie bevat 352 unieke MadeByDian-recepten met ingrediënten, bereidingsstappen, primaire kookboekindeling en beschikbare brongegevens. MDB-0182 blijft bewust vervallen.</p>
-          <div class="stats" id="statsBox"></div>
+          <p class="muted">De app toont lokale recepten en haalt daarnaast de online Supabase-catalogus op. Controleer hieronder of er nog recepten uitsluitend op dit apparaat staan.</p>
+          <div class="stats" id="statsBox"></div><p id="localOnlyStatus" class="muted"></p><button type="button" class="secondary" id="exportLocalOnlyBtn">Download recepten zonder MDB-nummer</button>
         </div>
         <div class="card">
           <h2>Gegevens</h2>
@@ -635,6 +635,7 @@ function setScreen(name,collection=null){
   if(name==='recipes'){activeCollectionFilter=collection;renderRecipes();}if(name==='collections')renderCollections();if(name==='week')renderWeek();if(name==='settings')renderSettings();window.scrollTo({top:0,behavior:'smooth'});
 }
 function renderSettings(){
+  const pending=state.recipes.filter(r=>!r.mdb);const note=document.querySelector('#localOnlyStatus');if(note)note.textContent=pending.length+' recepten zonder MDB-nummer op dit apparaat. Deze zijn mogelijk nog niet online opgeslagen. Maak eerst een back-up; verwijder ze niet.';
   const box=document.querySelector('#statsBox');
   if(!box) return;
   const planned=Object.values(state.week).filter(Boolean).length;
@@ -669,6 +670,7 @@ document.querySelector('#syncWeekBtn').onclick=()=>syncWeekMenus().catch(e=>aler
 setTimeout(()=>syncWeekMenus().catch(console.warn),1200);
 document.querySelector('#copyShoppingBtn').onclick=copyShopping;
 document.querySelector('#exportBtn').onclick=exportData;
+document.querySelector('#exportLocalOnlyBtn').onclick=()=>{const recipes=state.recipes.filter(r=>!r.mdb);const blob=new Blob([JSON.stringify({recipes,exportedAt:new Date().toISOString(),type:'local-only-review'},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='MadeByDian_nog_niet_online_'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
 document.querySelector('#exportJsonBtn').onclick=exportData;
 document.querySelector('#importJsonBtn').onclick=()=>document.querySelector('#importJsonFile').click();
 document.querySelector('#importJsonFile').onchange=e=>{const f=e.target.files?.[0];if(f)importDataFile(f);e.target.value='';};
