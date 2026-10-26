@@ -514,6 +514,24 @@ function renderCollections(){
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
+async function syncCatalogRecipes(){
+ if(!weekCloud)return;
+ try{
+  const {data,error}=await weekCloud.from('mbd_catalog').select('mdb,recipe').order('mdb',{ascending:true}).limit(1000);
+  if(error)throw error;
+  if(!Array.isArray(data)||!data.length)return;
+  const known=new Set(state.recipes.map(r=>r.mdb));let added=0;
+  for(const row of data){const p=row.recipe||{};if(!row.mdb||known.has(row.mdb))continue;
+   const origin=p.sourceKind||p.source||'';
+   const isBook=/kookboek/i.test(String(origin))||!!p.book;
+   const collections=Array.isArray(p.collections)?[...p.collections]:[];
+   if(isBook&&!collections.includes('Uit kookboeken'))collections.push('Uit kookboeken');
+   state.recipes.push({...p,id:p.id||row.mdb,mdb:row.mdb,sourceKind:isBook?'Kookboek':origin,bookPage:p.bookPage||'',collections,contentSynced:true});known.add(row.mdb);added++;
+  }
+  if(added){persist();renderRecipes();renderCollections();}
+ }catch(e){console.warn('Catalogus synchronisatie niet beschikbaar:',e.message)}
+}
+setTimeout(syncCatalogRecipes,1800);
 let cloudUser=null;
 let weekSyncInProgress=false;
 async function syncWeekMenus(){
