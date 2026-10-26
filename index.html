@@ -642,16 +642,23 @@ function renderSettings(){
   const synced=state.recipes.filter(r=>r.contentSynced).length; const indexed=state.recipes.filter(r=>r.mdb).length; box.innerHTML=`<div><b>${indexed}</b><span>MDB-index</span></div><div><b>${synced}</b><span>volledig lokaal</span></div><div><b>${planned}</b><span>dagen gepland</span></div>`;
 }
 function importDataFile(file){
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const incoming=JSON.parse(reader.result);
-      if(!incoming || !Array.isArray(incoming.recipes) || typeof incoming.week!=='object') throw new Error('Ongeldig bestand');
-      if(!confirm(`Back-up importeren met ${incoming.recipes.length} recepten? De huidige lokale gegevens worden vervangen.`)) return;
-      state={recipes:incoming.recipes,week:incoming.week||{}}; persist(); renderAll(); alert('Back-up geïmporteerd.');
-    }catch(e){ alert('Dit is geen geldige MadeByDian Recipes-back-up.'); }
-  };
-  reader.readAsText(file);
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const incoming=JSON.parse(reader.result);
+   if(!incoming||!Array.isArray(incoming.recipes))throw Error('Ongeldig bestand');
+   const existingIds=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));
+   const existingFingerprints=new Set(state.recipes.map(r=>recipeFingerprint(String(r.title||''),String(r.ingredients||''))));
+   const additions=incoming.recipes.filter(r=>r&&typeof r.title==='string'&&!(r.mdb&&existingIds.has(r.mdb))&&!existingFingerprints.has(recipeFingerprint(String(r.title||''),String(r.ingredients||''))));
+   if(!confirm('Back-up gecontroleerd: '+additions.length+' mogelijk ontbrekende recepten gevonden. Deze alleen lokaal toevoegen, zonder bestaande recepten of weekmenu’s te vervangen?'))return;
+   const snapshot=JSON.stringify(state);
+   try{
+    for(const r of additions){state.recipes.push({...r,id:r.id||uid()});if(r.mdb)existingIds.add(r.mdb);existingFingerprints.add(recipeFingerprint(String(r.title||''),String(r.ingredients||'')));}
+    persist();renderAll();alert(additions.length+' recepten lokaal toegevoegd. Maak een back-up en controleer ze vóór online verwerking.');
+   }catch(saveError){state=JSON.parse(snapshot);alert('Import niet voltooid; je bestaande gegevens zijn behouden. '+saveError.message);}
+  }catch(e){alert('Dit is geen geldige receptenback-up: '+e.message);}
+ };
+ reader.readAsText(file);
 }
 function clearAllData(){
   alert('Veiligheidsblokkade: terugzetten naar de oude 352-receptenindex is uitgeschakeld. Je actuele Supabase-catalogus en nieuwere lokale recepten blijven behouden. Gebruik de exportfunctie om eerst een back-up te bewaren.');
