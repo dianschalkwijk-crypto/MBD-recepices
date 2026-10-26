@@ -194,7 +194,7 @@ const SEED_RECIPES = [{"id":"MDB-0001","mdb":"MDB-0001","title":"Big Mac Burrito
 const STORAGE_KEY = 'madebydian-recipes-filled-copy-v0.5';
 
 const COLLECTIONS = [
-  ['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
+  ['Uit kookboeken','📚'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
   ['Camping 1pans','⛺'],['Mealprep','🧊'],['Easy oven','🔥'],['Ontbijt','🥣'],['Vegetarisch','🥬'],['Aziatisch','🍜'],
   ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Overig','📌']
 ];
@@ -412,7 +412,7 @@ function showMessage(el,text,type='warn'){el.textContent=text;el.className=`mess
 let activeCollectionFilter = null;
 function renderRecipes(){
   const q=document.querySelector('#recipeSearch').value.trim().toLowerCase();
-  const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
+  const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter)||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
   const box=document.querySelector('#recipeList');
   if(!list.length){box.innerHTML='<div class="empty">Geen passend recept gevonden. 🍲</div>';return;}
   box.innerHTML=list.map(r=>{
@@ -423,7 +423,7 @@ function renderRecipes(){
       <div class="recipe-title">${esc(r.title||r.originalTitle||'Naamloos recept')}</div>
       ${r.originalTitle&&r.originalTitle!==r.title?`<div class="recipe-meta">Origineel: ${esc(r.originalTitle)}</div>`:''}
       ${primaryMeta?`<div class="recipe-meta">${esc(primaryMeta)}</div>`:''}
-      ${r.book?`<div class="recipe-meta">Kookboek: ${esc(r.book)}</div>`:''}
+      ${r.sourceKind==='Kookboek'?`<div class="recipe-meta">📚 Kookboek${r.book?': '+esc(r.book):''}${r.bookPage?' · bladzijde '+esc(r.bookPage):''}</div>`:''}
       ${appCollections?`<div class="recipe-meta">Collectie: ${esc(appCollections)}</div>`:''}
       ${r.ingredients?`<div class="recipe-meta">${esc((r.ingredients||'').split('\n')[0]||'')}</div>`:`<div class="recipe-meta">Receptinhoud nog niet lokaal gesynchroniseerd.</div>`}
       <div class="recipe-actions">
@@ -510,7 +510,7 @@ function deleteRecipe(id){
 }
 function renderCollections(){
   const box=document.querySelector('#collectionOverview');
-  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>(r.collections||[]).includes(name)).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
+  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>((r.collections||[]).includes(name)||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
