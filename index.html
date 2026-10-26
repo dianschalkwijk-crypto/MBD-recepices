@@ -530,7 +530,7 @@ async function syncCatalogRecipes(){
   const {data,error}=await weekCloud.from('mbd_catalog').select('mdb,recipe').order('mdb',{ascending:true}).limit(1000);
   if(error)throw error;
   if(!Array.isArray(data)||!data.length)return;
-  const known=new Set(state.recipes.map(r=>r.mdb));let added=0;
+  const known=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));let added=0;
   for(const row of data){const p=row.recipe||{};if(!row.mdb||known.has(row.mdb))continue;
    const origin=p.sourceKind||p.source||'';
    const isBook=/kookboek/i.test(String(origin))||!!p.book;
@@ -538,7 +538,7 @@ async function syncCatalogRecipes(){
    if(isBook&&!collections.includes('Uit kookboeken'))collections.push('Uit kookboeken');
    state.recipes.push({...p,id:p.id||row.mdb,mdb:row.mdb,sourceKind:isBook?'Kookboek':origin,bookPage:p.bookPage||'',collections,contentSynced:true});known.add(row.mdb);added++;
   }
-  if(added){persist();renderRecipes();renderCollections();}
+  if(added){try{persist()}catch(storageError){console.warn('Lokale opslag vol; online recepten blijven in Supabase:',storageError.message)}renderRecipes();renderCollections();}
  }catch(e){console.warn('Catalogus synchronisatie niet beschikbaar:',e.message)}
 }
 setTimeout(syncCatalogRecipes,1800);
