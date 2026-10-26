@@ -409,7 +409,7 @@ async function saveRecipe(){
     const {data:{session},error:authError}=await weekCloud.auth.getSession();
     if(authError||!session)throw Error('Log eerst in via Accounts om het recept veilig online op te slaan.');
     const {data,error}=await weekCloud.rpc('mbd_save_scanned_recipe',{payload});
-    if(error)throw error;savedId=String(data||'');if(!/^MDB-\\d+$/.test(savedId))throw Error('Geen geldig receptnummer ontvangen');
+    if(error)throw error;savedId=String(data||'');if(!/^MDB-\d+$/.test(savedId))throw Error('Geen geldig receptnummer ontvangen');
   }catch(e){showMessage(document.querySelector('#importMessage'),'Niet opgeslagen: '+e.message,'warn');button.disabled=false;return;}
   state.recipes.unshift({...payload,id:savedId,mdb:savedId});
   persist(); currentDraft=null;button.disabled=false;
