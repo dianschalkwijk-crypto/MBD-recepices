@@ -388,7 +388,7 @@ function renderCollectionPicker(){
 function recipeFingerprint(title, ingredients){
   return `${title}|${ingredients}`.toLowerCase().replace(/[^a-z0-9à-ÿ]+/g,' ').trim();
 }
-function saveRecipe(){
+async function saveRecipe(){
   if(!currentDraft) return;
   const title=document.querySelector('#reviewTitle').value.trim()||currentDraft.title;
   const author=document.querySelector('#reviewAuthor').value.trim();
@@ -401,11 +401,21 @@ function saveRecipe(){
   if(exact||fuzzy){
     if(!confirm(`Dit lijkt al op “${(exact||fuzzy).title}”. Toch als apart recept opslaan?`)) return;
   }
-  state.recipes.unshift({id:uid(),mdb:'',title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions:'',time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString()});
-  persist(); currentDraft=null;
+  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions:'',time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:'Social / link'};
+  const button=document.querySelector('#saveRecipeBtn');button.disabled=true;
+  let savedId='';
+  try{
+    if(!weekCloud)throw Error('Supabase is niet beschikbaar. Het recept is nog niet opgeslagen.');
+    const {data:{session},error:authError}=await weekCloud.auth.getSession();
+    if(authError||!session)throw Error('Log eerst in via Accounts om het recept veilig online op te slaan.');
+    const {data,error}=await weekCloud.rpc('mbd_save_scanned_recipe',{payload});
+    if(error)throw error;savedId=String(data||'');if(!/^MDB-\\d+$/.test(savedId))throw Error('Geen geldig receptnummer ontvangen');
+  }catch(e){showMessage(document.querySelector('#importMessage'),'Niet opgeslagen: '+e.message,'warn');button.disabled=false;return;}
+  state.recipes.unshift({...payload,id:savedId,mdb:savedId});
+  persist(); currentDraft=null;button.disabled=false;
   document.querySelector('#reviewCard').classList.add('hidden');
   document.querySelector('#sourceUrl').value='';document.querySelector('#sourceText').value='';
-  showMessage(document.querySelector('#importMessage'),'✓ Recept opgeslagen. De bronlink, tekst en collecties zijn bewaard.','ok');
+  showMessage(document.querySelector('#importMessage'),'✓ Recept veilig online opgeslagen als '+savedId+'. Bronlink, tekst en collecties zijn bewaard.','ok');
   renderAll();
 }
 function showMessage(el,text,type='warn'){el.textContent=text;el.className=`message ${type==='ok'?'ok':''}`;}
