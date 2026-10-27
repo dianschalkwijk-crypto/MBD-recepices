@@ -2,6 +2,32 @@
 
 Brondeployment: dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK.
 
-46 van de 55 oorspronkelijke bronbestanden zijn hersteld. De 38 statische tekstbestanden en drie PNG-iconen zijn via de immutable deployment opgehaald; hun SHA-1 hashes komen exact overeen met de Vercel-bronbestandslijst. De overige vijf zijn de eerder herstelde API- en configuratiebestanden.
+## Actuele status — 27 oktober 2026
 
-Nog ontbreken negen serverbestanden: api/admin/normalize-recipes.ts, api/notion/books.ts, api/notion/catalog.ts, api/notion/full.ts, api/notion/health.ts, api/notion/photo.ts, api/notion/save.ts, api/recipes/import.ts, api/recipes/source.ts. De servercode wordt door de connector afgekapt. Geen volledige bronexport of werkende build: niet naar productie publiceren.
+Alle 55 oorspronkelijke bronpaden zijn nu vertegenwoordigd op branch `recovery/vercel-2026-10-22`.
+
+- De 46 eerder herstelde statische/configuratiebestanden zijn vanuit de immutable Vercel-deployment teruggehaald; voor de eerder gecontroleerde statische bestanden kwamen de SHA-1 hashes overeen met de Vercel-bronlijst.
+- De negen oorspronkelijk ontbrekende serverpaden zijn nu allemaal aanwezig:
+  - `api/admin/normalize-recipes.ts`
+  - `api/notion/books.ts`
+  - `api/notion/catalog.ts`
+  - `api/notion/full.ts`
+  - `api/notion/health.ts`
+  - `api/notion/photo.ts`
+  - `api/notion/save.ts`
+  - `api/recipes/import.ts`
+  - `api/recipes/source.ts`
+
+## Herkomst serverbestanden
+
+De Vercel-connector kapt de broninhoud van serverbestanden af. Daarom geldt niet voor alle negen dat ze byte-voor-byte identiek aan de oude deployment zijn.
+
+- `api/recipes/import.ts`: eerder volledig hersteld en aanwezig.
+- `api/notion/full.ts`, `health.ts`, `photo.ts`, `save.ts`: opnieuw opgebouwd en functioneel getest tegen de recovery-preview en huidige Notion/Supabase-data.
+- `api/notion/books.ts` en `catalog.ts`: opnieuw opgebouwd uit de zichtbare oude bronprefix plus het live antwoordcontract van de originele deployment. Recovery-preview geeft HTTP 200 en dezelfde veldstructuur/live data.
+- `api/recipes/source.ts`: opnieuw opgebouwd uit de vrijwel volledige oude bronprefix, met dezelfde social-host allowlist en veilige fetchbeperkingen. Build en methodecontract gecontroleerd; succesvolle externe POST-fetch is nog niet afzonderlijk end-to-end bewezen.
+- `api/admin/normalize-recipes.ts`: veilig opnieuw opgebouwd. De oude hardcoded beheersleutel is bewust niet teruggezet. De route vereist nu `MBD_NORMALIZE_KEY` uit de serveromgeving en blijft uitgeschakeld zolang die niet is geconfigureerd. Er is geen frontend-afhankelijkheid van deze route gevonden.
+
+## Belangrijk
+
+“Alle 55 paden aanwezig” betekent niet dat ieder gereconstrueerd serverbestand byte-identiek is aan de oude bron. Functionele tests en het centrale `PROJECT_STATUS.md` zijn leidend voor de releasebeslissing. Productie is nog niet vanuit deze recovery-branch gepromoveerd.
