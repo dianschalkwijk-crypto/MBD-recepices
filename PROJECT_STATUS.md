@@ -196,3 +196,18 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Synthetische allergietest met fictief allergeen: risicorecept verdwijnt uit bibliotheek én weekmenu; toegelaten recept blijft zichtbaar/beschikbaar.
 - Syntaxcontrole van allergy-integration-v2.js, catalog-sync-v2.js en service-worker.js: alle drie geldig.
 - Deze wijziging is NOG NIET naar productie uitgerold. Huidige productie blijft deployment dpl_Rej4YizpoammzWyUYngbRKpJF14W.
+
+## WEB PUSH + ALLERGIE/EETVOORKEUREN PREVIEW — 27-10-2026
+- Allergie/eetvoorkeurpreview blijft groen. 'Lust ik niet' beïnvloedt weekmenu/maaltijdpakketten/boodschappen maar niet de algemene receptenbibliotheek; allergenen filteren wel bibliotheek én weekmenu. Beide gedragingen synthetisch getest met fictieve termen.
+- First-load/cachekloof opgelost: index.html en service-worker laden v20-scripts; serviceworker-cache v0.10.20.
+- PWA manifest heeft nu stabiele id '/'.
+- Web Push-infrastructuur toegevoegd zonder Vercel-upgrade. Eerste poging met extra Vercel API-functies liep terecht tegen Hobby-limiet van 12 functies; die functies en web-push dependency zijn volledig verwijderd. Nieuwste preview bouwt weer READY.
+- Pushzender draait als Supabase Edge Function 'mbd-push' (verify_jwt=false, testactie valideert zelf user-token). Edge Function genereert eenmalig een vaste VAPID-keypair server-side en bewaart die in afgeschermde mbd_push_config; browser krijgt alleen public key.
+- public.mbd_push_subscriptions aangemaakt met RLS: authenticated gebruikers kunnen uitsluitend hun eigen abonnement selecteren/invoegen/wijzigen/verwijderen.
+- Ochtendbatch gebruikt service-role-only RPC mbd_push_claim_due(date) en mbd_push_mark_result(...); claim is atomair en voorkomt dubbele meldingen per lokale datum.
+- Edge GET-config functioneel getest: HTTP 200, enabled=true, public key lengte 87, timezone Europe/Amsterdam, sendTime 08:40.
+- Morning POST buiten 08:40 functioneel getest: HTTP 200, skipped=true, reason=outside_window; er is niets verstuurd.
+- Pushconfig telt 1 rij; pushabonnementen tellen 0 rijen. Automatische cron is BEWUST NOG NIET aangemaakt/geactiveerd.
+- Laatste Vercel-preview met pushclient via Supabase Edge Function: dpl_ojELSck8DtJeszGv1Qz4UkHngPPb, commit 35540d26645a4b1559e16232f6c24165b2b585be, READY.
+- Preview smokecheck: / HTTP 200 met push-notifications-v1.js?v=20; pushclient verwijst naar Supabase Edge Function; service-worker heeft push- en notificationclick-handler; manifest id '/'; /api/health 200.
+- Voor iPhone is een Home Screen web app + expliciete gebruikersklik voor notificatietoestemming vereist. Volgende veilige fase: code naar productie, maar cron uit laten; gebruiker activeert en test handmatig. Pas na ontvangen testpush de 08:40-cron activeren.
