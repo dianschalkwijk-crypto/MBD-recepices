@@ -158,3 +158,16 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Rollbackpunt vóór deze release blijft deployment `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f` op commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`.
 - MBD_SUPABASE_WRITE_SECRET is vooraf veilig geroteerd en voor preview + production afgestemd op de Supabase RPC-hashcontrole.
 - `api/admin/normalize-recipes.ts` is een losse adminroute en wordt niet door de frontend gebruikt. De echte normalizer/source functionaliteit is op preview eerder succesvol end-to-end getest; de normale productie-import gebruikt `/api/recipes/import` en heeft aiConfigured=true.
+
+## PRODUCTIE-RELEASE GESLAAGD — 27-10-2026
+- Productiedeployment: `dpl_Rej4YizpoammzWyUYngbRKpJF14W`.
+- Uitgerolde commit: `6bd55632e262fd506d8e7be9b495bfa8dd36337c` op branch `recovery/vercel-2026-10-22`.
+- Live alias `https://madebydian-recipes-dian.vercel.app` wijst naar deze deployment.
+- Live start-URL `/`: HTTP 200 en titel `MadeByDian Recipes` bevestigd.
+- `/api/health`: HTTP 200, AI geconfigureerd.
+- `/api/notion/health`: HTTP 200, Notion en Supabase-write geconfigureerd.
+- `/api/notion/save`: HTTP 200 health-respons, max 30 recepten per boek.
+- `/api/notion/catalog`: HTTP 200 met actuele Notion-catalogus.
+- Vercel runtime-error scan na release: 0 fouten in de gecontroleerde 30 minuten.
+- Huidige rollbackreferentie vóór deze release blijft `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f` / commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`.
+- Oudere statusregels die zeggen dat productie nog niet is gepromoveerd zijn hiermee vervallen.
