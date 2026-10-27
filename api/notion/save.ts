@@ -113,9 +113,7 @@ export default async function handler(req:any,res:any){
     if(sourceURL){try{const u=new URL(sourceURL);if(u.protocol!=='https:'&&u.protocol!=='http:')throw 0}catch{return res.status(400).json({ok:false,error:'Bronlink is ongeldig'})}}
 
     const [nMax,sMax,book]=await Promise.all([highestNotion(),highestSupabase(),activeBook()]);
-    const requestedTestMdb=String(b.__testMdb||'').toUpperCase();
-    const forcedTestMdb=(process.env.VERCEL_ENV==='preview'&&requestedTestMdb==='MDB-0673')?requestedTestMdb:'';
-    const mdb=forcedTestMdb||fmt(Math.max(nMax,sMax)+1);
+    const mdb=fmt(Math.max(nMax,sMax)+1);
     const props:any={
       'Recept':{title:tt(title)},
       'Publiekstitel':{rich_text:rt(title)},
