@@ -78,7 +78,18 @@ if(old){
 }};
 for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
-if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){try{if(preSyncState&&Array.isArray(preSyncState.recipes)){state=preSyncState;if(typeof STORAGE_KEY!=='undefined')localStorage.setItem(STORAGE_KEY,JSON.stringify(state));try{localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()}))}catch(_){}try{localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[]))}catch(_){}if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit verse back-up mislukt',rollbackError)}tell('Online recepten gevonden; lokaal bewaren is mislukt. De toestand van vlak vóór deze synchronisatie is zo mogelijk hersteld.',true);return}}
+if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){
+ const quota=e?.name==='QuotaExceededError'||e?.code===22||e?.code===1014||/quota|storage.*full|exceed/i.test(String(e?.message||e||''));
+ if(quota){
+  // De online catalogus is de bron voor receptinhoud. Bij volle Safari-opslag houden we de verse
+  // samengevoegde catalogus in het geheugen in plaats van terug te vallen op verouderde lokale inhoud.
+  try{if(typeof renderAll==='function')renderAll()}catch(renderError){console.warn('Render na opslaglimiet',renderError)}
+  tell('Online recepten geladen. Safari-opslag is vol; de actuele catalogus blijft nu beschikbaar en wordt bij een volgende start opnieuw online geladen.',true);
+  return;
+ }
+ try{if(preSyncState&&Array.isArray(preSyncState.recipes)){state=preSyncState;if(typeof STORAGE_KEY!=='undefined')localStorage.setItem(STORAGE_KEY,JSON.stringify(state));try{localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()}))}catch(_){}try{localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[]))}catch(_){}if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit verse back-up mislukt',rollbackError)}
+ tell('Synchronisatie kon niet veilig worden opgeslagen; de toestand van vóór deze synchronisatie is zo mogelijk hersteld.',true);return
+}}
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
