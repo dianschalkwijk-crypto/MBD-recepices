@@ -23,20 +23,20 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false;
- if(origin==='Notion'){
-  for(const p of ['title','originalTitle','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
-   if(p==='sourceURL'){if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}continue}
-   if(present(r[p])&&old[p]!==r[p]){old[p]=r[p];c=true}
-  }
-  if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
-  if(Array.isArray(r.collections)&&r.collections.length&&JSON.stringify(old.collections||[])!==JSON.stringify(r.collections)){old.collections=[...r.collections];c=true}
-  if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom='Notion';repair++;changed=true}
- }else{
-  for(const p of ['title','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL','contentSynced','warnings'])if(r[p]!==undefined&&r[p]!==null&&((p==='contentSynced'||p==='warnings')||present(r[p]))&&JSON.stringify(old[p])!==JSON.stringify(r[p])){old[p]=r[p];c=true}
-  if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
-  if((!Array.isArray(old.collections)||!old.collections.length)&&Array.isArray(r.collections)&&r.collections.length){old.collections=[...r.collections];c=true}
-  if(c){fill++;changed=true}
+ // Fill only blank fields. Never overwrite existing data from another source.
+ if(present(r.title)&&present(old.title)&&name(r.title)!==name(old.title)){
+  console.warn('MDB titelconflict: overgeslagen',id,origin);
+  return;
  }
+ for(const p of ['title','originalTitle','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
+  if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}
+  else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p]))
+   console.warn('MDB veldconflict: bestaande waarde behouden',id,p,origin);
+ }
+ if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
+ if((!Array.isArray(old.collections)||!old.collections.length)&&Array.isArray(r.collections)&&r.collections.length){old.collections=[...r.collections];c=true}
+ if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom='Aanvulling '+origin;fill++;changed=true}
+
 }else{
  const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
  state.recipes.push(n);by.set(id,n);add++;changed=true
