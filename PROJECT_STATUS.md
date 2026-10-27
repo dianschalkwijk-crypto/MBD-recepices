@@ -225,3 +225,13 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Preview na fix: full HTTP 200, photo HTTP 302 en geen DEP0169 meer in runtime logs.
 - Tijdelijke `NODE_OPTIONS=--trace-deprecation` is na diagnose weer uitgeschakeld.
 - Deze laatste DEP0169-fix is nog NIET opnieuw naar productie uitgerold; huidige productie blijft functioneel maar kan deze deprecation warning nog loggen.
+
+## UX-AFWERKING LIVE — 27-10-2026
+- Production deployment: `dpl_8P87RRygKMqw2XY3Aq9CJKMvfBTc`, commit `5c0d15369c5cecc46e95de9a904384434b35abc5`.
+- Live alias `madebydian-recipes-dian.vercel.app` is omgezet van rollbackdeployment `dpl_Rej4YizpoammzWyUYngbRKpJF14W` naar deze versie.
+- Weekmenu: MDB-nummer is niet meer de primaire keuzeweergave. De bestaande allergie-, eetvoorkeur- en maaltijdpakketfilter blijft leidend; toegestane recepten tonen titel plus visuele tegel. Eigen/privé receptfoto wordt gebruikt wanneer beschikbaar en ingelogd, anders een gerecht-emoji als herkenningsbeeld.
+- Foto/kookboekscanner: “Automatisch herkennen” is standaard. De AI retourneert `imageType` (recipe_page / food_photo / unclear), confidence en maximaal drie alternatieve gerechtstitels. Bij lage zekerheid toont de scanner keuzeknoppen in plaats van vooraf verplicht te vragen wat er op de foto staat. Handmatige importmodi blijven als fallback beschikbaar.
+- Echte fotoherkennings-POST getest op preview én op de nieuwe production build vóór live alias-switch: HTTP 200; een niet-receptafbeelding werd correct als `unclear` met lage confidence teruggegeven.
+- Na opslaan: zowel de gewone recepten-inbox als de foto/kookboekscanner tonen een knop `➕ Nog een recept opslaan` om direct een volgende invoer te starten.
+- Serviceworker cache verhoogd naar `madebydian-recipes-v0.10.23` en injecteert `ux-finishing-v1.js?v=23` en `scan-enhance-v1.js?v=23`.
+- Post-release: live root HTTP 200, API health HTTP 200, nieuwe scripts HTTP 200, runtime-error scan 0 fouten in de gecontroleerde 30 minuten.
