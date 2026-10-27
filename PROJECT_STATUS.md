@@ -72,3 +72,12 @@ Inspecteer eerst eerdere exports of andere beschikbare bronkopieën en de bestaa
 - Daarmee is de eerder ontbrekende browserpraktijktest afgerond.
 - Eerder al bevestigd: previewbestanden en api/health HTTP 200; Supabase ACTIVE_HEALTHY; mbd_catalog 669 rijen / 669 unieke MDB-nummers / 0 lege MDB / 0 lege recipes; RLS en SELECT-rechten correct.
 - Tijdelijke previewlink had een TTL van 15 minuten en verloopt automatisch.
+
+## ACTUELE STATUS — vervangt oudere testblokkades (27-10-2026)
+- BROWSERTEST: GESLAAGD. De tijdelijke Vercel-preview is door de gebruiker in Safari geopend en toont de MadeByDian receptenapp.
+- PREVIEW/API: GESLAAGD. index.html, catalog-sync-v2.js, service-worker.js en api/health geven HTTP 200.
+- SUPABASE READ: GESLAAGD. Project ACTIVE_HEALTHY; mbd_catalog 669 rijen, 669 unieke MDB-nummers, 0 lege MDB, 0 lege recipe; RLS aan; anon/authenticated SELECT toegestaan.
+- DUBBELE INLINE SYNC: AFGESCHERMD. Serverwrapper en serviceworker schakelen de oude setTimeout(syncCatalogRecipes,1800) uit; catalog-sync-v2.js is de veilige route.
+- ROLLBACK: HUIDIGE CODE GECONTROLEERD. catalog-sync-v2.js maakt per synchronisatierun een verse in-memory preSyncState vóór merge; index.html declareert state met let, zodat rollback naar preSyncState technisch kan worden uitgevoerd.
+- Oudere regels hierboven die zeggen dat browser-/previewtest ontbreekt zijn historisch en niet meer actueel.
+- Nog apart te bewijzen: volledige schrijvende end-to-end keten app -> Supabase/Notion inclusief conflictgedrag. Dit is niet hetzelfde als de nu afgeronde browsertest.
