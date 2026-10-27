@@ -128,3 +128,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - source/normalize bouwen; GET geeft het verwachte 405-methodecontract. Een succesvolle externe source-POST en een echte AI-normalisatiecall zijn nog niet end-to-end bewezen.
 - normalize-recipes bevat bewust niet meer de oude hardcoded adminsleutel. De route vereist MBD_NORMALIZE_KEY uit de serveromgeving en is zonder die secret uitgeschakeld. Er is geen frontend-referentie naar deze adminroute gevonden.
 - Zie RECOVERY_STATUS.md voor herkomst en onderscheid tussen exact teruggevonden en functioneel gereconstrueerde serverbestanden.
+
+## LAATSTE TWEE SERVERTESTS GROEN — 27-10-2026
+- `api/recipes/source.ts`: echte externe bron-fetch uitgevoerd op recovery-preview via een tijdelijke preview-only selftest. Toegestane YouTube-URL opgehaald; HTTP 200; brontekst uit metadata teruggegeven. Geen receptdata gewijzigd of opgeslagen.
+- `api/admin/normalize-recipes.ts`: echte OpenAI-call uitgevoerd op recovery-preview met fictief testrecept. Eerste poging vond een echte compatibiliteitsfout: GPT-5.6 Luna ondersteunt hier geen `temperature: 0`. Die parameter is verwijderd (commit 32f98af7eb52e543d375719a778937ac9de2b227). Tweede poging: HTTP 200 en correcte Nederlandse normalisatie (`Chicken pasta` -> `Kippasta`, Engelse ingrediënten/stappen vertaald).
+- Tijdelijke selftest-code is daarna uit beide routes verwijderd. Schone previewdeployment `dpl_FLX8yH1nqbPCg3Nv9dvnfZdA1JmC` is READY. GET op beide routes geeft weer het normale 405-contract; geen testachterdeur aanwezig.
+- De bestaande productie-`OPENAI_API_KEY` was alleen tijdelijk voor preview beschikbaar tijdens de AI-test en staat weer uitsluitend op `production`.
+- Branch-specifieke `MBD_NORMALIZE_KEY` blijft als server-secret op de recovery-preview; de OpenAI-key staat daar niet meer. De key staat niet in broncode of browsercode.
+- Hiermee zijn de twee resterende servertestgaten voor source-fetch en AI-normalisatie AFGEROND op recovery-preview.
+- Productie is niet gepromoveerd of gewijzigd door deze tests.
