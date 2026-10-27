@@ -146,3 +146,15 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Huidige live alias `madebydian-recipes-dian.vercel.app` wijst vóór de nieuwe release naar deployment `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f`, commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`. Dit is het vastgelegde rollbackpunt.
 - Let op: een previewdeployment mag niet simpelweg als productiealias worden gebruikt omdat preview- en production-envs verschillen. Voor livegang moet een echte production deployment van de geteste commit worden gemaakt.
 - Technisch releaseklaar op preview. De volgende stap verandert de live productieversie en vereist expliciete toestemming.
+
+## PRODUCTIE LIVE — 27-10-2026
+- Gebruiker gaf expliciet toestemming voor livegang.
+- Geteste commit `6bd55632e262fd506d8e7be9b495bfa8dd36337c` is als echte production deployment gebouwd: `dpl_Rej4YizpoammzWyUYngbRKpJF14W`, READY.
+- Live alias `madebydian-recipes-dian.vercel.app` wijst nu naar deze deployment.
+- Directe live smokechecks: `/index.html` 200 met MadeByDian Recipes; `/api/health` 200 en aiConfigured=true; `/api/notion/health` 200; `/api/notion/save` 200; `/api/notion/catalog` 200; tijdelijke recovery-testroute 404.
+- Runtime error scan na livegang: geen fouten gevonden in de gecontroleerde 30 minuten.
+- Supabase na livegang ongewijzigd: 671 totale rijen = 653 canonieke recepten + 18 duplicate-quarantined.
+- Tijdelijke share/protection bypass van de live alias is ingetrokken; protectionBypass is leeg.
+- Rollbackpunt vóór deze release blijft deployment `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f` op commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`.
+- MBD_SUPABASE_WRITE_SECRET is vooraf veilig geroteerd en voor preview + production afgestemd op de Supabase RPC-hashcontrole.
+- `api/admin/normalize-recipes.ts` is een losse adminroute en wordt niet door de frontend gebruikt. De echte normalizer/source functionaliteit is op preview eerder succesvol end-to-end getest; de normale productie-import gebruikt `/api/recipes/import` en heeft aiConfigured=true.
