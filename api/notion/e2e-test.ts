@@ -1,4 +1,4 @@
-import saveHandler from './save';
+import saveHandler from './save.js';
 
 export default async function handler(req:any,res:any){
   res.setHeader('Cache-Control','no-store');
