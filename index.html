@@ -478,6 +478,7 @@ function showRecipeDetails(id){
       </div>
       <p class="recipe-meta" id="mbdPhotoCredit">${hasOwn?'Eigen gerechtfoto':hasSource?'Bronfoto uit kookboek – niet van MadeByDian':'Geen bronfoto opgeslagen · MadeByDian-logo'}</p>
       ${hasSource?'<button type="button" data-view-private-photo>Bekijk originele kookboekfoto (privé)</button>':''}
+      <label style="display:block;margin-top:10px">Oorspronkelijke kookboekfoto toevoegen <input type="file" accept="image/*" data-source-photo-upload style="max-width:100%"></label>
       <label style="display:block;margin-top:10px">Vervang door mijn eigen foto <input type="file" accept="image/*" data-own-photo-upload style="max-width:100%"></label>
       <p class="recipe-meta" id="mbdPhotoStatus">Eigen foto’s zijn alleen zichtbaar na aanmelden als beheerder.</p>
     </div>`);
@@ -516,6 +517,28 @@ function showRecipeDetails(id){
     body.querySelector('[data-view-private-photo]')?.addEventListener('click',async()=>{
       try{await showPrivate(r.sourcePhotoPaths[0]);body.querySelector('#mbdPhotoCredit').textContent='Bronfoto uit kookboek – niet van MadeByDian';photoStatus.textContent='Privéfoto wordt tijdelijk getoond.';}
       catch(e){photoStatus.textContent='Bronfoto niet beschikbaar: '+e.message;}
+    });
+    body.querySelector('[data-source-photo-upload]')?.addEventListener('change',async e=>{
+      const file=e.target.files?.[0];if(!file)return;
+      try{
+        if(!client)throw Error('Online opslag niet beschikbaar');
+        const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Log eerst in via Accounts');
+        if(!r.mdb)throw Error('Recept heeft nog geen MDB-nummer');
+        if(!file.type.startsWith('image/'))throw Error('Kies een afbeelding');
+        photoStatus.textContent='Oorspronkelijke kookboekfoto privé opslaan…';
+        const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+        const path=r.mdb+'/bron-'+Date.now()+'.'+ext;
+        const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
+        if(uploadError)throw uploadError;
+        const {data:stored,error:readError}=await client.from('mbd_catalog').select('recipe').eq('mdb',r.mdb).single();if(readError)throw readError;
+        const existing=Array.isArray(stored.recipe?.sourcePhotoPaths)?stored.recipe.sourcePhotoPaths:[];
+        const paths=[...existing,path];
+        const {error:updateError}=await client.from('mbd_catalog').update({recipe:{...(stored.recipe||{}),sourcePhotoPaths:paths,sourcePhotoPrivate:true,sourcePhotoCredit:'Bronfoto uit kookboek – niet van MadeByDian'}}).eq('mdb',r.mdb);
+        if(updateError)throw updateError;
+        r.sourcePhotoPaths=paths;r.sourcePhotoPrivate=true;try{persist()}catch{}
+        await showPrivate(path);body.querySelector('#mbdPhotoCredit').textContent='Bronfoto uit kookboek – niet van MadeByDian';
+        photoStatus.textContent='Oorspronkelijke kookboekfoto veilig privé gekoppeld aan '+r.mdb+'.';
+      }catch(err){photoStatus.textContent='Bronfoto niet gekoppeld: '+err.message;}
     });
     body.querySelector('[data-own-photo-upload]')?.addEventListener('change',async e=>{
       const file=e.target.files?.[0];if(!file)return;
