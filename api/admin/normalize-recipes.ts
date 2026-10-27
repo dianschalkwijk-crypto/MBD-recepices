@@ -26,7 +26,6 @@ export default async function handler(req:any,res:any){
   const client=new OpenAI({apiKey:env.OPENAI_API_KEY});
   const completion=await client.chat.completions.create({
    model:env.OPENAI_MODEL||'gpt-5.6-luna',
-   temperature:0,
    response_format:{type:'json_object'},
    messages:[{role:'system',content:instructions},{role:'user',content:JSON.stringify({recipes:input})}]
   });
