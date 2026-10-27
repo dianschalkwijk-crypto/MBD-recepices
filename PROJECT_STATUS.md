@@ -57,3 +57,11 @@ Inspecteer eerst eerdere exports of andere beschikbare bronkopieën en de bestaa
 - Statische test op werkelijk uit GitHub gelezen bron: serververvanging verwijdert exacte inline sync hook (1 oorspronkelijke match), injectie verwijst naar catalog-sync-v2.js, serviceworker schakelt dezelfde hook uit, snapshot staat vóór merge, rollbackcode bestaat. Alle vijf checks positief. Dit is NIET hetzelfde als een geslaagde browser- of database-integratietest.
 - Preview-runtime logs afgelopen 30 minuten: geen events. Dit bewijst geen foutloosheid omdat geen geauthenticeerde request uitgevoerd kon worden.
 - Apart productieprobleem uit Vercel runtime errors: `/api/recipes/recognize-photo` had op 2026-10-26 HTTP 429 `credit_balance_exhausted` / `insufficient_quota` voor AI-fotoherkenning. Geen betaling of API-configuratie gewijzigd.
+
+## Praktijktest 27-10-2026
+- Previewbestanden index.html, catalog-sync-v2.js, service-worker.js en api/health gecontroleerd: HTTP 200.
+- Supabase MadeByDian Recepten is ACTIVE_HEALTHY.
+- mbd_catalog: 669 rijen, 669 unieke MDB-nummers, 0 lege MDB, 0 lege recepten.
+- RLS staat aan. anon en authenticated hebben SELECT-recht. Publieke leespolicy staat actief.
+- Interactieve browsertest is nog niet afgerond: TinyFish wallet is leeg en lokale Chromium wordt door de uitvoeromgeving geblokkeerd.
+- Tijdelijke previewtoegang is na de controles ingetrokken.
