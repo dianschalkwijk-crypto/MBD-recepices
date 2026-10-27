@@ -35,7 +35,8 @@ export default async function handler(req:any,res:any){
  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate');
  res.setHeader('X-Content-Type-Options','nosniff');
  if(req.method!=='GET') return res.status(405).json({message:'Alleen foto lezen is hier beschikbaar.'});
- const mdb=String(req.query?.mdb||'').trim().toUpperCase();
+ const requestUrl=new URL(String(req.url||'/'),'http://localhost');
+ const mdb=String(requestUrl.searchParams.get('mdb')||'').trim().toUpperCase();
  if(!/^MDB-\d{4,}$/.test(mdb)) return res.status(400).json({message:'Ongeldig MDB-nummer.'});
  try{
   const page=await pageFor(mdb);
