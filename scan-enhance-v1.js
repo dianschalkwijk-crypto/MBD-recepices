@@ -3,7 +3,8 @@ if(window.__mbdScanEnhanceV1)return;window.__mbdScanEnhanceV1=true;
 const el=id=>document.getElementById(id);
 if(!el("scan")||!el("photo")||!el("mode"))return;
 
-const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");\nconst oldScan=scan.onclick;
+const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");
+const oldScan=scan.onclick;
 let appendNext=false,lastMultiResults=null;
 
 function files(){try{return Array.isArray(selected)?selected:[]}catch(_){return [...(photo.files||[])]}}
