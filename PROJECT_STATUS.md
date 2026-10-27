@@ -98,3 +98,16 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Alle tijdelijke protection overrides die voor browsertests zijn gebruikt zijn weer ingetrokken; productie is niet aangepast.
 - De ontbrekende READ/browser/database-praktijktest is hiermee AFGEROND.
 - Nog apart open: schrijvende keten voor een nieuw recept (`/api/notion/save` + geauthenticeerde Supabase-write), inclusief rollback bij gedeeltelijke schrijffout. Dit mag niet als onderdeel van de afgeronde read/synctest worden verward.
+
+## SCHRIJVENDE E2E-TEST AFGEROND — 27-10-2026
+- Preview save-keten app-handler -> Notion -> Supabase is aantoonbaar geslaagd.
+- Succesproef maakte tijdelijk MDB-0673 aan; los gecontroleerd in Notion en Supabase met gelijke titel, ingrediënten, stappen en Notion-link.
+- Conflictproef forceerde bestaand MDB-0673: Supabase gaf HTTP 409 / conflict exists; save-handler meldde rolledBackNotion=true.
+- Daarna gecontroleerd dat Supabase MDB-0673 niet was overschreven en dat geen tweede actieve Notion-pagina achterbleef.
+- Tijdelijke testrecords MDB-0673, MDB-0674 en MDB-0675 zijn verwijderd uit Supabase en naar Notion-prullenbak verplaatst. Boek 31 teller hersteld naar 18 actieve recepten.
+- Tijdelijke testhook en routes api/notion/e2e-test.ts en api/notion/e2e-cleanup.ts zijn uit GitHub verwijderd.
+- Opgeschoonde previewcontrole: /api/notion/health 200, /api/notion/full?mdb=MDB-0183 200, /api/notion/save 200; beide E2E-testpaden 404.
+- Beveiligde Supabase RPC mbd_catalog_server_write voorkomt stil overschrijven van bestaande MDB-records. Preview gebruikt een branch-scoped server-only secret; het geheim staat niet in browsercode.
+- Productie is NIET gepromoveerd en heeft de nieuwe schrijfsecret nog niet; deze E2E-status geldt voor de recovery preview.
+- Na testcleanup: Supabase 669 rijen / 669 unieke MDB-nummers, hoogste MDB-0672.
+- Openstaand gegevensverschil: Notion hoogste MDB-0645, terwijl Supabase tot MDB-0672 loopt. Dit verschil bestond vóór de E2E-test en moet apart veilig worden gereconcilieerd; niet automatisch hernummeren of overschrijven.
