@@ -31,3 +31,8 @@ De Vercel-connector kapt de broninhoud van serverbestanden af. Daarom geldt niet
 ## Belangrijk
 
 “Alle 55 paden aanwezig” betekent niet dat ieder gereconstrueerd serverbestand byte-identiek is aan de oude bron. Functionele tests en het centrale `PROJECT_STATUS.md` zijn leidend voor de releasebeslissing. Productie is nog niet vanuit deze recovery-branch gepromoveerd.
+
+## Functionele servertests afgerond — 27 oktober 2026
+- `api/recipes/source.ts`: externe toegestane bron-fetch in preview succesvol getest (HTTP 200).
+- `api/admin/normalize-recipes.ts`: echte OpenAI-normalisatie in preview succesvol getest (HTTP 200) na verwijderen van niet-ondersteunde `temperature: 0` voor GPT-5.6 Luna.
+- Tijdelijke selftest-logica is weer verwijderd; schone preview bouwt READY en beide routes hebben weer hun normale methodebeveiliging.
