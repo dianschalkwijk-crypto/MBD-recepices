@@ -3,7 +3,7 @@ if(window.__mbdScanEnhanceV1)return;window.__mbdScanEnhanceV1=true;
 const el=id=>document.getElementById(id);
 if(!el("scan")||!el("photo")||!el("mode"))return;
 
-const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");
+const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");\nconst oldScan=scan.onclick;
 let appendNext=false,lastMultiResults=null;
 
 function files(){try{return Array.isArray(selected)?selected:[]}catch(_){return [...(photo.files||[])]}}
@@ -152,7 +152,7 @@ function boot(){
  };
  el("addphoto").onclick=()=>{if(mode.value!=="auto")return oldAdd?.call(el("addphoto"));appendNext=true;photo.value="";photo.click()};
  mode.addEventListener("change",()=>{if(mode.value==="auto"){el("foodnamewrap").classList.add("hide");el("addphoto").classList.toggle("hide",!files().length);scan.textContent="✨ Foto automatisch uitlezen"}else scan.textContent="Tekst herkennen"});
- scan.onclick=()=>mode.value==="auto"?autoScan():null;
+ scan.onclick=()=>mode.value==="auto"?autoScan():oldScan?.call(scan);
  installSaveAnother();
 }
 boot();
