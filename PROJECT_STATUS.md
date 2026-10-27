@@ -137,3 +137,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Branch-specifieke `MBD_NORMALIZE_KEY` blijft als server-secret op de recovery-preview; de OpenAI-key staat daar niet meer. De key staat niet in broncode of browsercode.
 - Hiermee zijn de twee resterende servertestgaten voor source-fetch en AI-normalisatie AFGEROND op recovery-preview.
 - Productie is niet gepromoveerd of gewijzigd door deze tests.
+
+## RELEASE-READINESS — 27-10-2026
+- Laatste schone recovery-preview: deployment `dpl_6Jp25cnk6mcq3AdfRfMYU95sZ8Lt`, commit `6bd55632e262fd506d8e7be9b495bfa8dd36337c`, READY.
+- Smokecheck op deze preview: `/api/notion/save` HTTP 200 met `notionConfigured=true` en `supabaseWriteConfigured=true`; `/api/notion/health` HTTP 200; tijdelijke `/api/recovery-normalize-test` geeft 404.
+- OPENAI_API_KEY staat na de afgeronde normalizer-test weer uitsluitend op production.
+- MBD_SUPABASE_WRITE_SECRET is veilig geroteerd: preview en production hebben dezelfde nieuwe server-secret; Supabase RPC controleert alleen de SHA-256-hash. De secret staat niet in broncode of browsercode.
+- Huidige live alias `madebydian-recipes-dian.vercel.app` wijst vóór de nieuwe release naar deployment `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f`, commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`. Dit is het vastgelegde rollbackpunt.
+- Let op: een previewdeployment mag niet simpelweg als productiealias worden gebruikt omdat preview- en production-envs verschillen. Voor livegang moet een echte production deployment van de geteste commit worden gemaakt.
+- Technisch releaseklaar op preview. De volgende stap verandert de live productieversie en vereist expliciete toestemming.
