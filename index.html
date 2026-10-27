@@ -469,6 +469,18 @@ function showRecipeDetails(id){
   document.querySelector('#modalRecipeTitle').textContent=r.title||r.originalTitle||'Recept';
   const pills=[r.category,r.cuisine,r.method,r.portions,r.time].filter(Boolean);
   const blocks=[];
+  if(r.sourceKind==='Kookboek'){
+    const hasOwn=!!r.ownPhotoPath,hasSource=Array.isArray(r.sourcePhotoPaths)&&r.sourcePhotoPaths.length>0;
+    blocks.push(`<div class="detail-section">
+      <div id="mbdCookbookPhoto" style="display:flex;justify-content:center;align-items:center;min-height:130px;background:#faf5f1;border:1px solid #e5d8ce;border-radius:12px;overflow:hidden">
+        <img src="/assets/mbd-recipes-logo.webp" alt="MadeByDian Recepten" style="max-width:100%;max-height:230px;object-fit:contain" onerror="this.replaceWith(document.createTextNode('MadeByDian · Recepten'))">
+      </div>
+      <p class="recipe-meta" id="mbdPhotoCredit">${hasOwn?'Eigen gerechtfoto':hasSource?'Bronfoto uit kookboek – niet van MadeByDian':'Geen bronfoto opgeslagen · MadeByDian-logo'}</p>
+      ${hasSource?'<button type="button" data-view-private-photo>Bekijk originele kookboekfoto (privé)</button>':''}
+      <label style="display:block;margin-top:10px">Vervang door mijn eigen foto <input type="file" accept="image/*" data-own-photo-upload style="max-width:100%"></label>
+      <p class="recipe-meta" id="mbdPhotoStatus">Eigen foto’s zijn alleen zichtbaar na aanmelden als beheerder.</p>
+    </div>`);
+  }
   if(r.intro) blocks.push(`<div class="detail-section"><div class="detail-text">${esc(r.intro)}</div></div>`);
   if(pills.length) blocks.push(`<div class="detail-pills">${pills.map(x=>`<span class="detail-pill">${esc(String(x))}</span>`).join('')}</div>`);
   blocks.push(`<div class="detail-section"><h3>Ingrediënten</h3><div class="detail-text">${esc(r.ingredients||'Nog niet beschikbaar').replace(/\n/g,'<br>')}</div></div>`);
@@ -488,6 +500,43 @@ function showRecipeDetails(id){
   links.push(`<button data-modal-copy class="secondary">Kopieer recept</button>`);
   blocks.push(`<div class="detail-section"><div class="recipe-actions">${links.join('')}</div></div>`);
   const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');
+  if(r.sourceKind==='Kookboek'){
+    const photoBox=body.querySelector('#mbdCookbookPhoto'),photoStatus=body.querySelector('#mbdPhotoStatus');
+    const client=weekCloud;
+    const showPrivate=async path=>{
+      if(!client)throw Error('Online opslag niet beschikbaar');
+      const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Log eerst in via Accounts');
+      const {data,error}=await client.storage.from('mbd-cookbook-originals').createSignedUrl(path,120);
+      if(error)throw error;
+      const img=document.createElement('img');img.src=data.signedUrl;img.alt='Privéfoto bij '+(r.title||'recept');img.style.cssText='max-width:100%;max-height:360px;object-fit:contain';
+      photoBox.replaceChildren(img);
+    };
+    if(r.ownPhotoPath)showPrivate(r.ownPhotoPath).catch(e=>{photoStatus.textContent='Eigen foto: '+e.message;});
+    body.querySelector('[data-view-private-photo]')?.addEventListener('click',async()=>{
+      try{await showPrivate(r.sourcePhotoPaths[0]);body.querySelector('#mbdPhotoCredit').textContent='Bronfoto uit kookboek – niet van MadeByDian';photoStatus.textContent='Privéfoto wordt tijdelijk getoond.';}
+      catch(e){photoStatus.textContent='Bronfoto niet beschikbaar: '+e.message;}
+    });
+    body.querySelector('[data-own-photo-upload]')?.addEventListener('change',async e=>{
+      const file=e.target.files?.[0];if(!file)return;
+      try{
+        if(!client)throw Error('Online opslag niet beschikbaar');
+        const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Log eerst in via Accounts');
+        if(!r.mdb)throw Error('Recept heeft nog geen MDB-nummer');
+        if(!file.type.startsWith('image/'))throw Error('Kies een afbeelding');
+        photoStatus.textContent='Eigen foto privé opslaan…';
+        const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+        const path=r.mdb+'/eigen-'+Date.now()+'.'+ext;
+        const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
+        if(uploadError)throw uploadError;
+        const {data:stored,error:readError}=await client.from('mbd_catalog').select('recipe').eq('mdb',r.mdb).single();if(readError)throw readError;
+        const {error:updateError}=await client.from('mbd_catalog').update({recipe:{...(stored.recipe||{}),ownPhotoPath:path}}).eq('mdb',r.mdb);
+        if(updateError)throw updateError;
+        r.ownPhotoPath=path;try{persist()}catch{}
+        await showPrivate(path);body.querySelector('#mbdPhotoCredit').textContent='Mijn eigen gerechtfoto';
+        photoStatus.textContent='Eigen foto opgeslagen. De oorspronkelijke kookboekfoto blijft privé bewaard.';
+      }catch(err){photoStatus.textContent='Foto niet opgeslagen: '+err.message;}
+    });
+  }
   body.querySelector('[data-modal-source]')?.addEventListener('click',()=>window.open(r.sourceURL,'_blank','noopener'));
   body.querySelector('[data-modal-content]')?.addEventListener('click',()=>window.open(r.contentURL,'_blank','noopener'));
   body.querySelector('[data-modal-notion]')?.addEventListener('click',()=>window.open(r.notionURL,'_blank','noopener'));
@@ -530,15 +579,25 @@ async function syncCatalogRecipes(){
   const {data,error}=await weekCloud.from('mbd_catalog').select('mdb,recipe').order('mdb',{ascending:true}).limit(1000);
   if(error)throw error;
   if(!Array.isArray(data)||!data.length)return;
-  const known=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));let added=0;
-  for(const row of data){const p=row.recipe||{};if(!row.mdb||known.has(row.mdb))continue;
+  const known=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));let added=0,updated=0;
+  for(const row of data){const p=row.recipe||{};if(!row.mdb)continue;
+   if(known.has(row.mdb)){
+    const local=state.recipes.find(r=>r.mdb===row.mdb);
+    if(local){for(const key of ['sourcePhotoPaths','sourcePhotoPrivate','sourcePhotoCredit','ownPhotoPath']){
+     if(p[key]&&JSON.stringify(local[key])!==JSON.stringify(p[key])){local[key]=p[key];updated++;}
+    }
+    if(p.sourceKind==='Kookboek'&&local.sourceKind!=='Kookboek'){local.sourceKind='Kookboek';updated++;}
+    if(p.book&&!local.book){local.book=p.book;updated++;}
+    if(p.bookPage&&!local.bookPage){local.bookPage=p.bookPage;updated++;}
+    }continue;
+   }
    const origin=p.sourceKind||p.source||'';
    const isBook=/kookboek/i.test(String(origin))||!!p.book;
    const collections=Array.isArray(p.collections)?[...p.collections]:[];
    if(isBook&&!collections.includes('Uit kookboeken'))collections.push('Uit kookboeken');
    state.recipes.push({...p,id:p.id||row.mdb,mdb:row.mdb,sourceKind:isBook?'Kookboek':origin,bookPage:p.bookPage||'',collections,contentSynced:true});known.add(row.mdb);added++;
   }
-  if(added){try{persist()}catch(storageError){console.warn('Lokale opslag vol; online recepten blijven in Supabase:',storageError.message)}renderRecipes();renderCollections();}
+  if(added||updated){try{persist()}catch(storageError){console.warn('Lokale opslag vol; online recepten blijven in Supabase:',storageError.message)}renderRecipes();renderCollections();}
  }catch(e){console.warn('Catalogus synchronisatie niet beschikbaar:',e.message)}
 }
 setTimeout(syncCatalogRecipes,1800);
