@@ -31,46 +31,57 @@ async function loadWeekImage(img,placeholder,r){
   img.src=data.signedUrl;img.hidden=false;placeholder.hidden=true;
  }catch(_){}
 }
-function updateWeekVisual(row,id){
- const r=state.recipes.find(x=>String(x.id)===String(id));
+function updateWeekVisual(row,value,select){
  const img=row.querySelector("[data-week-img]"),placeholder=row.querySelector("[data-week-emoji]"),title=row.querySelector("[data-week-title]");
+ if(!img||!placeholder||!title)return;
  img.hidden=true;img.removeAttribute("src");placeholder.hidden=false;
+ if(String(value||"").startsWith("p:")){
+  placeholder.textContent="📦";title.textContent=select?.selectedOptions?.[0]?.textContent||"Maaltijdpakket";return;
+ }
+ const id=String(value||"").replace(/^r:/,"");
+ const r=state.recipes.find(x=>String(x.id)===id);
  placeholder.textContent=r?visualEmoji(r):"🍽️";
  title.textContent=r?(r.title||r.originalTitle||"Recept"):"Nog geen recept gekozen";
  if(r)loadWeekImage(img,placeholder,r);
 }
+function decorateWeek(){
+ const box=q("#weekPlanner");if(!box||typeof state==="undefined"||!Array.isArray(state.recipes))return;
+ for(const row of box.querySelectorAll(".week-row")){
+  if(row.dataset.mbdVisual==="1")continue;
+  const select=row.querySelector("select"),label=row.querySelector("b");if(!select||!label)continue;
+  for(const opt of select.options){
+   if(!String(opt.value).startsWith("r:"))continue;
+   const id=String(opt.value).slice(2),r=state.recipes.find(x=>String(x.id)===id);
+   if(r)opt.textContent=r.title||r.originalTitle||"Naamloos recept";
+  }
+  row.dataset.mbdVisual="1";row.classList.add("mbd-week-row");
+  const choice=document.createElement("div");choice.className="mbd-week-choice";
+  const thumb=document.createElement("div");thumb.className="mbd-week-thumb";thumb.setAttribute("aria-hidden","true");
+  const emoji=document.createElement("span");emoji.setAttribute("data-week-emoji","");
+  const img=document.createElement("img");img.setAttribute("data-week-img","");img.hidden=true;img.alt="";
+  thumb.append(emoji,img);
+  const fields=document.createElement("div");fields.className="mbd-week-fields";
+  const selectedTitle=document.createElement("div");selectedTitle.className="mbd-week-title";selectedTitle.setAttribute("data-week-title","");
+  select.parentNode?.insertBefore(choice,select);
+  fields.append(select,selectedTitle);choice.append(thumb,fields);
+  label.insertAdjacentElement("afterend",choice);
+  updateWeekVisual(row,select.value,select);
+  select.addEventListener("change",()=>setTimeout(()=>updateWeekVisual(row,select.value,select),0));
+ }
+}
 function installWeekPlanner(){
- if(typeof window.renderWeek!=="function"||typeof state==="undefined"||!Array.isArray(state.recipes))return;
+ if(typeof window.renderWeek!=="function")return;
  if(window.renderWeek.__mbdVisualWeek)return;
+ const baseRender=window.renderWeek;
  const enhanced=function(){
-  const days=["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
-  const recipes=state.recipes.slice().sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),"nl"));
-  const options=recipes.map(r=>`<option value="${esc(String(r.id))}">${esc(r.title||r.originalTitle||"Naamloos recept")}</option>`).join("");
-  const box=q("#weekPlanner");if(!box)return;
-  box.innerHTML=days.map(d=>`<div class="week-row mbd-week-row" data-week-row="${esc(d)}">
-    <b class="mbd-week-day">${d}</b>
-    <div class="mbd-week-choice">
-      <div class="mbd-week-thumb" aria-hidden="true"><span data-week-emoji>🍽️</span><img data-week-img hidden alt=""></div>
-      <div class="mbd-week-fields">
-        <select data-day="${esc(d)}" aria-label="Recept voor ${esc(d)}"><option value="">Kies recept</option>${options}</select>
-        <div class="mbd-week-title" data-week-title>Nog geen recept gekozen</div>
-      </div>
-    </div>
-  </div>`).join("");
-  box.querySelectorAll("select").forEach(s=>{
-   const row=s.closest("[data-week-row]");
-   s.value=state.week?.[s.dataset.day]||"";
-   updateWeekVisual(row,s.value);
-   s.onchange=()=>{
-    if(s.value)state.week[s.dataset.day]=s.value;else delete state.week[s.dataset.day];
-    persist();updateWeekVisual(row,s.value);
-   };
-  });
+  const result=baseRender.apply(this,arguments);
+  decorateWeek();
   if(typeof renderWeekArchive==="function")renderWeekArchive();
+  return result;
  };
  enhanced.__mbdVisualWeek=true;
  window.renderWeek=enhanced;
- if(q('[data-screen="week"].active'))enhanced();
+ decorateWeek();
 }
 function addSaveAnother(){
  const msg=q("#importMessage");if(!msg||q("#mbd-save-another"))return;
@@ -96,7 +107,7 @@ function css(){
  if(q("#mbd-ux-finishing-css"))return;
  const s=document.createElement("style");s.id="mbd-ux-finishing-css";s.textContent=`
  .mbd-week-row{grid-template-columns:1fr!important;gap:7px!important;margin:0 0 15px}
- .mbd-week-day{font-size:15px!important}
+ .mbd-week-day{font-size:15px!important}.mbd-week-row>b{font-size:15px!important}
  .mbd-week-choice{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:center}
  .mbd-week-thumb{width:62px;height:62px;border-radius:14px;background:#f4ece7;border:1px solid var(--line,#e8dfd8);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:30px}
  .mbd-week-thumb img{width:100%;height:100%;object-fit:cover}
