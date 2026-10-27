@@ -13,6 +13,7 @@ export default async function handler(req:any,res:any){
     json:(v:any)=>{payload=v;return v}
   };
   const marker='MBD E2E TEST 2026-10-27 '+Date.now();
+  const rollback=String(req.query?.rollback||'')==='1';
   await saveHandler({
     method:'POST',
     body:{
@@ -22,8 +23,9 @@ export default async function handler(req:any,res:any){
       steps:'1. Teststap uitvoeren.',
       sourceURL:null,
       collections:['E2E-test'],
-      warnings:['Tijdelijk systeemtestrecord; verwijderen na verificatie.']
+      warnings:['Tijdelijk systeemtestrecord; verwijderen na verificatie.'],
+      ...(rollback?{__testMdb:'MDB-0673'}:{})
     }
   },mockRes);
-  return res.status(statusCode).json({test:true,marker,result:payload});
+  return res.status(statusCode).json({test:true,rollback,marker,result:payload});
 }
