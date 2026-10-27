@@ -17,6 +17,15 @@ let server=[];try{
  server=await get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}});
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
+// Save the original local state BEFORE any merge. Abort rather than modify data without a rollback copy.
+try {
+ if(typeof persist!=='function')throw Error('persist unavailable');
+ const snapshotKey='mbd-pre-sync-snapshot';
+ if(!localStorage.getItem(snapshotKey)){
+  localStorage.setItem(snapshotKey,JSON.stringify({recipes:state.recipes,week:state.week||{},savedAt:new Date().toISOString()}));
+  if(!localStorage.getItem(snapshotKey))throw Error('snapshot verification failed');
+ }
+}catch(e){tell('Synchronisatie gestopt: veilige lokale back-up niet mogelijk ('+e.message+').',true);return}
 let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
@@ -43,7 +52,7 @@ if(old){
 }};
 for(const row of server)if(row?.recipe)merge({...row.recipe,mdb:row.mdb},'Supabase');
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
-if(changed){try{if(typeof persist!=='function')throw Error('persist unavailable');const snapshotKey='mbd-pre-sync-snapshot';if(!localStorage.getItem(snapshotKey)){localStorage.setItem(snapshotKey,JSON.stringify({recipes:state.recipes,week:state.week||{},savedAt:new Date().toISOString()}))}persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
+if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
