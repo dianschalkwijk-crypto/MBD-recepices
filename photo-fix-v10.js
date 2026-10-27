@@ -4,7 +4,9 @@ const $=s=>document.querySelector(s),idOf=s=>(String(s||"").match(/MDB-[0-9]{4,}
 const categories=["Gezin","Airfryer","Borrel","Zomer","Seizoens","Lunch","Camping 1pans","Mealprep","Easy oven","Ontbijt","Vegetarisch","Aziatisch","Little Kids","Salades","Protein","Wraps","Toetjes","BBQ","Diepvries","Pasta","Overig"];
 const selected=new Set();let timer,allTerms=true;
 function recipes(){try{return typeof state!=="undefined"&&Array.isArray(state.recipes)?state.recipes:[]}catch(e){return []}}
-function terms(){return ($("#mbd-ingredients")?.value||"").split(/[,;\n]+/).map(s=>s.trim().toLocaleLowerCase("nl")).filter(Boolean)}
+const norm=s=>String(s??"").toLocaleLowerCase("nl").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+function ingredientText(r){const v=r?.ingredients;if(Array.isArray(v))return v.map(x=>typeof x==="string"?x:JSON.stringify(x||"")).join("\n");if(v&&typeof v==="object")return JSON.stringify(v);return String(v||"")}
+function terms(){return ($("#mbd-ingredients")?.value||"").split(/[,;\n]+/).map(norm).filter(Boolean)}
 function setup(){
 const list=$("#recipeList"),search=$("#recipeSearch");if(!list||!search||$("#mbd-search-tools"))return;
 const bar=document.createElement("section");bar.id="mbd-search-tools";bar.style.cssText="margin:12px 0;padding:12px;border:1px solid #e8dfd8;border-radius:14px;background:#fbf7f3";
@@ -23,17 +25,17 @@ search.addEventListener("input",()=>setTimeout(update,0));
 }
 function update(){
 const list=$("#recipeList"),counter=$("#mbd-result-count");if(!list||!counter)return;
-const byId=new Map(recipes().map(r=>[String(r.mdb||"").toUpperCase(),r])),words=terms();
+const all=recipes(),byId=new Map(all.map(r=>[String(r.mdb||"").toUpperCase(),r])),byLocalId=new Map(all.map(r=>[String(r.id||""),r])),words=terms();
 const cards=[...list.querySelectorAll(".recipe-card")];
-for(const card of cards){const r=byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(r?.collections||[]),r?.category||""].map(x=>String(x).toLowerCase());const categoryOk=!selected.size||[...selected].some(c=>cats.includes(c.toLowerCase()));
-const hay=String(r?.ingredients||"").toLocaleLowerCase("nl");const ingredientsOk=!words.length||(allTerms?words.every(w=>hay.includes(w)):words.some(w=>hay.includes(w)));
+for(const card of cards){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=byLocalId.get(String(localId))||byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(r?.collections||[]),r?.category||""].map(norm);const categoryOk=!selected.size||[...selected].some(c=>cats.includes(norm(c)));
+const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?words.every(w=>hay.includes(w)):words.some(w=>hay.includes(w)));
 const ok=categoryOk&&ingredientsOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
 const count=cards.filter(c=>!c.hidden).length,q=$("#recipeSearch")?.value.trim()||"";
 const query=words.length?words.join(" + "):q;const msg=count+" "+(count===1?"gerecht gevonden":"gerechten gevonden")+(query?" met "+query:"")+(selected.size?" · "+[...selected].join(", "):"");
 if(counter.textContent!==msg)counter.textContent=msg;
 }
 function photos(){
-for(const card of document.querySelectorAll(".recipe-card")){const id=idOf(card.querySelector(".mdb-badge")?.textContent);if(!id||card.querySelector(".mbd-recipe-thumb"))continue;
+for(const card of document.querySelectorAll(".recipe-card")){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=recipes().find(x=>String(x.id||"")===String(localId));const id=String(r?.mdb||idOf(card.querySelector(".mdb-badge")?.textContent)||"").toUpperCase();if(!id||card.querySelector(".mbd-recipe-thumb"))continue;
 const img=document.createElement("img");img.className="mbd-recipe-thumb";img.dataset.mdb=id;img.alt="Receptfoto";img.loading="lazy";img.style.cssText="width:84px;height:84px;object-fit:cover;border-radius:14px;margin:8px 12px 8px 0;float:left;background:#f5f1ed;border:1px solid #e8dfd8";
 img.onerror=()=>{img.style.display="none";img.dataset.loadError="1"};img.src="/api/notion/photo?mdb="+encodeURIComponent(id)+"&v=11";
 const title=card.querySelector(".recipe-title");title?title.before(img):card.prepend(img)}
@@ -86,7 +88,7 @@ if(document.readyState!=="loading"){tag();setTimeout(tag,600)}
 ;(()=>{if(window.__mbdCountFix)return;window.__mbdCountFix=true;
 function update(){if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
 const count=state.recipes.length;
-for(const el of document.querySelectorAll(".library-note")){const html=el.innerHTML;if(html.includes("352 unieke MDB-recepten"))el.innerHTML=html.replace("352 unieke MDB-recepten zijn volledig geladen","De oorspronkelijke 352 MDB-recepten zijn geladen; de actuele collectie bevat "+count+" recepten").replace("Volledige bibliotheek v0.5","Receptenbibliotheek · "+count+" recepten")}
+for(const el of document.querySelectorAll(".library-note"))el.innerHTML="<b>📚 Receptenbibliotheek · "+count+" recepten</b><p class=\"muted\">Actuele collectie uit je lokale en online bibliotheek. Ingrediënten, bereidingsstappen, bron- en Notion-links blijven bij het recept.</p>"
 const status=document.querySelector("#mbd-pinterest-status");if(status)status.textContent="Totaal "+count+" recepten in deze browser · Pinterest kookboeken 23–29 inbegrepen waar nog niet aanwezig.";
 }
 document.addEventListener("DOMContentLoaded",()=>{setTimeout(update,900);setTimeout(update,2500)});if(document.readyState!=="loading")setTimeout(update,900);
