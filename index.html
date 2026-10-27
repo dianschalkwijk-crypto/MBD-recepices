@@ -54,9 +54,10 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div>
-        <div class="eyebrow">MadeByDian</div>
-        <h1 id="pageTitle">Recepten-inbox</h1>
+      <div style="display:flex;align-items:center;gap:11px">
+        <img src="/assets/mbd-recipes-logo.svg" width="37" height="54" alt="Logo MadeByDian Recepten" style="object-fit:contain;border-radius:5px">
+        <div><div class="eyebrow">MadeByDian</div>
+        <h1 id="pageTitle">Recepten-inbox</h1></div>
       </div>
       <button class="icon-btn" id="exportBtn" title="Exporteren" aria-label="Exporteren">↗</button>
     </header>
@@ -473,7 +474,7 @@ function showRecipeDetails(id){
     const hasOwn=!!r.ownPhotoPath,hasSource=Array.isArray(r.sourcePhotoPaths)&&r.sourcePhotoPaths.length>0;
     blocks.push(`<div class="detail-section">
       <div id="mbdCookbookPhoto" style="display:flex;justify-content:center;align-items:center;min-height:130px;background:#faf5f1;border:1px solid #e5d8ce;border-radius:12px;overflow:hidden">
-        <img src="/assets/mbd-recipes-logo.webp" alt="MadeByDian Recepten" style="max-width:100%;max-height:230px;object-fit:contain" onerror="this.replaceWith(document.createTextNode('MadeByDian · Recepten'))">
+        <img src="/assets/mbd-recipes-logo.svg" alt="MadeByDian Recepten" style="max-width:100%;max-height:230px;object-fit:contain" onerror="this.replaceWith(document.createTextNode('MadeByDian · Recepten'))">
       </div>
       <p class="recipe-meta" id="mbdPhotoCredit">${hasOwn?'Eigen gerechtfoto':hasSource?'Bronfoto uit kookboek – niet van MadeByDian':'Geen bronfoto opgeslagen · MadeByDian-logo'}</p>
       ${hasSource?'<button type="button" data-view-private-photo>Bekijk originele kookboekfoto (privé)</button>':''}
