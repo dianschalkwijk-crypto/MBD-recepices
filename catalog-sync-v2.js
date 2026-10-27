@@ -1,6 +1,14 @@
 (()=>{
 'use strict';if(window.__mbdSyncV3)return;window.__mbdSyncV3=true;
 const PUB='sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF',DB='https://ywsdubincfabjhvjqkot.supabase.co';
+function loadPreferenceIntegration(){
+ try{
+  if(window.__mbdAllergyIntegrated||document.querySelector('script[data-mbd-preferences]'))return;
+  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=19';s.dataset.mbdPreferences='1';
+  s.onerror=()=>console.warn('Allergie/eetvoorkeur-integratie kon niet worden geladen');
+  document.head.appendChild(s);
+ }catch(e){console.warn('Voorkeur-integratie',e)}
+}
 const present=x=>x!==null&&x!==undefined&&String(x).trim()!=='';
 const name=x=>String(x||'').trim().toLowerCase().replace(/\s+/g,' ');
 const value=x=>typeof x==='string'?x:Array.isArray(x)?x.join('\n'):'';
@@ -74,5 +82,5 @@ if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
-document.addEventListener('DOMContentLoaded',boot);boot();let t=setInterval(()=>{boot();if(started)clearInterval(t)},300);setTimeout(()=>clearInterval(t),12000);
+document.addEventListener('DOMContentLoaded',boot);loadPreferenceIntegration();boot();let t=setInterval(()=>{boot();if(started)clearInterval(t)},300);setTimeout(()=>clearInterval(t),12000);
 })();
