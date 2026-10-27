@@ -171,3 +171,18 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Vercel runtime-error scan na release: 0 fouten in de gecontroleerde 30 minuten.
 - Huidige rollbackreferentie vóór deze release blijft `dpl_ANGqALo2JFNYoaXZ4Tzoxqkm7x1f` / commit `7b7b3b4dc816c15d0ee42c828af377213a2dee68`.
 - Oudere statusregels die zeggen dat productie nog niet is gepromoveerd zijn hiermee vervallen.
+
+## DATAKWALITEIT + UI/FOTO-CONTROLES — 27-10-2026
+- Actuele canonieke catalogus: 653 recepten; 18 extra Supabase-rijen blijven bewust `duplicate-quarantined`.
+- Quarantainegedrag in `catalog-sync-v2.js` gecontroleerd: quarantainerecords worden niet nieuw in de zichtbare bibliotheek gemerged. Bestaande lokale dubbelen worden alleen naar `state.quarantinedRecipes` verplaatst als titel/ingrediënten/stappen exact overeenkomen; afwijkende lokale inhoud blijft zichtbaar ter bescherming van gebruikerswerk.
+- Bronlinks vóór herstel: 154 canonieke recepten zonder `sourceURL`.
+- 33 geldige webbronnen veilig teruggevuld vanuit bestaande Notion-velden; één lokale bestandsverwijzing bewust niet als URL opgeslagen.
+- Daarna 98 extra `sourceURL`-velden veilig hersteld uit reeds aanwezige geldige `contentURL`-velden in hetzelfde Supabase-record.
+- Actuele resterende bronloze recepten: 23. Voor deze records is geen andere geldige URL in Supabase/Notion aangetoond; er is niets gegokt.
+- Foto’s vóór herstel: 66 canonieke recepten zonder `photoURL`.
+- 16 bestaande Notion-foto’s opnieuw gekoppeld via `/api/notion/photo?mdb=...`; geen AI-afbeeldingen gegenereerd.
+- Actuele resterende recepten zonder foto: 50. Geen alternatieve foto/image-velden gevonden voor deze records.
+- Oude taalheuristiek markeerde nog 6 recepten; inhoudelijke controle wees uit dat de teksten Nederlands zijn en vooral het bronmaatwoord `cup` triggerde. Geen onnodige AI-vertaling uitgevoerd.
+- MDB-0641 had in Supabase ingrediënten/stappen als JSON-lijsttekst. Notion bevatte correcte leesbare tekst; precies die bestaande Notion-tekst is teruggezet in Supabase.
+- Live navigatie gecontroleerd op productie-HTML: hoofdscript compileert syntactisch; tabbinding aanwezig; knoppen en schermen voor `collections` en `settings` bestaan; `renderCollections()` en `renderSettings()` worden vanuit `setScreen()` aangeroepen. De oude melding dat Collecties/Instellingen niet openen past bij de eerder herstelde fatale JS-syntaxfout; geen nieuwe patch nodig op basis van huidige code.
+- `/api/recipes/recognize-photo` functioneel live getest met een fictieve PNG-receptpagina. HTTP 200; herkend: titel Tomatensoep, 3/3 ingrediënten, 4/4 stappen, confidence high. Er is niets opgeslagen. De eerdere fotoherkenningsstoring is op huidige productie niet reproduceerbaar.
