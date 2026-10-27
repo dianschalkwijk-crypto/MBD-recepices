@@ -111,3 +111,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Productie is NIET gepromoveerd en heeft de nieuwe schrijfsecret nog niet; deze E2E-status geldt voor de recovery preview.
 - Na testcleanup: Supabase 669 rijen / 669 unieke MDB-nummers, hoogste MDB-0672.
 - Openstaand gegevensverschil: Notion hoogste MDB-0645, terwijl Supabase tot MDB-0672 loopt. Dit verschil bestond vóór de E2E-test en moet apart veilig worden gereconcilieerd; niet automatisch hernummeren of overschrijven.
+
+## CATALOGUS-RECONCILIATIE AFGEROND — 27-10-2026
+- Oud statusverschil “Notion loopt tot MDB-0645 / Supabase tot MDB-0672” was niet meer actueel.
+- MDB-0646 t/m MDB-0672 gecontroleerd. Notion bevat de 9 canonieke recepten; 18 tussenliggende Supabase-records zijn bewust gemarkeerd als `duplicate-quarantined` en verwijzen naar hun canonieke MDB-ID.
+- Volledige telling vóór herstel: Supabase 651 canonieke recepten, Notion 653 unieke MDB-ID's.
+- De twee echte Notion-only recepten waren MDB-0638 en MDB-0639. Geen bestaand Supabase-record had dezelfde bronlink of titel.
+- MDB-0638 en MDB-0639 zijn zonder overschrijven teruggezet in Supabase met hun bestaande Notion-links en receptinhoud.
+- Eindcontrole: Supabase 671 totale rijen = 653 canoniek + 18 quarantaine. Canonieke rijen zonder Notion-link: 0. Notion: 653 unieke MDB-ID's, hoogste MDB-0672.
+- MDB-0182 blijft bewust vervallen en is niet opnieuw aangemaakt. Er is niet hernummerd.
