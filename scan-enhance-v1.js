@@ -130,8 +130,15 @@ function resetForAnother(){
 function installSaveAnother(){
  const saveStatus=el("savestatus");if(!saveStatus)return;
  const show=()=>{
-  let b=el("mbd-scan-another");
   const ok=/Veilig online opgeslagen als/i.test(saveStatus.textContent||"");
+  const existing=el("saveAnother");
+  if(existing){
+   existing.onclick=resetForAnother;
+   existing.classList.toggle("hide",!ok);
+   el("mbd-scan-another")?.remove();
+   return;
+  }
+  let b=el("mbd-scan-another");
   if(!ok){b?.remove();return}
   if(b)return;b=document.createElement("button");b.id="mbd-scan-another";b.type="button";b.textContent="➕ Nog een recept opslaan";b.onclick=resetForAnother;saveStatus.insertAdjacentElement("afterend",b);
  };
@@ -142,7 +149,7 @@ function boot(){
  mode.value="auto";scan.textContent="✨ Foto automatisch uitlezen";
  const label=mode.closest("label");if(label?.firstChild?.nodeType===3)label.firstChild.nodeValue="Herkenning";
  if(!el("mbd-auto-hint")){const p=document.createElement("p");p.id="mbd-auto-hint";p.className="note";p.textContent="Je hoeft niet vooraf aan te geven wat er op de foto staat. De app probeert dit zelf te herkennen en geeft alleen keuzes als hij twijfelt.";mode.closest("label").insertAdjacentElement("afterend",p)}
- el("foodnamewrap").classList.add("hide");
+ el("foodnamewrap")?.classList.add("hide");
  const oldChange=photo.onchange,oldAdd=el("addphoto").onclick;
  photo.onchange=e=>{
   if(mode.value!=="auto"){appendNext=false;return oldChange?.call(photo,e)}
@@ -152,7 +159,7 @@ function boot(){
   setStatus(merged.length+" foto('s) klaar. Ik bepaal zelf wat erop staat.");
  };
  el("addphoto").onclick=()=>{if(mode.value!=="auto")return oldAdd?.call(el("addphoto"));appendNext=true;photo.value="";photo.click()};
- mode.addEventListener("change",()=>{if(mode.value==="auto"){el("foodnamewrap").classList.add("hide");el("addphoto").classList.toggle("hide",!files().length);scan.textContent="✨ Foto automatisch uitlezen"}else scan.textContent="Tekst herkennen"});
+ mode.addEventListener("change",()=>{if(mode.value==="auto"){el("foodnamewrap")?.classList.add("hide");el("addphoto").classList.toggle("hide",!files().length);scan.textContent="✨ Foto automatisch uitlezen"}else scan.textContent="Tekst herkennen"});
  scan.onclick=()=>mode.value==="auto"?autoScan():oldScan?.call(scan);
  installSaveAnother();
 }
