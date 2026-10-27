@@ -82,6 +82,40 @@
     });
   }
 
+  function saveAnotherButton(){
+    let b=$("#mbdSaveAnother");
+    if(b)return b;
+    const msg=$("#importMessage");
+    if(!msg)return null;
+    b=document.createElement("button");
+    b.id="mbdSaveAnother";
+    b.type="button";
+    b.className="secondary";
+    b.textContent="➕ Nog een recept opslaan";
+    b.style.display="none";
+    b.style.marginTop="10px";
+    b.onclick=()=>{
+      try{currentDraft=null}catch(_){}
+      pendingPhoto=null;
+      if($("#sourceUrl"))$("#sourceUrl").value="";
+      if($("#sourceText"))$("#sourceText").value="";
+      if($("#reviewTitle"))$("#reviewTitle").value="";
+      if($("#reviewAuthor"))$("#reviewAuthor").value="";
+      if($("#reviewIngredients"))$("#reviewIngredients").value="";
+      if($("#reviewSteps"))$("#reviewSteps").value="";
+      if($("#mbdPhotoInput"))$("#mbdPhotoInput").value="";
+      if($("#mbdPhotoPreview")){$("#mbdPhotoPreview").removeAttribute("src");$("#mbdPhotoPreview").style.display="none";}
+      $("#reviewCard")?.classList.add("hidden");
+      b.style.display="none";
+      if(typeof setScreen==="function")setScreen("inbox");
+      if(typeof showMessage==="function"&&msg)showMessage(msg,"Klaar voor het volgende recept. Plak een link, tekst of voeg een foto toe.","ok");
+      $("#sourceUrl")?.focus();
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+    msg.after(b);
+    return b;
+  }
+
   function fingerprint(title,ingredients){
     try{
       if(typeof recipeFingerprint==="function")return recipeFingerprint(title,ingredients);
@@ -215,6 +249,7 @@
         msg.textContent=message;
       }
 
+      const again=saveAnotherButton();if(again)again.style.display="block";
       if(typeof renderAll==="function")renderAll();
     }catch(e){
       const message="⚠️ Niet opgeslagen: "+(e?.message||e);
@@ -233,6 +268,7 @@
 
   function install(){
     addPhotoBox();
+    saveAnotherButton();
     const btn=$("#saveRecipeBtn");
     if(!btn||btn.dataset.mbdNotionSync==="1")return;
     btn.dataset.mbdNotionSync="1";
