@@ -211,3 +211,17 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Laatste Vercel-preview met pushclient via Supabase Edge Function: dpl_ojELSck8DtJeszGv1Qz4UkHngPPb, commit 35540d26645a4b1559e16232f6c24165b2b585be, READY.
 - Preview smokecheck: / HTTP 200 met push-notifications-v1.js?v=20; pushclient verwijst naar Supabase Edge Function; service-worker heeft push- en notificationclick-handler; manifest id '/'; /api/health 200.
 - Voor iPhone is een Home Screen web app + expliciete gebruikersklik voor notificatietoestemming vereist. Volgende veilige fase: code naar productie, maar cron uit laten; gebruiker activeert en test handmatig. Pas na ontvangen testpush de 08:40-cron activeren.
+
+## LIVE CONTROLE NA PRODUCTIERELEASE — 27-10-2026
+- Live startpagina `/`: HTTP 200, titel `MadeByDian Recipes`.
+- `/api/health`: HTTP 200, AI geconfigureerd.
+- `/api/notion/health`, `/api/notion/save`, `/api/notion/catalog`, `/api/notion/full?mdb=MDB-0639`: HTTP 200.
+- Supabase actueel: 671 totale rijen = 653 canonieke recepten + 18 `duplicate-quarantined`; 671 unieke MDB-ID's; hoogste MDB-0672; 0 canonieke records zonder Notion-link.
+- Notion actueel: 653 unieke MDB-ID's; hoogste MDB-0672. Canonieke telling komt dus exact overeen met Supabase.
+- RLS op `mbd_catalog` staat aan; anon/authenticated SELECT blijven actief.
+- Schrijfbeveiliging opnieuw gecontroleerd op bestaand MDB-0639: RPC geeft conflict `exists` en overschrijft niets. MDB-0639 bleef `Airfryer-churrognocchi`.
+- Eén niet-functionele Node 24-waarschuwing gevonden: DEP0169 via Vercels interne `req.query` getter. Stacktrace wees naar `/opt/rust/nodejs.js`, getriggerd door `req.query` in `api/notion/full.ts` en `photo.ts`.
+- Fix op preview: beide routes lezen `mdb` nu via WHATWG `URL(...).searchParams` in commits `03a3d75fd63c7d3476e7074642e1c650190d4f3e` en `cef8ec29dab0a5825ba479317745653e37bd98cf`.
+- Preview na fix: full HTTP 200, photo HTTP 302 en geen DEP0169 meer in runtime logs.
+- Tijdelijke `NODE_OPTIONS=--trace-deprecation` is na diagnose weer uitgeschakeld.
+- Deze laatste DEP0169-fix is nog NIET opnieuw naar productie uitgerold; huidige productie blijft functioneel maar kan deze deprecation warning nog loggen.
