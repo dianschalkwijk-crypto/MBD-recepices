@@ -52,7 +52,7 @@ if(old){
 }};
 for(const row of server)if(row?.recipe)merge({...row.recipe,mdb:row.mdb},'Supabase');
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
-if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
+if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){try{const original=JSON.parse(localStorage.getItem('mbd-pre-sync-snapshot')||'null');if(original&&Array.isArray(original.recipes)){state.recipes=original.recipes;state.week=original.week||{};if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit back-up mislukt',rollbackError)}tell('Online recepten gevonden; lokaal bewaren is mislukt. Lokale toestand is zo mogelijk hersteld.',true);return}}
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
