@@ -17,7 +17,8 @@ const score=(p:any)=>{
 export default async function handler(req:any,res:any){
   res.setHeader('Cache-Control','no-store, no-cache, must-revalidate');res.setHeader('X-Content-Type-Options','nosniff');
   if(req.method!=='GET')return res.status(405).json({ok:false,error:'Method not allowed'});
-  const mdb=String(req.query?.mdb||'').toUpperCase().trim();if(!/^MDB-\d{4}$/.test(mdb))return res.status(400).json({ok:false,error:'Bad id'});
+  const requestUrl=new URL(String(req.url||'/'),'http://localhost');
+  const mdb=String(requestUrl.searchParams.get('mdb')||'').toUpperCase().trim();if(!/^MDB-\d{4}$/.test(mdb))return res.status(400).json({ok:false,error:'Bad id'});
   try{
     const d=await notion('/data_sources/'+R+'/query',{method:'POST',body:JSON.stringify({page_size:20,filter:{property:'MDB-ID',rich_text:{equals:mdb}}})});
     const pages=(d.results||[]).filter((x:any)=>!x.in_trash);
