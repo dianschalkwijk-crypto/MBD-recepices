@@ -186,3 +186,13 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - MDB-0641 had in Supabase ingrediënten/stappen als JSON-lijsttekst. Notion bevatte correcte leesbare tekst; precies die bestaande Notion-tekst is teruggezet in Supabase.
 - Live navigatie gecontroleerd op productie-HTML: hoofdscript compileert syntactisch; tabbinding aanwezig; knoppen en schermen voor `collections` en `settings` bestaan; `renderCollections()` en `renderSettings()` worden vanuit `setScreen()` aangeroepen. De oude melding dat Collecties/Instellingen niet openen past bij de eerder herstelde fatale JS-syntaxfout; geen nieuwe patch nodig op basis van huidige code.
 - `/api/recipes/recognize-photo` functioneel live getest met een fictieve PNG-receptpagina. HTTP 200; herkend: titel Tomatensoep, 3/3 ingrediënten, 4/4 stappen, confidence high. Er is niets opgeslagen. De eerdere fotoherkenningsstoring is op huidige productie niet reproduceerbaar.
+
+## ALLERGIE + EETVOORKEUREN PREVIEW GROEN — 27-10-2026
+- Previewdeployment `dpl_FAFo6qdHoVC8jVsapPJLBB8PKohY`, commit `8797a297d08b8d8b412ffd2c35e4c87d6c04814c`, READY.
+- `index.html` laadt op eerste bezoek v19 van photo/save/catalog én `allergy-integration-v2.js?v=19`; serviceworker-cache verhoogd naar v0.10.19. Daarmee is de eerdere first-load/cachekloof afgevangen.
+- Bestaande allergie-integratie was aanwezig in GitHub maar werd in productie niet geladen; preview heractiveert die gecontroleerd.
+- `mbd_dislikes_v1` (‘lust ik niet’) is gekoppeld aan weekmenu/maaltijdpakketten/boodschappen, maar niet aan de algemene receptenbibliotheek.
+- Synthetische test met fictief ingrediënt: recept blijft zichtbaar in bibliotheek, wordt uitgesloten van weekmenu; toegelaten recept blijft beschikbaar.
+- Synthetische allergietest met fictief allergeen: risicorecept verdwijnt uit bibliotheek én weekmenu; toegelaten recept blijft zichtbaar/beschikbaar.
+- Syntaxcontrole van allergy-integration-v2.js, catalog-sync-v2.js en service-worker.js: alle drie geldig.
+- Deze wijziging is NOG NIET naar productie uitgerold. Huidige productie blijft deployment dpl_Rej4YizpoammzWyUYngbRKpJF14W.
