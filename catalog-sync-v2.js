@@ -17,12 +17,14 @@ let server=[];try{
  server=await get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}});
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
-// Save the original local state BEFORE any merge. Abort rather than modify data without a rollback copy.
+// Keep a fresh in-memory copy for THIS sync run. The historical localStorage snapshot stays as an extra one-time safety net.
+let preSyncState;
 try {
  if(typeof persist!=='function')throw Error('persist unavailable');
+ preSyncState=JSON.parse(JSON.stringify(state));
  const snapshotKey='mbd-pre-sync-snapshot';
  if(!localStorage.getItem(snapshotKey)){
-  localStorage.setItem(snapshotKey,JSON.stringify({recipes:state.recipes,week:state.week||{},savedAt:new Date().toISOString()}));
+  localStorage.setItem(snapshotKey,JSON.stringify({recipes:preSyncState.recipes,week:preSyncState.week||{},savedAt:new Date().toISOString()}));
   if(!localStorage.getItem(snapshotKey))throw Error('snapshot verification failed');
  }
 }catch(e){tell('Synchronisatie gestopt: veilige lokale back-up niet mogelijk ('+e.message+').',true);return}
@@ -52,7 +54,7 @@ if(old){
 }};
 for(const row of server)if(row?.recipe)merge({...row.recipe,mdb:row.mdb},'Supabase');
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
-if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){try{const original=JSON.parse(localStorage.getItem('mbd-pre-sync-snapshot')||'null');if(original&&Array.isArray(original.recipes)){state.recipes=original.recipes;state.week=original.week||{};if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit back-up mislukt',rollbackError)}tell('Online recepten gevonden; lokaal bewaren is mislukt. Lokale toestand is zo mogelijk hersteld.',true);return}}
+if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){try{if(preSyncState&&Array.isArray(preSyncState.recipes)){state=preSyncState;if(typeof STORAGE_KEY!=='undefined')localStorage.setItem(STORAGE_KEY,JSON.stringify(state));try{localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()}))}catch(_){}try{localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[]))}catch(_){}if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit verse back-up mislukt',rollbackError)}tell('Online recepten gevonden; lokaal bewaren is mislukt. De toestand van vlak vóór deze synchronisatie is zo mogelijk hersteld.',true);return}}
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
