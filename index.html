@@ -388,7 +388,7 @@ function renderCollectionPicker(){
 function recipeFingerprint(title, ingredients){
   return `${title}|${ingredients}`.toLowerCase().replace(/[^a-z0-9à-ÿ]+/g,' ').trim();
 }
-async async function saveRecipe(){
+async function saveRecipe(){
   if(!currentDraft) return;
   const title=document.querySelector('#reviewTitle').value.trim()||currentDraft.title;
   const author=document.querySelector('#reviewAuthor').value.trim();
