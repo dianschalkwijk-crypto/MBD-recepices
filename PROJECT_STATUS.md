@@ -120,3 +120,11 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - MDB-0638 en MDB-0639 zijn zonder overschrijven teruggezet in Supabase met hun bestaande Notion-links en receptinhoud.
 - Eindcontrole: Supabase 671 totale rijen = 653 canoniek + 18 quarantaine. Canonieke rijen zonder Notion-link: 0. Notion: 653 unieke MDB-ID's, hoogste MDB-0672.
 - MDB-0182 blijft bewust vervallen en is niet opnieuw aangemaakt. Er is niet hernummerd.
+
+## BRONCODEHERSTEL: 55/55 PADEN AANWEZIG — 27-10-2026
+- De oude blokkade “46/55 hersteld, negen serverbestanden ontbreken” is gesloten.
+- Alle negen serverpaden zijn nu aanwezig op de recovery-branch.
+- books/catalog zijn tegen het oude live antwoordcontract gecontroleerd en geven op preview HTTP 200.
+- source/normalize bouwen; GET geeft het verwachte 405-methodecontract. Een succesvolle externe source-POST en een echte AI-normalisatiecall zijn nog niet end-to-end bewezen.
+- normalize-recipes bevat bewust niet meer de oude hardcoded adminsleutel. De route vereist MBD_NORMALIZE_KEY uit de serveromgeving en is zonder die secret uitgeschakeld. Er is geen frontend-referentie naar deze adminroute gevonden.
+- Zie RECOVERY_STATUS.md voor herkomst en onderscheid tussen exact teruggevonden en functioneel gereconstrueerde serverbestanden.
