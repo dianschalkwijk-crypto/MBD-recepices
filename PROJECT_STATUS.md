@@ -81,3 +81,20 @@ Inspecteer eerst eerdere exports of andere beschikbare bronkopieën en de bestaa
 - ROLLBACK: HUIDIGE CODE GECONTROLEERD. catalog-sync-v2.js maakt per synchronisatierun een verse in-memory preSyncState vóór merge; index.html declareert state met let, zodat rollback naar preSyncState technisch kan worden uitgevoerd.
 - Oudere regels hierboven die zeggen dat browser-/previewtest ontbreekt zijn historisch en niet meer actueel.
 - Nog apart te bewijzen: volledige schrijvende end-to-end keten app -> Supabase/Notion inclusief conflictgedrag. Dit is niet hetzelfde als de nu afgeronde browsertest.
+
+
+## DEFINITIEVE READ/BROWSER-SYNCSTATUS — 27-10-2026
+Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijktest nog ontbreekt of alleen via Safari is bewezen.
+
+- Echte headless-Chromiumtest uitgevoerd in een tijdelijke Vercel-sandbox op de recovery-preview.
+- App laadt met HTTP 200 en zonder Vercel-login.
+- Supabase-request bevestigd als CORS `OPTIONS 200` + één echte `GET 200`; dit is geen dubbele catalogussynchronisatie.
+- Na synchronisatie: Supabase 669, `state.recipes` 669, 669 unieke MDB-ID's en lokale opslag 669.
+- Zichtbare receptkaarten: 666. Dit is bedoeld door `allergy-integration-v2.js`: recepten met gevonden allergenen of onvoldoende ingrediënteninformatie worden uit de kaartlijst gehouden. De drie records blijven wel in state/opslag; geen dataverlies.
+- Oude automatische Notion-read scripts (`mbd-notion-live-bridge`, `detail-rescue`, `notion-force-sync`) zijn uit de runtime-injectie verwijderd. Runtime laadt voor catalogus alleen `catalog-sync-v2.js?v=18`.
+- Legacy `api/app.ts` injecteert geen v16-code meer; hij verwijst alleen door naar `/index.html`.
+- Notion-foto GET-route hersteld in `api/notion/photo.ts`; MDB-0001 getest: HTTP 302 naar een geldige tijdelijke Notion/S3-bestands-URL.
+- Laatste preview voor de fotoroute: `dpl_EkE6nPJj9NUReqkjVzAGzMX2uFaN`, commit `ca502dc6bbe737a53eabdf27d520bcc46423f6fa`, READY.
+- Alle tijdelijke protection overrides die voor browsertests zijn gebruikt zijn weer ingetrokken; productie is niet aangepast.
+- De ontbrekende READ/browser/database-praktijktest is hiermee AFGEROND.
+- Nog apart open: schrijvende keten voor een nieuw recept (`/api/notion/save` + geauthenticeerde Supabase-write), inclusief rollback bij gedeeltelijke schrijffout. Dit mag niet als onderdeel van de afgeronde read/synctest worden verward.
