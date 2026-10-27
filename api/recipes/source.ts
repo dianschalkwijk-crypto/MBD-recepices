@@ -4,9 +4,11 @@ function dec(s:string){
 const ALLOWED=new Set(['instagram.com','pinterest.com','pin.it','tiktok.com','facebook.com','youtube.com','youtu.be']);
 export default async function handler(req:any,res:any){
  res.setHeader('Cache-Control','no-store');
- if(req.method!=='POST')return res.status(405).json({message:'POST required'});
+ const selftest=process.env.VERCEL_ENV==='preview'&&req.method==='GET'&&String(req.query?.selftest||'')==='1';
+ if(!selftest&&req.method!=='POST')return res.status(405).json({message:'POST required'});
  try{
-  const url=new URL(String(req.body?.url||'')),host=url.hostname.replace(/^www\./,'').toLowerCase();
+  const rawUrl=selftest?'https://www.youtube.com/watch?v=jNQXAC9IVRw':String(req.body?.url||'');
+  const url=new URL(rawUrl),host=url.hostname.replace(/^www\./,'').toLowerCase();
   if(url.protocol!=='https:'||!ALLOWED.has(host)||url.username||url.password||url.port)return res.status(400).json({message:'Niet ondersteunde link'});
   const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);let response:Response;
   try{response=await fetch(url.toString(),{headers:{'User-Agent':'Mozilla/5.0','Accept':'text/html'},redirect:'error',signal:c.signal})}finally{clearTimeout(t)}
