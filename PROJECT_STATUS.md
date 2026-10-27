@@ -235,3 +235,17 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Na opslaan: zowel de gewone recepten-inbox als de foto/kookboekscanner tonen een knop `➕ Nog een recept opslaan` om direct een volgende invoer te starten.
 - Serviceworker cache verhoogd naar `madebydian-recipes-v0.10.23` en injecteert `ux-finishing-v1.js?v=23` en `scan-enhance-v1.js?v=23`.
 - Post-release: live root HTTP 200, API health HTTP 200, nieuwe scripts HTTP 200, runtime-error scan 0 fouten in de gecontroleerde 30 minuten.
+
+## UX-AFRONDING WEEKMENU + FOTO-IMPORT — 27-10-2026
+- Live productie bijgewerkt naar deployment `dpl_5hCkNDC2XYd8NuyLy6QCCFdG5UFA`, commit `813e0a5b0efad3c0c0d07f6649c207510277c387`.
+- Weekmenu: receptnaam is nu de primaire tekst in de keuzelijst; MDB-ID staat niet meer vooraan.
+- Weekmenu: bij de gekozen maaltijd wordt een 64×64 receptfoto getoond via `/api/notion/photo`; zonder beschikbare foto verschijnt een neutrale 🍽️-placeholder. MDB-ID blijft klein als technische referentie.
+- Foto-import: standaardmodus is nu “Automatisch herkennen”. De gebruiker hoeft niet vooraf te kiezen of het een receptpagina, screenshot of gerechtfoto is.
+- Foto-import: bij lage/middelhoge zekerheid of een onduidelijke foto geeft de herkennings-API maximaal drie mogelijke titels; de UI toont deze als keuzeknoppen.
+- Echte productie-AI-test uitgevoerd met een kunstmatige onduidelijke afbeelding: HTTP 200, confidence=low, imageType=unclear en 3 alternatieven terug. Er is tijdens deze test niets opgeslagen.
+- Na succesvol opslaan is zowel in de scanner als in de gewone inbox een knop “➕ Nog een recept opslaan” beschikbaar; deze maakt het formulier schoon en start direct de volgende invoer.
+- Dubbele scan-enhance/fallback-logica is op elkaar afgestemd; geen dubbele “Nog een recept”-knop.
+- iPhone/PWA-cache verhoogd naar `madebydian-recipes-v0.10.24`; hoofd- en hulpscripts laden met versie 24.
+- Alle aangepaste JS en inline scan-JS syntax-gecontroleerd: groen.
+- Live smokecheck: root, scanpagina, weekmenu-script, save-script en API-health HTTP 200; AI geconfigureerd.
+- Vercel runtime-error scan na release: 0 runtime-errors in de gecontroleerde 30 minuten.
