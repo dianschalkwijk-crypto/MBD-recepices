@@ -38,7 +38,7 @@ async function session(){
 }
 async function getConfig(){
   if(config)return config;
-  const r=await fetch('/api/push/config',{cache:'no-store'});
+  const r=await fetch('/api/push',{cache:'no-store'});
   const d=await r.json().catch(()=>({}));
   if(!r.ok||!d.enabled||!d.publicKey)throw Error(d.error||'Push is nog niet geconfigureerd');
   config=d;return d;
@@ -109,7 +109,7 @@ async function test(){
     const sub=reg?await reg.pushManager.getSubscription():null;
     if(!sub)throw Error('Zet eerst meldingen aan');
     status('Testmelding wordt verstuurd…');
-    const r=await fetch('/api/push/test',{
+    const r=await fetch('/api/push?action=test',{
       method:'POST',
       headers:{Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'},
       body:'{}'
