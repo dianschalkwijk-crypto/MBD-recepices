@@ -16,7 +16,7 @@ export default async function handler(req:any,res:any){
   const text=dec(match?.[1]||'').replace(/\s+/g,' ').trim();
   const author=(text.match(/- ([a-z0-9_.]+) on (?:January|February|March|April|May|June|July|August|September|October|November|December)/i)||[])[1]||null;
   if(!text)return res.status(422).json({message:'Geen bruikbare recepttekst gevonden'});
-  return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:author,text,author});
+  return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:author,text,author,selftest});
  }catch(e:any){
   if(e?.name==='AbortError')return res.status(504).json({message:'Bron ophalen duurde te lang'});
   return res.status(400).json({message:'Link kon niet worden verwerkt'});
