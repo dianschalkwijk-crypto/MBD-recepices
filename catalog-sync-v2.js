@@ -17,17 +17,13 @@ let server=[];try{
  server=await get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}});
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
-// Keep a fresh in-memory copy for THIS sync run. The historical localStorage snapshot stays as an extra one-time safety net.
+// Keep a fresh in-memory copy for THIS sync run. The already-persisted app state remains the durable pre-sync copy until persist() succeeds.
 let preSyncState;
 try {
  if(typeof persist!=='function')throw Error('persist unavailable');
  preSyncState=JSON.parse(JSON.stringify(state));
- const snapshotKey='mbd-pre-sync-snapshot';
- if(!localStorage.getItem(snapshotKey)){
-  localStorage.setItem(snapshotKey,JSON.stringify({recipes:preSyncState.recipes,week:preSyncState.week||{},savedAt:new Date().toISOString()}));
-  if(!localStorage.getItem(snapshotKey))throw Error('snapshot verification failed');
- }
-}catch(e){tell('Synchronisatie gestopt: veilige lokale back-up niet mogelijk ('+e.message+').',true);return}
+ if(!preSyncState||!Array.isArray(preSyncState.recipes))throw Error('snapshot verification failed');
+}catch(e){tell('Synchronisatie gestopt: veilige tijdelijke back-up niet mogelijk ('+e.message+').',true);return}
 let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
