@@ -25,6 +25,26 @@ try {
  if(!preSyncState||!Array.isArray(preSyncState.recipes))throw Error('snapshot verification failed');
 }catch(e){tell('Synchronisatie gestopt: veilige tijdelijke back-up niet mogelijk ('+e.message+').',true);return}
 let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
+
+// Quarantined catalog rows are preserved but must not pollute the visible recipe library.
+// Only move a local copy when its core content still exactly matches the quarantined server row.
+// If the user changed it locally, keep it visible and log the conflict instead of hiding user work.
+for(const row of server){
+ const p=row?.recipe||{};if(p.syncStatus!=='duplicate-quarantined'||!p.duplicateOf)continue;
+ const id=String(row.mdb||'').toUpperCase(),canonical=String(p.duplicateOf||'').toUpperCase();
+ const idx=state.recipes.findIndex(r=>String(r?.mdb||'').toUpperCase()===id);
+ if(idx<0)continue;
+ const local=state.recipes[idx];
+ const same=name(local.title)===name(p.title)&&value(local.ingredients).trim()===value(p.ingredients).trim()&&value(local.steps).trim()===value(p.steps).trim();
+ if(!same){console.warn('Quarantaine overgeslagen: lokale inhoud wijkt af',id,canonical);continue}
+ if(!Array.isArray(state.quarantinedRecipes))state.quarantinedRecipes=[];
+ if(!state.quarantinedRecipes.some(r=>String(r?.mdb||'').toUpperCase()===id)){
+  state.quarantinedRecipes.push({...local,syncStatus:'duplicate-quarantined',duplicateOf:canonical,quarantinedAt:p.quarantinedAt||new Date().toISOString()});
+ }
+ state.recipes.splice(idx,1);by.delete(id);
+ if(state.week&&typeof state.week==='object')for(const d of Object.keys(state.week))if(state.week[d]===local.id||state.week[d]===id)state.week[d]=canonical;
+ repair++;changed=true;
+}
 const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
 const old=by.get(id);
@@ -48,7 +68,7 @@ if(old){
  const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
-for(const row of server)if(row?.recipe)merge({...row.recipe,mdb:row.mdb},'Supabase');
+for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
 if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){try{if(preSyncState&&Array.isArray(preSyncState.recipes)){state=preSyncState;if(typeof STORAGE_KEY!=='undefined')localStorage.setItem(STORAGE_KEY,JSON.stringify(state));try{localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()}))}catch(_){}try{localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[]))}catch(_){}if(typeof renderAll==='function')renderAll()}}catch(rollbackError){console.error('Herstel uit verse back-up mislukt',rollbackError)}tell('Online recepten gevonden; lokaal bewaren is mislukt. De toestand van vlak vóór deze synchronisatie is zo mogelijk hersteld.',true);return}}
 tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
