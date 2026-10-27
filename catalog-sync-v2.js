@@ -13,10 +13,10 @@ async function get(u,opt){const r=await fetch(u,{cache:'no-store',...opt});if(!r
 async function run(){
 if(typeof state==='undefined'||!Array.isArray(state.recipes))return;
 const by=new Map();for(const r of state.recipes)if(r?.mdb&&!by.has(String(r.mdb).toUpperCase()))by.set(String(r.mdb).toUpperCase(),r);
-let server=[],notion=[];try{[server,notion]=await Promise.all([
-get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}}),
-get('/api/notion/catalog').then(x=>x.items||[]).catch(e=>{console.warn('Notion niet bereikbaar, Supabase blijft beschikbaar',e);return []})
-])}catch(e){tell('Synchronisatie niet bereikbaar: '+e.message,true);return}
+let server=[];try{
+ server=await get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}});
+}catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
+
 let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
@@ -42,20 +42,9 @@ if(old){
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
 for(const row of server)if(row?.recipe)merge({...row.recipe,mdb:row.mdb},'Supabase');
-const candidates=notion.filter(r=>{
- const id=String(r?.mdb||'').toUpperCase(),old=by.get(id);
- if(!/^MDB-\d{4,}$/.test(id))return false;
- if(!old)return true;
- if(!present(old.ingredients)||!present(old.steps))return true;
- if(present(r.title)&&name(old.title)!==name(r.title))return true;
- return suspicious(old);
-});
-for(const r of candidates.slice(0,40)){try{
- const d=await get('/api/notion/full?mdb='+encodeURIComponent(r.mdb));
- if(d.ok&&d.recipe&&!suspicious(d.recipe))merge({...d.recipe,book:r.book,bookNo:r.bookNo},'Notion');
-}catch(e){console.warn('Notion recept',r.mdb,e.message)}}
+// Notion is a backup only. Do not pull Notion into the app or overwrite app data.
 if(changed){try{if(typeof persist!=='function')throw Error('persist unavailable');const snapshotKey='mbd-pre-sync-snapshot';if(!localStorage.getItem(snapshotKey)){localStorage.setItem(snapshotKey,JSON.stringify({recipes:state.recipes,week:state.week||{},savedAt:new Date().toISOString()}))}persist();if(typeof renderAll==='function')renderAll()}catch(e){tell('Online recepten gevonden; lokaal bewaren is mislukt.',true);return}}
-tell('Supabase: '+server.length+' · Notion: '+notion.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
+tell('Supabase: '+server.length+' · lokaal: '+state.recipes.length+' · toegevoegd: '+add+' · aangevuld: '+fill+' · hersteld: '+repair,false);
 }
 let started=false;function boot(){if(started||typeof state==='undefined'||!Array.isArray(state.recipes))return;started=true;setTimeout(()=>run().catch(e=>tell('Sync: '+e.message,true)),1500)}
 document.addEventListener('DOMContentLoaded',boot);boot();let t=setInterval(()=>{boot();if(started)clearInterval(t)},300);setTimeout(()=>clearInterval(t),12000);
