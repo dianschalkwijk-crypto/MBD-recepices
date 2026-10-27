@@ -65,3 +65,10 @@ Inspecteer eerst eerdere exports of andere beschikbare bronkopieën en de bestaa
 - RLS staat aan. anon en authenticated hebben SELECT-recht. Publieke leespolicy staat actief.
 - Interactieve browsertest is nog niet afgerond: TinyFish wallet is leeg en lokale Chromium wordt door de uitvoeromgeving geblokkeerd.
 - Tijdelijke previewtoegang is na de controles ingetrokken.
+
+## Browsertest afgerond 27-10-2026
+- De gebruiker heeft de tijdelijke Vercel-preview direct via Safari geopend.
+- Bevestigd: de pagina opent als de MadeByDian receptenapp en niet als Vercel-login/tussenpagina.
+- Daarmee is de eerder ontbrekende browserpraktijktest afgerond.
+- Eerder al bevestigd: previewbestanden en api/health HTTP 200; Supabase ACTIVE_HEALTHY; mbd_catalog 669 rijen / 669 unieke MDB-nummers / 0 lege MDB / 0 lege recipes; RLS en SELECT-rechten correct.
+- Tijdelijke previewlink had een TTL van 15 minuten en verloopt automatisch.
