@@ -327,3 +327,14 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Preview/live smokechecks: root 200, `/scan.html` 200, `/api/health` 200 met `aiConfigured:true`, `/api/notion/health` 200 met Notion + Supabase write geconfigureerd, `/api/recipes/source` GET 405, `/api/recipes/import` GET 405, `/api/notion/photo?mdb=BAD` 400.
 - Runtime error/warning/fatal-logscan op de live deployment: geen treffers in de gecontroleerde 20 minuten.
 - `OPENAI_API_KEY` is uitsluitend tijdelijk ook aan preview gekoppeld om de releasebuild te valideren en daarna weer teruggezet naar production-only.
+
+
+## VOLLEDIGE NOTION ↔ SUPABASE MDB-RECONCILIATIE — 28-10-2026
+- Notion-data source `MRB / MDB-receptenlijst` volledig geteld: 706 rijen totaal, 656 unieke niet-lege MDB-ID's en 50 hulprijen zonder MDB-ID.
+- Supabase `public.mbd_catalog`: 674 totale rijen = 656 canonieke recepten + 18 `duplicate-quarantined`.
+- Canonieke telling is daarmee aan beide kanten exact 656; hoogste canonieke MDB-ID is `MDB-0675`.
+- Verdeling per MDB-blok komt exact overeen tussen Notion en Supabase: 0001–0100 = 100; 0101–0200 = 99; 0201–0300 = 100; 0301–0400 = 100; 0401–0500 = 100; 0501–0600 = 100; 0601–0675 = 57.
+- In blok 0101–0200 ontbreekt in Notion uitsluitend `MDB-0182`; dit is dezelfde bewust vervallen MDB-ID als in Supabase.
+- De exacte canonieke ID-lijst 0601–0675 is één-op-één gelijk in Notion en Supabase. De 18 ontbrekende nummers in dit bereik zijn uitsluitend de bekende `duplicate-quarantined` Supabase-records die naar hun canonieke MDB-ID verwijzen.
+- Conclusie: geen canoniek recept ontbreekt aan één van beide kanten en er is geen extra canonieke MDB-ID aan één kant. De oude open blokkade voor een datasource-brede Notion/Supabase MDB-vergelijking is hiermee AFGEROND.
+- Er is tijdens deze controle niets hernummerd, verwijderd of inhoudelijk overschreven.
