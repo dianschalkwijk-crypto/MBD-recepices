@@ -88,12 +88,14 @@ function installWeekPlanner(){
   box.addEventListener("change",e=>{
    const changed=e.target?.closest?.("select");if(!changed)return;
    const aria=changed.getAttribute("aria-label")||"";
-   setTimeout(()=>{
+   const refresh=()=>{
+    const currentBox=q("#weekPlanner");if(!currentBox)return;
     decorateWeek();
-    const live=[...box.querySelectorAll(".week-row select")].find(s=>(s.getAttribute("aria-label")||"")===aria);
+    const live=[...currentBox.querySelectorAll(".week-row select")].find(s=>(s.getAttribute("aria-label")||"")===aria);
     const row=live?.closest(".week-row");
     if(live&&row)updateWeekVisual(row,live.value,live);
-   },60);
+   };
+   [60,250,800].forEach(ms=>setTimeout(refresh,ms));
   },true);
  }
  if(typeof window.renderWeek!=="function"){decorateWeek();return}
