@@ -81,11 +81,12 @@ async function attachCatalogPhoto(req:any,res:any){
  if(!result?.ok)return res.status(409).json({ok:false,error:'Het recept is intussen gewijzigd. De foto is niet gekoppeld; probeer opnieuw.',conflict:true});
  return res.status(200).json({ok:true,mdb,photoKind,paths:photoKind==='own'?[recipe.ownPhotoPath]:recipe.sourcePhotoPaths,updatedAt:result.updated_at||null});
 }
-function base64Bytes(value:string){
+function base64Buffer(value:string):ArrayBuffer{
  const raw=atob(value);
- const out=new Uint8Array(raw.length);
+ const buffer=new ArrayBuffer(raw.length);
+ const out=new Uint8Array(buffer);
  for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
- return out;
+ return buffer;
 }
 async function uploadNotionPhoto(req:any,res:any){
  const mdb=cleanMdb(req.body?.mdb);
@@ -105,7 +106,7 @@ async function uploadNotionPhoto(req:any,res:any){
  if(!created?.id)throw new Error('Notion maakte geen bestandsupload aan');
 
  const form=new FormData();
- form.append('file',new Blob([base64Bytes(base64)],{type:contentType}),filename);
+ form.append('file',new Blob([base64Buffer(base64)],{type:contentType}),filename);
  const sent=await fetch('https://api.notion.com/v1/file_uploads/'+encodeURIComponent(created.id)+'/send',{
   method:'POST',
   headers:{Authorization:'Bearer '+token(),'Notion-Version':V},
