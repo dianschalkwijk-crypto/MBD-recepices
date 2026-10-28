@@ -13,8 +13,15 @@ const present=x=>x!==null&&x!==undefined&&String(x).trim()!=='';
 const name=x=>String(x||'').trim().toLowerCase().replace(/\s+/g,' ');
 const value=x=>typeof x==='string'?x:Array.isArray(x)?x.join('\n'):'';
 const mojibake=x=>/[ÃâðÂ]/.test(String(x||''));
-const englishTitle=x=>/\b(high[- ]protein|homemade|chicken pita|chicken pasta|egg bake|smashburger|save recipe|follow @|ice cream|plant based cookbook|valentine.?s day|banana dessert)\b/i.test(String(x||''));
-const englishBody=x=>/\b(tbsp|tsp|cups?|lbs?|oz|boneless|skinless|minced|diced|chopped|shredded|preheat|bake for|cook for|serve with|add the|mix the|olive oil|chicken thighs?|chicken breasts?)\b/i.test(String(x||''));
+const englishTitle=x=>/\b(high[- ]protein|homemade|chicken pita|chicken pasta|egg bake|smashburger|save recipe|follow @|ice cream|plant based cookbook|valentine.?s day|banana dessert|breakfast wrap|breakfast sandwich|lazy sunday|herb cheese|baked cottage cheese)\b/i.test(String(x||''));
+const englishBody=x=>/\b(tbsp|tsp|cups?|lbs?|oz|boneless|skinless|minced|diced|chopped|shredded|preheat|bake for|cook for|serve with|add the|mix the|olive oil|chicken thighs?|chicken breasts?|bell pepper|spring onion|shredded cheddar|ground beef|ground lamb)\b/i.test(String(x||''));
+function englishScore(x){
+ const s=String(x||'').toLowerCase();
+ const en=(s.match(/\b(chicken|beef|pork|flour|tablespoons?|teaspoons?|cups?|bake|baked|cook|cooked|stir|onion|garlic|butter|cheese|rice|cream|eggs?|salt|pepper|breakfast|homemade|with|and|into|shredded|minced|diced|chopped|boneless|skinless)\b/g)||[]).length;
+ const nl=(s.match(/\b(kip|rund|varken|bloem|eetlepels?|theelepels?|bak|gebakken|kook|gekookt|roer|ui|knoflook|boter|kaas|rijst|room|eieren?|zout|peper|ontbijt|met|en|in|geraspt|fijngehakt|gesneden)\b/g)||[]).length;
+ return en-nl;
+}
+const clearerDutch=(local,server)=>present(local)&&present(server)&&(englishTitle(local)||englishBody(local)||englishScore(local)>=3)&&!englishTitle(server)&&!englishBody(server)&&englishScore(server)<=0;
 const suspicious=r=>mojibake(r?.title)||mojibake(r?.ingredients)||mojibake(r?.steps)||englishTitle(r?.title)||englishBody(r?.ingredients)||englishBody(r?.steps);
 function tell(s,bad){try{const q=document.querySelector('#recipeSearch');if(!q)return;let e=document.querySelector('#mbd-sync-v2');if(!e){e=document.createElement('div');e.id='mbd-sync-v2';e.style.cssText='font-size:12px;padding:7px 0;font-weight:600';q.insertAdjacentElement('afterend',e)}e.textContent=s;e.style.color=bad?'#985b24':'#277342'}catch(_){}}
 async function get(u,opt){const r=await fetch(u,{cache:'no-store',...opt});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
@@ -57,20 +64,25 @@ const merge=(r,origin)=>{
 const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r.title))return;
 const old=by.get(id);
 if(old){
- let c=false;
- // Fill only blank fields. Never overwrite existing data from another source.
+ let c=false,seedRepair=false;
+ // Bestaande lokale gebruikersdata blijft leidend. Alleen oude ingebouwde seedtekst
+ // mag worden vervangen wanneer die aantoonbaar Engels/kapot is en Supabase een duidelijke Nederlandse versie heeft.
+ const canRepairSeed=old.seeded===true;
  if(present(r.title)&&present(old.title)&&name(r.title)!==name(old.title)){
-  console.warn('MDB titelconflict: overgeslagen',id,origin);
-  return;
+  if(canRepairSeed&&clearerDutch(old.title,r.title)){old.title=r.title;c=true;seedRepair=true}
+  else{console.warn('MDB titelconflict: bestaande waarde behouden',id,origin)}
  }
  for(const p of ['title','originalTitle','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
+  if(p==='title'&&name(old.title)===name(r.title))continue;
   if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}
-  else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p]))
-   console.warn('MDB veldconflict: bestaande waarde behouden',id,p,origin);
+  else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p])){
+   if(canRepairSeed&&['title','originalTitle','ingredients','steps'].includes(p)&&clearerDutch(old[p],r[p])){old[p]=r[p];c=true;seedRepair=true}
+   else console.warn('MDB veldconflict: bestaande waarde behouden',id,p,origin);
+  }
  }
  if(r.hasPhoto&&!old.hasPhoto){old.hasPhoto=true;c=true}
  if((!Array.isArray(old.collections)||!old.collections.length)&&Array.isArray(r.collections)&&r.collections.length){old.collections=[...r.collections];c=true}
- if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom='Aanvulling '+origin;fill++;changed=true}
+ if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom=seedRepair?'Nederlandse seed-herstel '+origin:'Aanvulling '+origin;fill++;if(seedRepair)repair++;changed=true}
 
 }else{
  const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
