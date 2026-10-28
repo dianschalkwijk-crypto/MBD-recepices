@@ -4,6 +4,36 @@ const el=id=>document.getElementById(id);
 if(!el("scan")||!el("photo")||!el("mode"))return;
 
 const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");
+function kindFromUrl(raw){
+ try{const h=new URL(raw).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";return"Website"}catch{return"Website"}
+}
+function ensureSourceFields(){
+ const kind=el("kind"),author=el("author"),page=el("source");if(!kind||!author||!page)return;
+ for(const name of ["Instagram","TikTok","Facebook","Pinterest","Website"]){
+  if(![...kind.options].some(o=>o.value===name)){const o=document.createElement("option");o.value=name;o.textContent=name;kind.append(o)}
+ }
+ let input=el("mbdSourceUrl");
+ if(!input){
+  const label=document.createElement("label");label.id="mbdSourceUrlWrap";label.append(document.createTextNode("Bronlink"));
+  input=document.createElement("input");input.id="mbdSourceUrl";input.type="url";input.inputMode="url";input.placeholder="https://www.instagram.com/reel/... of https://website.nl/recept";
+  label.append(input);kind.closest("label")?.insertAdjacentElement("afterend",label);
+ }
+ const authorLabel=author.closest("label"),pageLabel=page.closest("label"),urlLabel=el("mbdSourceUrlWrap"),keep=el("keepPhoto")?.closest("label");
+ const refresh=()=>{
+  const k=kind.value,web=!["Kookboek","Eigen recept"].includes(k);
+  if(authorLabel?.firstChild)authorLabel.firstChild.nodeValue=k==="Kookboek"?"Naam kookboek":k==="Eigen recept"?"Maker / bron (optioneel)":"Maker / account / website";
+  if(pageLabel)pageLabel.style.display=k==="Kookboek"?"block":"none";
+  if(urlLabel)urlLabel.style.display=web?"block":"none";
+  if(keep?.firstChild)keep.firstChild.nodeValue="";
+  const text=keep?.childNodes?.[1];
+  if(text&&text.nodeType===3)text.nodeValue=" Bewaar de bronfoto/screenshot privé bij dit recept.";
+ };
+ kind.addEventListener("change",refresh);
+ input.addEventListener("input",()=>{if(input.value.trim()&&!["Instagram","TikTok","Facebook","Pinterest","Website"].includes(kind.value))kind.value=kindFromUrl(input.value.trim());refresh()});
+ const params=new URLSearchParams(location.search),u=params.get("sourceURL")||"",k=params.get("sourceKind")||"";
+ if(u&&!input.value){input.value=u;kind.value=[...kind.options].some(o=>o.value===k)?k:kindFromUrl(u)}
+ refresh();
+}
 const oldScan=scan.onclick;
 let appendNext=false,lastMultiResults=null;
 
@@ -44,7 +74,11 @@ function fill(d){
  el("method").value=["Airfryer","Oven","Pan","Koken"].includes(d.method)?d.method:"Overig";
  el("category").value=["Ontbijt","Lunch","Avondeten","Snack","Bijgerecht"].includes(d.category)?d.category:"Overig";
  el("mainIngredient").value=d.mainIngredient||"";el("ack").checked=false;
- el("kind").value=d.imageType==="food_photo"?"Eigen recept":d.imageType==="recipe_page"?"Kookboek":el("kind").value;
+ const linked=el("mbdSourceUrl")?.value.trim(),current=el("kind").value;
+ if(linked&&["Instagram","TikTok","Facebook","Pinterest","Website"].includes(current)){}
+ else if(d.imageType==="food_photo")el("kind").value="Eigen recept";
+ else if(d.imageType==="recipe_page")el("kind").value=d.book?"Kookboek":"Screenshot";
+ el("kind").dispatchEvent(new Event("change"));
 }
 function uncertain(d){return d.confidence==="low"||d.imageType==="unclear"||(!d.title&&!(d.ingredients||[]).length&&!(d.steps||[]).length)}
 async function one(file,hint="auto"){
@@ -122,7 +156,7 @@ async function autoScan(){
 function resetForAnother(){
  clearChoices();lastMultiResults=null;setFiles([]);photo.value="";el("preview").removeAttribute("src");el("preview").classList.add("hide");
  for(const id of ["title","ingredients","steps","mainIngredient","author","source","foodname"])if(el(id))el(id).value="";
- el("method").value="Overig";el("category").value="Overig";el("kind").value="Kookboek";el("ack").checked=false;
+ el("method").value="Overig";el("category").value="Overig";if(el("mbdSourceUrl"))el("mbdSourceUrl").value="";el("kind").value="Screenshot";el("kind").dispatchEvent(new Event("change"));el("ack").checked=false;
  el("batch").classList.add("hide");el("batchlist").replaceChildren();el("savestatus").textContent="";
  try{updatePhotos()}catch(_){el("photocount").textContent="Nog geen foto’s geselecteerd.";scan.disabled=true}
  window.scrollTo({top:0,behavior:"smooth"});setTimeout(()=>photo.click(),350);
@@ -145,6 +179,7 @@ function installSaveAnother(){
  new MutationObserver(show).observe(saveStatus,{childList:true,subtree:true,characterData:true});show();
 }
 function boot(){
+ ensureSourceFields();
  if(!mode.querySelector('option[value="auto"]')){const o=document.createElement("option");o.value="auto";o.textContent="✨ Automatisch herkennen (aanbevolen)";mode.prepend(o)}
  mode.value="auto";scan.textContent="✨ Foto automatisch uitlezen";
  const label=mode.closest("label");if(label?.firstChild?.nodeType===3)label.firstChild.nodeValue="Herkenning";
