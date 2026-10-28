@@ -4,6 +4,13 @@ const el=id=>document.getElementById(id);
 if(!el("scan")||!el("photo")||!el("mode"))return;
 
 const mode=el("mode"),photo=el("photo"),scan=el("scan"),statusBox=el("status");
+function handoff(){
+ try{
+  const h=JSON.parse(sessionStorage.getItem("mbd_scan_handoff_v1")||"{}")||{};
+  const linked=el("mbdSourceUrl")?.value.trim()||new URLSearchParams(location.search).get("sourceURL")||"";
+  return !linked||!h.sourceURL||String(h.sourceURL)===String(linked)?h:{};
+ }catch{return{}}
+}
 function kindFromUrl(raw){
  try{const h=new URL(raw).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";return"Website"}catch{return"Website"}
 }
@@ -30,9 +37,10 @@ function ensureSourceFields(){
  };
  kind.addEventListener("change",refresh);
  input.addEventListener("input",()=>{if(input.value.trim()&&!["Instagram","TikTok","Facebook","Pinterest","Website"].includes(kind.value))kind.value=kindFromUrl(input.value.trim());refresh()});
- const params=new URLSearchParams(location.search),u=params.get("sourceURL")||"",k=params.get("sourceKind")||"",a=params.get("sourceAuthor")||"";
+ const params=new URLSearchParams(location.search),u=params.get("sourceURL")||"",k=params.get("sourceKind")||"",a=params.get("sourceAuthor")||"",h=handoff();
  if(u&&!input.value){input.value=u;kind.value=[...kind.options].some(o=>o.value===k)?k:kindFromUrl(u)}
- if(a&&!author.value)author.value=a;
+ if((a||h.sourceAuthor)&&!author.value)author.value=a||h.sourceAuthor;
+ if(!u&&h.sourceURL&&!input.value){input.value=h.sourceURL;kind.value=[...kind.options].some(o=>o.value===h.sourceKind)?h.sourceKind:kindFromUrl(h.sourceURL)}
  refresh();
 }
 const oldScan=scan.onclick;
@@ -62,7 +70,8 @@ function convert(file){return new Promise((resolve,reject)=>{
 })}
 async function recognize(file,hint="auto"){
  const image=await convert(file);
- const r=await fetch("/api/recipes/recognize-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image,hint})});
+ const h=handoff();
+ const r=await fetch("/api/recipes/recognize-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image,hint,sourceURL:h.sourceURL||el("mbdSourceUrl")?.value.trim()||"",sourceContext:String(h.sourceText||"").slice(0,12000),sourceAuthor:h.sourceAuthor||el("author")?.value.trim()||""})});
  const d=await r.json().catch(()=>({error:"De herkenningsdienst gaf geen geldig antwoord."}));
  if(!r.ok)throw Error(d.error||"Herkenning mislukt. Probeer een scherpere foto of vul het recept handmatig in.");
  return d;
