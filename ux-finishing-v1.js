@@ -191,9 +191,14 @@ function sourceKind(url){
 }
 function showPhotoFallback(url,message){
  const msg=q("#importMessage");if(msg){msg.textContent=message;msg.className="message warn"}
- let a=q("#mbd-link-photo-fallback");
- if(!a){a=document.createElement("a");a.id="mbd-link-photo-fallback";a.className="secondary";a.style.cssText="display:block;text-align:center;text-decoration:none;margin-top:10px";a.textContent="📷 Voeg screenshot of foto toe";msg?.insertAdjacentElement("afterend",a)}
- a.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url));
+ q("#mbd-link-photo-fallback")?.remove();
+ const box=document.createElement("div");box.id="mbd-link-photo-fallback";box.style.cssText="display:grid;gap:8px;margin-top:10px";
+ const photo=document.createElement("a");photo.className="secondary";photo.style.cssText="display:block;text-align:center;text-decoration:none";photo.textContent="📷 Screenshot of foto toevoegen";
+ photo.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url));
+ const paste=document.createElement("button");paste.type="button";paste.className="secondary";paste.textContent="📋 Recepttekst/caption plakken";paste.onclick=()=>q("#sourceText")?.focus();
+ const manual=document.createElement("a");manual.className="secondary";manual.style.cssText="display:block;text-align:center;text-decoration:none";manual.textContent="✍️ Handmatig vanaf foto invoeren";
+ manual.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url))+"&manual=1";
+ box.append(photo,paste,manual);msg?.insertAdjacentElement("afterend",box);
 }
 function installAutoLinkImport(){
  const btn=q("#analyzeBtn");if(!btn||btn.dataset.mbdAutoLink==="1")return;btn.dataset.mbdAutoLink="1";
