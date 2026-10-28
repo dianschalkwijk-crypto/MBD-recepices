@@ -338,3 +338,14 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - De exacte canonieke ID-lijst 0601–0675 is één-op-één gelijk in Notion en Supabase. De 18 ontbrekende nummers in dit bereik zijn uitsluitend de bekende `duplicate-quarantined` Supabase-records die naar hun canonieke MDB-ID verwijzen.
 - Conclusie: geen canoniek recept ontbreekt aan één van beide kanten en er is geen extra canonieke MDB-ID aan één kant. De oude open blokkade voor een datasource-brede Notion/Supabase MDB-vergelijking is hiermee AFGEROND.
 - Er is tijdens deze controle niets hernummerd, verwijderd of inhoudelijk overschreven.
+
+
+## SUPABASE SECURITY-HARDENING — 28-10-2026
+- Supabase security- en performance-advisors opnieuw uitgevoerd na de v36 livegang.
+- Vier helper/triggerfuncties hadden een mutable `search_path`: `prevent_number_reuse`, `prevent_tip_number_reuse`, `mbd_clean_text` en `mbd_clean_text_v2`. Voor alle vier is een vaste `search_path = pg_catalog` ingesteld.
+- `handle_new_user()` en `new_account_profile()` zijn bevestigd als uitsluitend database-triggerfuncties op `auth.users`. Directe EXECUTE-rechten voor PUBLIC/anon/authenticated zijn ingetrokken; de triggers zelf blijven actief.
+- Hercontrole met Supabase security advisor: `function_search_path_mutable` is verdwenen en de twee account-triggerfuncties staan niet meer onder publiek uitvoerbare SECURITY DEFINER-waarschuwingen.
+- Live `/api/notion/health` direct na de wijziging: HTTP 200, Notion en beveiligde Supabase-write geconfigureerd.
+- Bewust NIET gewijzigd: `has_app_access`, `is_admin`, `redeem_access_code`, `mbd_save_scanned_recipe` en `mbd_catalog_server_write`; deze zijn onderdeel van bestaande auth/save-flows of bevatten eigen autorisatie/secretcontrole en worden niet zonder gerichte end-to-endtest aangescherpt.
+- RLS-zonder-policy meldingen op backup/config/video-tabellen zijn INFO-waarschuwingen; geen publieke toegang toegevoegd. Leaked-password protection blijft een apart Supabase Auth-instellingspunt en is niet automatisch aangezet.
+- Geen receptdata, MDB-nummers of gebruikersdata gewijzigd.
