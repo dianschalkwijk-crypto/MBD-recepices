@@ -318,3 +318,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - De veilige foto-koppeling zit bewust in de bestaande `/api/notion/photo` POST-actie `attachCatalogPhoto`; géén 13e API-route toevoegen. TypeScript-transpilatie van deze route gaf geen syntaxdiagnostics. Lokale functietest bevestigde behoud van bestaande fotopaden, toevoeging van het nieuwe pad en optimistic locking via exact `p_expected_updated_at`.
 - Recentste READY-preview in deze afbouwlijn blijft `dpl_4gwfJ38VZeSogLRu2bGMQec6RfxP` op commit `24eda4f0c9478b7116596b34dd9d5ad2bcb4dc90`. De actuele v36-head kan door Vercels Hobby-daglimiet `api-deployments-free-per-day` nog niet opnieuw worden gebouwd; productie is daarom bewust niet aangepast.
 - Volledige datasource-brede Notion-URL-vergelijking kon niet worden afgerond door de tijdelijke Query Data Source-limiet. Gerichte page-fetches voor `MDB-0219` en `MDB-0638` zijn wel geslaagd en bevestigen de correcties.
+
+
+## LIVE RELEASE — 28-10-2026 · v36
+- Live alias `madebydian-recipes-dian.vercel.app` wijst naar deployment `dpl_9JJUvc4pNhFBnkQtARusXwCJ2rSH`, commit `a0ec1bdef9ce300f3561996dc472410cfa959c32` (`Keep imported ingredient lines fully Dutch`).
+- Vercel production-build via `POST /v13/deployments` bleef geblokkeerd door `api-deployments-free-per-day` (>100/24 uur). Daarom is de exact geteste READY previewdeployment via de bestaande vaste live alias gepubliceerd, zonder rebuild.
+- Voor release was rollbackpunt `dpl_D1UMN9E6amxioPxqQj81fD6ArELV`.
+- Preview/live smokechecks: root 200, `/scan.html` 200, `/api/health` 200 met `aiConfigured:true`, `/api/notion/health` 200 met Notion + Supabase write geconfigureerd, `/api/recipes/source` GET 405, `/api/recipes/import` GET 405, `/api/notion/photo?mdb=BAD` 400.
+- Runtime error/warning/fatal-logscan op de live deployment: geen treffers in de gecontroleerde 20 minuten.
+- `OPENAI_API_KEY` is uitsluitend tijdelijk ook aan preview gekoppeld om de releasebuild te valideren en daarna weer teruggezet naar production-only.
