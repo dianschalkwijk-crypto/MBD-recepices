@@ -83,6 +83,57 @@ function decorateWeek(){
   }
  }
 }
+function installWeekSearch(){
+ const planner=q("#weekPlanner");if(!planner||typeof state==="undefined"||!Array.isArray(state.recipes))return;
+ let wrap=q("#mbd-week-search");
+ if(!wrap){
+  wrap=document.createElement("section");wrap.id="mbd-week-search";wrap.className="mbd-week-search";
+  const input=document.createElement("input");input.id="mbd-week-search-input";input.type="search";input.placeholder="Zoek recept voor je weekmenu…";input.autocomplete="off";
+  const hint=document.createElement("div");hint.className="mbd-week-search-hint";hint.textContent="Zoek op receptnaam, MDB-nummer of ingrediënt. Kies daarna direct een dag.";
+  const results=document.createElement("div");results.id="mbd-week-search-results";
+  wrap.append(input,hint,results);planner.insertAdjacentElement("beforebegin",wrap);
+  input.addEventListener("input",()=>renderWeekSearchResults());
+ }
+ renderWeekSearchResults();
+}
+function renderWeekSearchResults(){
+ const input=q("#mbd-week-search-input"),host=q("#mbd-week-search-results"),planner=q("#weekPlanner");
+ if(!input||!host||!planner||typeof state==="undefined")return;
+ const term=searchNorm(input.value||"");host.replaceChildren();
+ if(term.length<2)return;
+ const words=term.split(/\s+/).filter(Boolean);
+ const allowed=new Set();
+ for(const opt of planner.querySelectorAll("select option")){
+  const v=String(opt.value||"");if(v.startsWith("r:"))allowed.add(v.slice(2));
+ }
+ const matches=state.recipes.filter(r=>{
+  if(!allowed.has(String(r.id)))return false;
+  const hay=searchNorm([r.mdb,r.title,r.originalTitle,r.category,r.ingredients].filter(Boolean).join(" "));
+  return words.every(w=>searchVariants(w).some(v=>hay.includes(v)));
+ }).slice(0,20);
+ const info=document.createElement("div");info.className="mbd-week-search-count";info.textContent=matches.length?matches.length+" passende recepten"+(matches.length===20?" (eerste 20)":""):"Geen passende recepten binnen je huidige allergie-/eetvoorkeurfilter.";host.append(info);
+ const days=["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
+ for(const r of matches){
+  const row=document.createElement("div");row.className="mbd-week-search-result";
+  const meta=document.createElement("div");meta.className="mbd-week-search-result-meta";
+  const title=document.createElement("strong");title.textContent=r.title||r.originalTitle||"Recept";
+  const code=document.createElement("small");code.textContent=r.mdb||"";meta.append(title,code);
+  const actions=document.createElement("div");actions.className="mbd-week-search-days";
+  for(const day of days){
+   const b=document.createElement("button");b.type="button";b.textContent=day.slice(0,2);b.title="Kies voor "+day;
+   b.onclick=()=>{
+    const select=[...planner.querySelectorAll("select")].find(s=>(s.getAttribute("aria-label")||"")===day+" avondeten");
+    if(!select)return;
+    const value="r:"+r.id;if(![...select.options].some(o=>o.value===value))return;
+    select.value=value;select.dispatchEvent(new Event("change",{bubbles:true}));
+    input.value="";host.replaceChildren();
+   };
+   actions.append(b);
+  }
+  row.append(meta,actions);host.append(row);
+ }
+}
+
 function installWeekPlanner(){
  const box=q("#weekPlanner");
  if(box&&box.dataset.mbdWeekDelegate!=="1"){
@@ -106,6 +157,7 @@ function installWeekPlanner(){
   const enhanced=function(){
    const result=baseRender.apply(this,arguments);
    decorateWeek();
+   installWeekSearch();
    if(typeof renderWeekArchive==="function")renderWeekArchive();
    return result;
   };
@@ -240,10 +292,16 @@ function css(){
  .mbd-week-fields select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:3;margin:0!important}
  .mbd-week-title{font-size:16px;line-height:1.3;font-weight:750;color:#3f3935;white-space:normal;overflow:visible;text-overflow:clip}
  .mbd-week-mdb{margin-top:6px;font-size:11px;color:#8a817b;font-weight:650;letter-spacing:.02em}
+ .mbd-week-search{margin:0 0 12px;padding:10px;border:1px solid var(--line,#e8dfd8);border-radius:14px;background:#fbf7f3}
+ .mbd-week-search input{margin:0!important}
+ .mbd-week-search-hint,.mbd-week-search-count{font-size:12px;color:#756e69;margin-top:6px}
+ .mbd-week-search-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid #eee4de}
+ .mbd-week-search-result-meta{min-width:0}.mbd-week-search-result-meta strong{display:block;font-size:14px}.mbd-week-search-result-meta small{display:block;color:#8a817b;margin-top:2px}
+ .mbd-week-search-days{display:flex;gap:4px}.mbd-week-search-days button{border:1px solid #ded3cb;background:#fff;border-radius:8px;padding:6px 7px;font-size:11px;font-weight:700}
  #mbd-save-another{width:100%}
  `;document.head.appendChild(s);
 }
-function boot(){css();installWeekPlanner();installSaveAnother();installAutoLinkImport()}
+function boot(){css();installWeekPlanner();installWeekSearch();installSaveAnother();installAutoLinkImport()}
 document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,0));
 if(document.readyState!=="loading")setTimeout(boot,0);
 setTimeout(boot,900);
