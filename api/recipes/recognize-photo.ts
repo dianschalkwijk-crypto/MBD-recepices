@@ -7,7 +7,6 @@ function looksEnglish(value:any){
  return en>=3&&en>nl;
 }
 async function translateRecognition(ai:OpenAI,result:any){
- if(!looksEnglish([result?.title,result?.ingredients,result?.steps,result?.notes,result?.alternatives]))return result;
  const completion=await ai.chat.completions.create({
   model:process.env.OPENAI_MODEL||"gpt-4.1-mini",response_format:{type:"json_object"},messages:[
    {role:"system",content:"Vertaal alleen de menselijk leesbare tekstvelden van dit fotoherkennings-JSON naar natuurlijk Nederlands. Vertaal title, ingredients, steps, notes, alternatives en mainIngredient. Behoud confidence en imageType exact. Gebruik voor method alleen Airfryer, Oven, Pan, Koken of Overig; voor category alleen Ontbijt, Lunch, Avondeten, Snack of Bijgerecht. Behoud book als eigennaam en bookPage exact. Verzin niets. Antwoord uitsluitend als JSON."},
