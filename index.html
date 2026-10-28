@@ -198,7 +198,7 @@ const SEED_RECIPES = [{"id":"MDB-0001","mdb":"MDB-0001","title":"Big Mac Burrito
 const STORAGE_KEY = 'madebydian-recipes-filled-copy-v0.5';
 
 const COLLECTIONS = [
-  ['Uit kookboeken','📚'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
+  ['Uit kookboeken','📚'],['HelloFresh','🥗'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
   ['Camping 1pans','⛺'],['Mealprep','🧊'],['Easy oven','🔥'],['Ontbijt','🥣'],['Vegetarisch','🥬'],['Aziatisch','🍜'],
   ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Overig','📌']
 ];
@@ -442,7 +442,7 @@ function showMessage(el,text,type='warn'){el.textContent=text;el.className=`mess
 let activeCollectionFilter = null;
 function renderRecipes(){
   const q=document.querySelector('#recipeSearch').value.trim().toLowerCase();
-  const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter)||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
+  const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter)||(activeCollectionFilter==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
   const box=document.querySelector('#recipeList');
   if(!list.length){box.innerHTML='<div class="empty">Geen passend recept gevonden. 🍲</div>';return;}
   box.innerHTML=list.map(r=>{
@@ -483,6 +483,23 @@ function planRecipeDate(id){
  const msg=document.createElement('p');save.onclick=()=>{if(!date.value){msg.textContent='Kies eerst een datum.';return}const key='mbd-dated-meals-v1';let items=[];try{items=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(items))items=[];const existing=items.findIndex(x=>x.date===date.value&&x.meal===meal.value);const entry={date:date.value,meal:meal.value,recipeId:r.id,mdb:r.mdb||'',title:r.title||'',savedAt:new Date().toISOString()};if(existing>=0){if(!confirm('Er staat al een recept op dit eetmoment. Vervangen?'))return;items[existing]=entry}else items.push(entry);localStorage.setItem(key,JSON.stringify(items));msg.textContent='Toegevoegd: '+date.value+' · '+meal.value+'. Op dit apparaat bewaard.';setTimeout(()=>panel.remove(),1800)};
  panel.append(title,label,mealLabel,save,cancel,msg);
 }
+const MBD_RATINGS_KEY='mbd_person_ratings_v1';
+function mbdRatingsRead(){try{return JSON.parse(localStorage.getItem(MBD_RATINGS_KEY)||'{}')||{}}catch{return{}}}
+function mbdRatingsSave(all){try{localStorage.setItem(MBD_RATINGS_KEY,JSON.stringify(all))}catch(e){alert('Beoordeling kon niet worden bewaard: '+e.message)}}
+function mbdRatingPanel(recipe,body){
+ const key=recipe.mdb||recipe.id,all=mbdRatingsRead(),data=all[key]||{},people=['Mama','Jake','Mace','Gast'];
+ const panel=document.createElement('section');panel.className='detail-section';
+ const heading=document.createElement('h3');heading.textContent='⭐ Beoordelingen per persoon';panel.append(heading);
+ people.forEach((person,index)=>{const row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:1px solid #eee';
+ const saved=data[person]||{};const label=document.createElement('label');label.style.cssText='display:block;font-weight:600;margin-bottom:5px';label.textContent=index===3?'Vierde persoon (naam per gerecht)':'Beoordeling '+person;row.append(label);
+ if(index===3){const name=document.createElement('input');name.placeholder='Naam invullen';name.value=saved.name||'';name.setAttribute('aria-label','Naam vierde persoon');row.append(name);name.addEventListener('change',()=>update('name',name.value.trim()));}
+ const stars=document.createElement('div');stars.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+ const update=(field,value)=>{const next=mbdRatingsRead();next[key]||={};next[key][person]||={};next[key][person][field]=value;mbdRatingsSave(next);if(field==='stars')renderStars(value)};
+ const renderStars=value=>{stars.replaceChildren();for(let n=1;n<=5;n++){const button=document.createElement('button');button.type='button';button.textContent=n<=Number(value||0)?'★':'☆';button.title=n+' sterren';button.setAttribute('aria-label',person+': '+n+' sterren');button.style.cssText='padding:5px 9px;font-size:23px;min-width:40px';button.onclick=()=>update('stars',n);stars.append(button)}};
+ renderStars(saved.stars);row.append(stars);
+ const note=document.createElement('textarea');note.placeholder='Opmerking voor '+(index===3?'deze persoon':person);note.value=saved.note||'';note.rows=2;note.style.cssText='width:100%;margin-top:7px';note.addEventListener('change',()=>update('note',note.value));row.append(note);panel.append(row)});
+ body.append(panel);
+}
 function showRecipeDetails(id){
   const r=state.recipes.find(x=>x.id===id); if(!r) return;
   document.querySelector('#modalRecipeMdb').textContent=[r.mdb,r.book].filter(Boolean).join(' · ');
@@ -520,7 +537,7 @@ function showRecipeDetails(id){
   if(r.notionURL) links.push(`<button data-modal-notion>Notion</button>`);
   links.push(`<button data-modal-copy class="secondary">Kopieer recept</button>`);
   blocks.push(`<div class="detail-section"><div class="recipe-actions">${links.join('')}</div></div>`);
-  const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');
+  const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');mbdRatingPanel(r,body);
   if(r.sourceKind==='Kookboek'){
     const photoBox=body.querySelector('#mbdCookbookPhoto'),photoStatus=body.querySelector('#mbdPhotoStatus');
     const client=weekCloud;
@@ -610,7 +627,7 @@ function deleteRecipe(id){
 }
 function renderCollections(){
   const box=document.querySelector('#collectionOverview');
-  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>((r.collections||[]).includes(name)||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
+  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>((r.collections||[]).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${n} recept${n===1?'':'en'}</span></button>`}).join('');
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
