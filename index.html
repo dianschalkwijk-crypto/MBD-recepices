@@ -539,12 +539,10 @@ function showRecipeDetails(id){
         const path=r.mdb+'/bron-'+Date.now()+'.'+ext;
         const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
         if(uploadError)throw uploadError;
-        const {data:stored,error:readError}=await client.from('mbd_catalog').select('recipe').eq('mdb',r.mdb).single();if(readError)throw readError;
-        const existing=Array.isArray(stored.recipe?.sourcePhotoPaths)?stored.recipe.sourcePhotoPaths:[];
-        const paths=[...existing,path];
-        const {error:updateError}=await client.from('mbd_catalog').update({recipe:{...(stored.recipe||{}),sourcePhotoPaths:paths,sourcePhotoPrivate:true,sourcePhotoCredit:'Bronfoto uit kookboek – niet van MadeByDian'}}).eq('mdb',r.mdb);
-        if(updateError)throw updateError;
-        r.sourcePhotoPaths=paths;r.sourcePhotoPrivate=true;try{persist()}catch{}
+        const attach=await fetch('/api/recipes/attach-source-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mdb:r.mdb,paths:[path],sourceKind:'Kookboek',photoKind:'source'})});
+        const attached=await attach.json().catch(()=>({}));
+        if(!attach.ok||!attached?.ok){try{await client.storage.from('mbd-cookbook-originals').remove([path])}catch{}throw Error(attached.error||'Bronfoto kon niet veilig worden gekoppeld')}
+        r.sourcePhotoPaths=attached.paths||[...(r.sourcePhotoPaths||[]),path];r.sourcePhotoPrivate=true;try{persist()}catch{}
         await showPrivate(path);body.querySelector('#mbdPhotoCredit').textContent='Bronfoto uit kookboek – niet van MadeByDian';
         photoStatus.textContent='Oorspronkelijke kookboekfoto veilig privé gekoppeld aan '+r.mdb+'.';
       }catch(err){photoStatus.textContent='Bronfoto niet gekoppeld: '+err.message;}
@@ -561,9 +559,9 @@ function showRecipeDetails(id){
         const path=r.mdb+'/eigen-'+Date.now()+'.'+ext;
         const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
         if(uploadError)throw uploadError;
-        const {data:stored,error:readError}=await client.from('mbd_catalog').select('recipe').eq('mdb',r.mdb).single();if(readError)throw readError;
-        const {error:updateError}=await client.from('mbd_catalog').update({recipe:{...(stored.recipe||{}),ownPhotoPath:path}}).eq('mdb',r.mdb);
-        if(updateError)throw updateError;
+        const attach=await fetch('/api/recipes/attach-source-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mdb:r.mdb,paths:[path],photoKind:'own'})});
+        const attached=await attach.json().catch(()=>({}));
+        if(!attach.ok||!attached?.ok){try{await client.storage.from('mbd-cookbook-originals').remove([path])}catch{}throw Error(attached.error||'Eigen foto kon niet veilig worden gekoppeld')}
         r.ownPhotoPath=path;try{persist()}catch{}
         await showPrivate(path);body.querySelector('#mbdPhotoCredit').textContent='Mijn eigen gerechtfoto';
         photoStatus.textContent='Eigen foto opgeslagen. De oorspronkelijke kookboekfoto blijft privé bewaard.';
