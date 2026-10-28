@@ -267,3 +267,17 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Eindtelling na herstel: Supabase 656 canonieke recepten, Notion 656 unieke MDB-ID’s, hoogste MDB-0675, 0 canonieke Supabase-records zonder Notion-link.
 - Tijdelijke smoke-GET-routes verwijderd: `/api/recipes/source` GET = 405 en `/api/recipes/import` GET = 405.
 - Productiesmoke: home 200, scan 200, health 200, notion health/save 200. Runtime logs op uitsluitend de nieuwe deployment: geen error/warning/fatal logs.
+
+## UX-AFMAAKRONDE — 28-10-2026
+- Weekmenu: foto + receptnaam-weergave is aanwezig via ux-finishing-v1.js; MDB-code is niet meer de primaire zichtbare keuze.
+- Recepten zoeken met één ingrediënt: databasecontrole toont 67 canonieke recepten met rijst/rice. De eerdere 0-resultatenweergave was dus een UI-filterfout.
+- photo-fix-v10.js aangepast zodat de gewone zoekbalk en “Koken met wat ik heb” niet tegelijk actief kunnen blijven; zodra één veld gebruikt wordt, wordt het andere gewist. Dit voorkomt dubbele filtering zoals op de screenshot met tweemaal “Rijst”.
+- Linkimport: bij mislukte automatische uitlezing worden nu drie duidelijke vervolgstappen aangeboden: screenshot/foto toevoegen, recepttekst/caption plakken, of handmatig vanaf foto invoeren. De bronlink blijft behouden.
+- api/recipes/source.ts uitgebreid voor veilige HTTPS-receptwebsites, gecontroleerde redirects, SSRF-blokkade en Recipe JSON-LD; social metadata blijft fallback.
+- Foto/scanner: bronkeuze ondersteunt Kookboek, Instagram, TikTok, Facebook, Pinterest, Website, Screenshot en Eigen recept; bronlink + maker/account blijven opslaan. “Nog een recept opslaan” bestaat na succesvolle save.
+- api/recipes/import.ts en api/recipes/recognize-photo.ts voeren nu altijd een tweede Nederlandse normalisatie uit, zodat Engelse titel/ingrediënten/bereiding niet ongemerkt blijven staan.
+- PWA-cache gerepareerd: service-worker v0.10.31 en correcte scriptquery’s ?v=31 (oude vorm had ??v=30).
+- Recovery-branch HEAD: 7a93aa82b491edccf76c5e14799c380f1ec62e1d.
+- Huidige live productiealias wijst nog naar dpl_8dU4zaxQtwGj6NP4i9mSNAfMT1eu / commit e53ba6bbebd96601ef987fd85353e9ea2228053f.
+- Nieuwe preview/productiedeployment van HEAD is op dit moment geblokkeerd door Vercel Hobby-limiet: meer dan 100 API-deployments in 24 uur (api-deployments-free-per-day). Er is geen mislukte appbuild; deployment werd vóór build geweigerd.
+- De laatste UX-fixes staan veilig in GitHub maar zijn daarom nog niet live. Niet opnieuw reconstrueren; na vrijvallen van het Vercel-deployquotum exact HEAD 7a93aa8 deployen en smoke-testen.
