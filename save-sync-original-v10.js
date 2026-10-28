@@ -5,6 +5,9 @@
   let pendingPhoto=null;
   let busy=false;
   const $=s=>document.querySelector(s);
+  function sourceKindFromUrl(raw){
+    try{const h=new URL(raw).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";if(h.includes("youtube")||h.includes("youtu.be"))return"YouTube";return"Website"}catch{return"Social / link"}
+  }
 
   async function post(url,body){
     const r=await fetch(url,{
@@ -101,12 +104,14 @@
       if($("#sourceText"))$("#sourceText").value="";
       if($("#reviewTitle"))$("#reviewTitle").value="";
       if($("#reviewAuthor"))$("#reviewAuthor").value="";
+      if($("#reviewPortions"))$("#reviewPortions").value="";
       if($("#reviewIngredients"))$("#reviewIngredients").value="";
       if($("#reviewSteps"))$("#reviewSteps").value="";
       if($("#mbdPhotoInput"))$("#mbdPhotoInput").value="";
       if($("#mbdPhotoPreview")){$("#mbdPhotoPreview").removeAttribute("src");$("#mbdPhotoPreview").style.display="none";}
       $("#reviewCard")?.classList.add("hidden");
       b.style.display="none";
+      const view=$("#mbdViewSaved");if(view)view.style.display="none";
       if(typeof setScreen==="function")setScreen("inbox");
       if(typeof showMessage==="function"&&msg)showMessage(msg,"Klaar voor het volgende recept. Plak een link, tekst of voeg een foto toe.","ok");
       $("#sourceUrl")?.focus();
@@ -145,6 +150,7 @@
 
     const title=($("#reviewTitle")?.value||currentDraft.title||"").trim();
     const author=($("#reviewAuthor")?.value||"").trim();
+    const portions=($("#reviewPortions")?.value||currentDraft.portions||"").trim();
     const ingredients=($("#reviewIngredients")?.value||"").trim();
     const steps=($("#reviewSteps")?.value||"").trim();
     const sourceURL=currentDraft.sourceURL||"";
@@ -169,7 +175,14 @@
         steps,
         sourceURL:sourceURL||null,
         collections:typeof selectedCollections!=="undefined"?[...selectedCollections]:[],
-        warnings:currentDraft.warnings||[]
+        warnings:currentDraft.warnings||[],
+        extra:{
+          sourceKind:currentDraft.sourceKind||sourceKindFromUrl(sourceURL),
+          sourceAuthor:author,
+          method:currentDraft.method||"",
+          category:currentDraft.category||"",
+          portions
+        }
       });
 
       const mdb=String(
@@ -210,12 +223,14 @@
             sourceURL,
             contentURL:sourceURL,
             notionURL,
-            category:"",
+            category:currentDraft?.category||"",
             cuisine:"",
-            portions:"",
+            portions,
             time:"",
             book:bookName,
             bookNo,
+            sourceKind:currentDraft?.sourceKind||sourceKindFromUrl(sourceURL),
+            sourceAuthor:author,
             collections:typeof selectedCollections!=="undefined"?[...selectedCollections]:[],
             warnings:currentDraft.warnings||[],
             seeded:false,
@@ -240,8 +255,8 @@
       }
 
       const message=photoError
-        ?"✓ "+mdb+" opgeslagen in Notion. Foto niet opgeslagen: "+photoError
-        :"✓ "+mdb+" opgeslagen in Notion"+(bookName?" · "+bookName:"")+(photoOK?" · foto opgeslagen":"");
+        ?"✅ Recept opgeslagen · "+mdb+". Foto niet opgeslagen: "+photoError
+        :"✅ Recept opgeslagen · "+mdb+(bookName?" · "+bookName:"")+(photoOK?" · foto opgeslagen":"");
 
       if(typeof showMessage==="function"&&msg){
         showMessage(msg,message,photoError?"warn":"ok");
@@ -250,6 +265,18 @@
       }
 
       const again=saveAnotherButton();if(again)again.style.display="block";
+      let view=$("#mbdViewSaved");
+      if(!view&&again){
+        view=document.createElement("button");view.id="mbdViewSaved";view.type="button";view.className="secondary";view.textContent="Bekijk opgeslagen recept";view.style.marginTop="8px";again.insertAdjacentElement("afterend",view);
+      }
+      if(view){
+        view.style.display="block";
+        view.onclick=()=>{
+          const found=state?.recipes?.find?.(r=>String(r.mdb||"").toUpperCase()===mdb);
+          if(typeof setScreen==="function")setScreen("recipes");
+          if(found&&typeof showRecipeDetails==="function")setTimeout(()=>showRecipeDetails(found.id),80);
+        };
+      }
       if(typeof renderAll==="function")renderAll();
     }catch(e){
       const message="⚠️ Niet opgeslagen: "+(e?.message||e);
