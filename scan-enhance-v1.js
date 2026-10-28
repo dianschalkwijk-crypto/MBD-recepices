@@ -36,7 +36,7 @@ function ensureSourceFields(){
  refresh();
 }
 const oldScan=scan.onclick;
-let appendNext=false,lastMultiResults=null;
+let appendNext=false,lastMultiResults=null,savedBatchIndexes=new Set();
 
 function files(){try{return Array.isArray(selected)?selected:[]}catch(_){return [...(photo.files||[])]}}
 function setFiles(next){try{selected=next}catch(_){}}
@@ -131,6 +131,7 @@ function combine(results){
 }
 function showBatch(results){
  try{batch=results;activePhotoIndex=0}catch(_){}
+ savedBatchIndexes=new Set();
  const box=el("batchlist");box.replaceChildren();el("batch").classList.remove("hide");
  results.forEach((d,i)=>{
   const wrap=document.createElement("div"),label=document.createElement("strong"),edit=document.createElement("button");
@@ -173,7 +174,7 @@ async function autoScan(){
  }finally{scan.disabled=false}
 }
 function resetForAnother(){
- clearChoices();lastMultiResults=null;setFiles([]);photo.value="";el("preview").removeAttribute("src");el("preview").classList.add("hide");
+ clearChoices();lastMultiResults=null;savedBatchIndexes=new Set();try{batch=[];activePhotoIndex=0}catch(_){}setFiles([]);photo.value="";el("preview").removeAttribute("src");el("preview").classList.add("hide");
  for(const id of ["title","ingredients","steps","mainIngredient","portions","author","source","foodname"])if(el(id))el(id).value="";
  el("method").value="Overig";el("category").value="Overig";if(el("mbdSourceUrl"))el("mbdSourceUrl").value="";el("kind").value="Screenshot";el("kind").dispatchEvent(new Event("change"));el("ack").checked=false;
  el("batch").classList.add("hide");el("batchlist").replaceChildren();el("savestatus").textContent="";
