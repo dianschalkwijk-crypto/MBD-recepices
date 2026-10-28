@@ -412,11 +412,14 @@ async function saveRecipe(){
   const button=document.querySelector('#saveRecipeBtn');button.disabled=true;
   let savedId='';
   try{
-    if(!weekCloud)throw Error('Supabase is niet beschikbaar. Het recept is nog niet opgeslagen.');
-    const {data:{session},error:authError}=await weekCloud.auth.getSession();
-    if(authError||!session)throw Error('Log eerst in via Accounts om het recept veilig online op te slaan.');
-    const {data,error}=await weekCloud.rpc('mbd_save_scanned_recipe',{payload});
-    if(error)throw error;savedId=String(data||'');if(!/^MDB-\d+$/.test(savedId))throw Error('Geen geldig receptnummer ontvangen');
+    const response=await fetch('/api/notion/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      title,author,ingredients,steps,sourceURL:sourceURL||null,collections:payload.collections,warnings:payload.warnings,
+      extra:{sourceKind:'Social / link',sourceAuthor:author,portions}
+    })});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data?.ok)throw Error(data.error||data.message||'Online bewaren mislukt');
+    savedId=String(data.mdb||'').toUpperCase();if(!/^MDB-\d+$/.test(savedId))throw Error('Geen geldig receptnummer ontvangen');
+    payload.notionURL=data.notionURL||'';
   }catch(e){showMessage(document.querySelector('#importMessage'),'Niet opgeslagen: '+e.message,'warn');button.disabled=false;return;}
   state.recipes.unshift({...payload,id:savedId,mdb:savedId});
   persist(); currentDraft=null;button.disabled=false;
