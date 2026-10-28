@@ -394,6 +394,15 @@ function renderCollectionPicker(){
 function recipeFingerprint(title, ingredients){
   return `${title}|${ingredients}`.toLowerCase().replace(/[^a-z0-9à-ÿ]+/g,' ').trim();
 }
+function likelyEnglishRecipe(title,ingredients,steps){
+  const s=[title,ingredients,steps].join(' ').toLowerCase();
+  const en=(s.match(/\b(chicken|beef|pork|flour|tablespoons?|teaspoons?|bake|cook|stir|onion|garlic|butter|cheese|rice|cream|eggs?|salt|pepper|serve|minutes|with|and|into)\b/g)||[]).length;
+  const nl=(s.match(/\b(kip|rund|varken|bloem|eetlepels?|theelepels?|bak|kook|roer|ui|knoflook|boter|kaas|rijst|room|eieren?|zout|peper|serveer|minuten|met|en|in)\b/g)||[]).length;
+  return en>=5&&en>nl+2;
+}
+function sourceKindFromURL(raw){
+  try{const h=new URL(raw).hostname.toLowerCase();if(h.includes('instagram'))return'Instagram';if(h.includes('tiktok'))return'TikTok';if(h.includes('facebook'))return'Facebook';if(h.includes('pinterest')||h==='pin.it')return'Pinterest';if(h.includes('youtube')||h.includes('youtu.be'))return'YouTube';return'Website'}catch{return'Social / link'}
+}
 async function saveRecipe(){
   if(!currentDraft) return;
   const title=document.querySelector('#reviewTitle').value.trim()||currentDraft.title;
@@ -402,19 +411,20 @@ async function saveRecipe(){
   const ingredients=document.querySelector('#reviewIngredients').value.trim();
   const steps=document.querySelector('#reviewSteps').value.trim();
   const sourceURL=currentDraft.sourceURL;
+  if(likelyEnglishRecipe(title,ingredients,steps)){showMessage(document.querySelector('#importMessage'),'Nog niet opgeslagen: de recepttekst lijkt nog grotendeels Engels. Laat de vertaling opnieuw uitvoeren of corrigeer de tekst eerst.','warn');return;}
   const exact = sourceURL && state.recipes.find(r=>r.sourceURL===sourceURL);
   const fp=recipeFingerprint(title,ingredients);
   const fuzzy=state.recipes.find(r=>recipeFingerprint(r.title,r.ingredients)===fp);
   if(exact||fuzzy){
     if(!confirm(`Dit lijkt al op “${(exact||fuzzy).title}”. Toch als apart recept opslaan?`)) return;
   }
-  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions,time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:'Social / link'};
+  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions,time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:sourceKindFromURL(sourceURL)};
   const button=document.querySelector('#saveRecipeBtn');button.disabled=true;
   let savedId='';
   try{
     const response=await fetch('/api/notion/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       title,author,ingredients,steps,sourceURL:sourceURL||null,collections:payload.collections,warnings:payload.warnings,
-      extra:{sourceKind:'Social / link',sourceAuthor:author,portions}
+      extra:{sourceKind:sourceKindFromURL(sourceURL),sourceAuthor:author,portions}
     })});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data?.ok)throw Error(data.error||data.message||'Online bewaren mislukt');
