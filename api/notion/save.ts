@@ -38,7 +38,7 @@ const platform=(u:string)=>{
   try{const h=new URL(u).hostname.toLowerCase();if(h.includes('instagram'))return'Instagram';if(h.includes('tiktok'))return'TikTok';if(h.includes('facebook'))return'Facebook';if(h.includes('pinterest')||h==='pin.it')return'Pinterest';if(h.includes('youtube')||h.includes('youtu.be'))return'YouTube';return'Website'}catch{return''}
 };
 const safeText=(v:any,max=2000)=>String(v||'').trim().slice(0,max);
-const allowedKinds=new Set(['Kookboek','Screenshot','Eigen recept','Instagram','TikTok','Facebook','Pinterest','Website','YouTube','Social / link']);
+const allowedKinds=new Set(['Kookboek','Screenshot','Eigen recept','Instagram','TikTok','Facebook','Pinterest','Website','YouTube','Anders','Social / link']);
 const mdbNo=(v:string)=>{const m=String(v||'').match(/^MDB-(\d{4})$/i);return m?Number(m[1]):0};
 const fmt=(n:number)=>'MDB-'+String(n).padStart(4,'0');
 
