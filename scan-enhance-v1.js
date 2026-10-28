@@ -184,17 +184,41 @@ function resetForAnother(){
 function installSaveAnother(){
  const saveStatus=el("savestatus");if(!saveStatus)return;
  const show=()=>{
-  const ok=/Veilig online opgeslagen als/i.test(saveStatus.textContent||"");
+  const ok=/(?:✅\s*)?Recept opgeslagen als|Veilig online opgeslagen als/i.test(saveStatus.textContent||"");
+  if(ok&&Array.isArray(batch)&&batch.length>1){
+   const idx=Number(activePhotoIndex)||0;
+   savedBatchIndexes.add(idx);
+   const row=el("batchlist")?.children?.[idx];
+   if(row&&!row.dataset.saved){
+    row.dataset.saved="1";
+    const strong=row.querySelector("strong");if(strong)strong.textContent+=" · ✅ opgeslagen";
+    const edit=row.querySelector("button");if(edit){edit.disabled=true;edit.textContent="Opgeslagen"}
+   }
+  }
+  const nextIndex=()=>Array.isArray(batch)?batch.findIndex((_,i)=>!savedBatchIndexes.has(i)):-1;
+  const openNext=()=>{
+   const i=nextIndex();
+   if(i<0){resetForAnother();return}
+   try{activePhotoIndex=i}catch(_){}
+   fill(batch[i]);
+   const row=el("batchlist")?.children?.[i];row?.scrollIntoView?.({behavior:"smooth",block:"nearest"});
+   el("ack").checked=false;saveStatus.textContent="";
+   setStatus("Controleer recept "+(i+1)+" van "+batch.length+" en sla het daarna op.");
+  };
+  const remaining=ok?nextIndex():-1;
   const existing=el("saveAnother");
   if(existing){
-   existing.onclick=resetForAnother;
+   existing.onclick=remaining>=0?openNext:resetForAnother;
+   existing.textContent=remaining>=0?"➡️ Volgend herkend recept controleren":"➕ Nog een recept opslaan";
    existing.classList.toggle("hide",!ok);
    el("mbd-scan-another")?.remove();
    return;
   }
   let b=el("mbd-scan-another");
   if(!ok){b?.remove();return}
-  if(b)return;b=document.createElement("button");b.id="mbd-scan-another";b.type="button";b.textContent="➕ Nog een recept opslaan";b.onclick=resetForAnother;saveStatus.insertAdjacentElement("afterend",b);
+  if(!b){b=document.createElement("button");b.id="mbd-scan-another";b.type="button";saveStatus.insertAdjacentElement("afterend",b)}
+  b.textContent=remaining>=0?"➡️ Volgend herkend recept controleren":"➕ Nog een recept opslaan";
+  b.onclick=remaining>=0?openNext:resetForAnother;
  };
  new MutationObserver(show).observe(saveStatus,{childList:true,subtree:true,characterData:true});show();
 }
