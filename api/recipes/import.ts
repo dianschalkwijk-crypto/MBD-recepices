@@ -26,6 +26,18 @@ const Recipe = z.object({
 });
 
 
+function renderIngredientLine(x:z.infer<typeof Ingredient>){
+  const amount=x.amount===null||x.amount===undefined?"":String(x.amount).replace(".",",");
+  const unit=String(x.unit||"").trim();
+  const ingredient=String(x.ingredient||"").trim();
+  const note=String(x.note||"").trim();
+  return [amount,unit,ingredient].filter(Boolean).join(" ")+(note?" ("+note+")":"");
+}
+function normalizeIngredientLines(result:z.infer<typeof Recipe>){
+  result.ingredients=result.ingredients.map(x=>({...x,original_line:renderIngredientLine(x)||x.original_line}));
+  return result;
+}
+
 function looksEnglish(value:any){
   const s=(typeof value==="string"?value:JSON.stringify(value||"")).toLowerCase();
   if(!s.trim())return false;
@@ -64,11 +76,11 @@ export default async function handler(req: any, res: any) {
     });
     const raw=completion.choices[0]?.message?.content;
     if(!raw)throw Error("Lege AI-respons");
-    let result=Recipe.parse(JSON.parse(raw));
+    let result=normalizeIngredientLines(Recipe.parse(JSON.parse(raw)));
     result.source_url=sourceURL||null;
     result.source_author=sourceAuthor||result.source_author||null;
     const readable=[result.title_nl,result.servings_text,...result.ingredients.flatMap(x=>[x.original_line,x.unit,x.ingredient,x.note]),...result.steps].filter(Boolean).join(" ");
-    if(looksEnglish(readable))result=await ensureDutch(ai,process.env.OPENAI_MODEL || "gpt-4.1-mini",result);
+    if(looksEnglish(readable))result=normalizeIngredientLines(await ensureDutch(ai,process.env.OPENAI_MODEL || "gpt-4.1-mini",result));
     result.source_url=sourceURL||null;
     result.source_author=sourceAuthor||result.source_author||null;
     return res.status(200).json(result);
