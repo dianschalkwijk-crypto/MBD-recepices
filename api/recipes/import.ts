@@ -25,6 +25,10 @@ const Recipe = z.object({
 });
 
 export default async function handler(req: any, res: any) {
+  if(req.method==="GET"&&process.env.VERCEL_ENV==="preview"&&req.query?.smoke){
+    req.method="POST";
+    req.body={sourceURL:null,sourceAuthor:"Preview test",sharedText:"Chicken rice bowl\nIngredients: 200 g chicken breast, 150 g cooked rice, 1 tbsp olive oil, 1 tsp garlic powder.\nInstructions: Cook the rice. Fry the chicken in olive oil. Add garlic powder. Serve with the rice."};
+  }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const parsed = Request.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Ongeldige of ontbrekende recepttekst." });
