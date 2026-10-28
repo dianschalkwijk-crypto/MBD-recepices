@@ -34,10 +34,9 @@ export default async function handler(req: any, res: any) {
     const ai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
     const completion = await ai.chat.completions.create({
       model:process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      temperature:0,
       response_format:{type:"json_object"},
       messages:[
-        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een Nederlands recept. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur uit de input. Als informatie ontbreekt: geef een waarschuwing."},
+        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een natuurlijk Nederlands recept. Vertaal de titel, alle ingrediëntnamen, opmerkingen en alle bereidingsstappen naar Nederlands, ook wanneer de bron Engels is. Behoud merknamen, hoeveelheden en betekenis exact. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur uit de input. Als informatie ontbreekt: geef een waarschuwing."},
         {role:"user",content:JSON.stringify({sourceURL,sourceAuthor,sharedText})}
       ]
     });
