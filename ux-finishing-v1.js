@@ -245,6 +245,7 @@ function sourceKind(url){
 }
 function showPhotoFallback(url,message,author=""){
  const msg=q("#importMessage");if(msg){msg.textContent=message;msg.className="message warn"}
+ try{sessionStorage.setItem("mbd_scan_handoff_v1",JSON.stringify({sourceURL:url,sourceKind:sourceKind(url),sourceAuthor:author||"",sourceText:q("#sourceText")?.value||"",savedAt:new Date().toISOString()}))}catch(_){}
  q("#mbd-link-photo-fallback")?.remove();
  const box=document.createElement("div");box.id="mbd-link-photo-fallback";box.style.cssText="display:grid;gap:8px;margin-top:10px";
  const photo=document.createElement("a");photo.className="secondary";photo.style.cssText="display:block;text-align:center;text-decoration:none";photo.textContent="📷 Screenshot of foto toevoegen";
