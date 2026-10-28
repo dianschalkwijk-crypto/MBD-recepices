@@ -68,20 +68,28 @@ async function recognize(file,hint="auto"){
  return d;
 }
 function fill(d){
- if(d.bookPage)el("source").value=d.bookPage;if(d.book&&!el("author").value)el("author").value=d.book;
+ if(d.bookPage)el("source").value=d.bookPage;
+ const linked=el("mbdSourceUrl")?.value.trim();
+ if(!linked&&d.sourceURL&&el("mbdSourceUrl"))el("mbdSourceUrl").value=d.sourceURL;
+ if(!el("author").value&&(d.sourceAuthor||d.book))el("author").value=d.sourceAuthor||d.book;
  el("title").value=d.title||"";
  el("ingredients").value=(d.ingredients||[]).join("\n");
  el("steps").value=(d.steps||[]).join("\n");
  el("method").value=["Airfryer","Oven","Pan","Koken"].includes(d.method)?d.method:"Overig";
  el("category").value=["Ontbijt","Lunch","Avondeten","Snack","Bijgerecht"].includes(d.category)?d.category:"Overig";
  el("mainIngredient").value=d.mainIngredient||"";if(el("portions"))el("portions").value=d.portions||"";el("ack").checked=false;
- const linked=el("mbdSourceUrl")?.value.trim(),current=el("kind").value;
- if(linked&&["Instagram","TikTok","Facebook","Pinterest","Website","Anders"].includes(current)){}
+ const nowLinked=el("mbdSourceUrl")?.value.trim(),current=el("kind").value;
+ if(nowLinked&&["Instagram","TikTok","Facebook","Pinterest","Website","Anders"].includes(current)){}
+ else if(d.sourceKind&&[...el("kind").options].some(o=>o.value===d.sourceKind))el("kind").value=d.sourceKind;
  else if(d.imageType==="food_photo")el("kind").value="Eigen recept";
  else if(d.imageType==="recipe_page")el("kind").value=d.book?"Kookboek":"Screenshot";
  el("kind").dispatchEvent(new Event("change"));
 }
-function uncertain(d){return d.confidence==="low"||d.imageType==="unclear"||(!d.title&&!(d.ingredients||[]).length&&!(d.steps||[]).length)}
+function uncertain(d){
+ if(d.confidence==="low"||d.imageType==="unclear")return true;
+ if(d.imageType==="recipe_page"&&(!(d.ingredients||[]).length||!(d.steps||[]).length))return true;
+ return !d.title&&!(d.ingredients||[]).length&&!(d.steps||[]).length;
+}
 async function one(file,hint="auto"){
  clearChoices();setStatus(hint==="auto"?"Foto wordt automatisch bekeken…":"Foto opnieuw analyseren…");
  const d=await recognize(file,hint);fill(d);
@@ -111,6 +119,9 @@ function combine(results){
   portions:results.find(x=>x.portions)?.portions||"",
   bookPage:results.map(x=>x.bookPage).filter(Boolean).join(", "),
   book:results.find(x=>x.book)?.book||"",
+  sourceKind:results.find(x=>x.sourceKind)?.sourceKind||"",
+  sourceAuthor:results.find(x=>x.sourceAuthor)?.sourceAuthor||"",
+  sourceURL:results.find(x=>x.sourceURL)?.sourceURL||"",
   imageType:"recipe_page",
   confidence:results.some(x=>x.confidence==="low")?"low":"medium",
   notes:"Meerdere pagina’s samengevoegd."
