@@ -633,6 +633,10 @@ async function syncCatalogRecipes(){
 /* catalog handled by safe sync */
 let cloudUser=null;
 let weekSyncInProgress=false;
+function currentWeekPortions(){try{return JSON.parse(localStorage.getItem('mbd_week_portions_v1')||'{}')||{}}catch{return{}}}
+function setCurrentWeekPortions(v){try{localStorage.setItem('mbd_week_portions_v1',JSON.stringify(v||{}))}catch{}}
+function encodeWeekMeals(menu){return {...(menu.week||{}),__mbdPortions:{...(menu.portions||{})}}}
+function decodeWeekMeals(meals){const src=(meals&&typeof meals==='object'&&!Array.isArray(meals))?{...meals}:{};const portions=(src.__mbdPortions&&typeof src.__mbdPortions==='object')?src.__mbdPortions:{};delete src.__mbdPortions;return {week:src,portions}}
 async function syncWeekMenus(){
   const status=document.querySelector('#weekSyncStatus');
   if(weekSyncInProgress)return;
@@ -645,18 +649,18 @@ async function syncWeekMenus(){
     const {data:remote,error}=await weekCloud.from('mbd_week_menu_archive').select('menu_number,meals,created_at').eq('owner_id',user.id).order('menu_number');
     if(error){status.textContent='Synchronisatie mislukt: '+error.message;return;}
     const local=Array.isArray(state.weekArchive)?state.weekArchive:[];
-    const merged=remote.map(row=>({number:row.menu_number,week:row.meals,savedAt:row.created_at}));
+    const merged=remote.map(row=>{const decoded=decodeWeekMeals(row.meals);return {number:row.menu_number,week:decoded.week,portions:decoded.portions,savedAt:row.created_at}});
     const toUpload=[];
     let next=Math.max(0,...merged.map(m=>m.number),...local.map(m=>Number(m.number)||0))+1;
     for(const menu of local){
-      const identical=merged.some(m=>JSON.stringify(m.week)===JSON.stringify(menu.week));
+      const identical=merged.some(m=>JSON.stringify(m.week)===JSON.stringify(menu.week)&&JSON.stringify(m.portions||{})===JSON.stringify(menu.portions||{}));
       if(identical)continue;
       const sameNumber=merged.some(m=>m.number===menu.number);
       const entry={...menu,number:sameNumber?next++:menu.number};
       merged.push(entry);toUpload.push(entry);
     }
     for(const menu of toUpload){
-      const {error:writeError}=await weekCloud.from('mbd_week_menu_archive').insert({owner_id:user.id,menu_number:menu.number,meals:menu.week});
+      const {error:writeError}=await weekCloud.from('mbd_week_menu_archive').insert({owner_id:user.id,menu_number:menu.number,meals:encodeWeekMeals(menu)});
       if(writeError){status.textContent='Online bewaren niet gelukt: '+writeError.message;return;}
     }
     state.weekArchive=merged.sort((x,y)=>x.number-y.number);
@@ -667,14 +671,15 @@ async function syncWeekMenus(){
 function saveWeekMenu(){
   state.weekArchive=Array.isArray(state.weekArchive)?state.weekArchive:[];
   if(!Object.values(state.week||{}).some(Boolean)){alert('Kies eerst gerechten voor je weekmenu.');return;}
-  const existing=state.weekArchive.find(m=>JSON.stringify(m.week)===JSON.stringify(state.week));if(existing){alert('Dit menu is al opgeslagen als Weekmenu '+existing.number);return;}
+  const portions=currentWeekPortions();
+  const existing=state.weekArchive.find(m=>JSON.stringify(m.week)===JSON.stringify(state.week)&&JSON.stringify(m.portions||{})===JSON.stringify(portions));if(existing){alert('Dit menu is al opgeslagen als Weekmenu '+existing.number);return;}
   const next=Math.max(0,...state.weekArchive.map(x=>Number(x.number)||0))+1;
-  state.weekArchive.push({number:next,week:{...state.week},savedAt:new Date().toISOString()});persist();renderWeek();syncWeekMenus().catch(e=>{document.querySelector('#weekSyncStatus').textContent='Online sync mislukt: '+e.message;});
+  state.weekArchive.push({number:next,week:{...state.week},portions:{...portions},savedAt:new Date().toISOString()});persist();renderWeek();syncWeekMenus().catch(e=>{document.querySelector('#weekSyncStatus').textContent='Online sync mislukt: '+e.message;});
 }
 function repeatWeekMenu(number){
   const saved=(state.weekArchive||[]).find(x=>x.number===number);if(!saved)return;
   if(!confirm('Weekmenu '+number+' herhalen? Je huidige weekplanning wordt vervangen; het opgeslagen menu blijft bewaard.'))return;
-  state.week={...saved.week};persist();renderWeek();
+  state.week={...saved.week};setCurrentWeekPortions(saved.portions||{});persist();renderWeek();
 }
 function renderWeekArchive(){
   const box=document.querySelector('#weekMenuArchive');if(!box)return;
