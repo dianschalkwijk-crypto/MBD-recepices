@@ -549,7 +549,7 @@ function showRecipeDetails(id){
         const path=r.mdb+'/bron-'+Date.now()+'.'+ext;
         const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
         if(uploadError)throw uploadError;
-        const attach=await fetch('/api/recipes/attach-source-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mdb:r.mdb,paths:[path],sourceKind:'Kookboek',photoKind:'source'})});
+        const attach=await fetch('/api/notion/photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'attachCatalogPhoto',mdb:r.mdb,paths:[path],sourceKind:'Kookboek',photoKind:'source'})});
         const attached=await attach.json().catch(()=>({}));
         if(!attach.ok||!attached?.ok){try{await client.storage.from('mbd-cookbook-originals').remove([path])}catch{}throw Error(attached.error||'Bronfoto kon niet veilig worden gekoppeld')}
         r.sourcePhotoPaths=attached.paths||[...(r.sourcePhotoPaths||[]),path];r.sourcePhotoPrivate=true;try{persist()}catch{}
@@ -569,7 +569,7 @@ function showRecipeDetails(id){
         const path=r.mdb+'/eigen-'+Date.now()+'.'+ext;
         const {error:uploadError}=await client.storage.from('mbd-cookbook-originals').upload(path,file,{contentType:file.type,upsert:false});
         if(uploadError)throw uploadError;
-        const attach=await fetch('/api/recipes/attach-source-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mdb:r.mdb,paths:[path],photoKind:'own'})});
+        const attach=await fetch('/api/notion/photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'attachCatalogPhoto',mdb:r.mdb,paths:[path],photoKind:'own'})});
         const attached=await attach.json().catch(()=>({}));
         if(!attach.ok||!attached?.ok){try{await client.storage.from('mbd-cookbook-originals').remove([path])}catch{}throw Error(attached.error||'Eigen foto kon niet veilig worden gekoppeld')}
         r.ownPhotoPath=path;try{persist()}catch{}
