@@ -273,8 +273,8 @@ function installAutoLinkImport(){
    q("#sourceText").value=found;
    if(typeof window.analyze==="function")await window.analyze();else if(typeof analyze==="function")await analyze();
    const draft=(typeof currentDraft!=="undefined")?currentDraft:null;
-   if(draft&&(draft.completeness==="onvoldoende"||!draft.ingredients?.length||!draft.steps?.length)){
-    showPhotoFallback(url,"De link bevatte niet genoeg receptinformatie. De bronlink blijft bewaard; voeg een screenshot of foto toe zodat de app die kan uitlezen.",String(d.author||d.sourceAuthor||""));
+   if(draft&&(draft.completeness!=="compleet"||!draft.ingredients?.length||!draft.steps?.length)){
+    showPhotoFallback(url,"De link kon maar gedeeltelijk worden uitgelezen. De bronlink en gevonden tekst blijven bewaard; voeg een screenshot of foto toe zodat de app ontbrekende zichtbare informatie kan proberen te lezen.",String(d.author||d.sourceAuthor||""));
    }
   }catch(err){
    showPhotoFallback(url,"Deze link kon niet volledig worden uitgelezen. De bronlink blijft bewaard; voeg een screenshot of foto toe zodat de app die kan uitlezen.");
