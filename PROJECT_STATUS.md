@@ -286,10 +286,11 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 ## LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v36
 - Actuele live productie vóór deze ronde: deployment `dpl_BdpfH1zEbyS62nx4GuR5s78f97UM`, commit `2814286639ee76a707807401ee3a21aea5feb3d4`.
 - Oudere deployment `dpl_Rej4YizpoammzWyUYngbRKpJF14W` / commit `6bd55632...` is niet meer de nieuwste productie.
-- Laatste functionele codecommit vóór deze statusnotitie: `cafb8c3180eeb047ea97c72d9a03ad55b6096426`. Latere status-only commits wijzigen geen appcode.
+- Laatste functionele codecommit vóór deze statusnotitie: `b2cc9722ca7a187af9916ea78c07fb477dbbb55f`. Latere status-only commits wijzigen geen appcode.
 - Weekmenu: gekozen recept staat als visuele kaart met 82×82 foto/placeholder en volledige receptnaam; MDB staat klein secundair.
 - Weekmenu: nieuw zoekveld zoekt alleen binnen recepten die de bestaande allergie-/eetvoorkeurfilter al hebben doorstaan. Zoekresultaten kunnen direct aan ma–vr worden toegewezen.
 - Weekmenu: personen/porties kunnen per dag worden aangepast. Boodschappenhoeveelheden met een betrouwbaar voorgetal worden proportioneel geschaald; regels zonder schaalbare hoeveelheid blijven ongewijzigd. Porties worden ook in opgeslagen/gesynchroniseerde weekmenu’s bewaard en bij herhalen hersteld.
+- Weekmenu: bij handmatig wisselen naar een ander recept/pakket wordt een eventueel oud dag-specifiek personen-aantal gewist, zodat geen hoeveelheid van het vorige recept onbedoeld wordt hergebruikt.
 - “Koken met wat ik heb”: dubbele zoeklaag verwijderd. Zoekvarianten zijn accentongevoelig en ondersteunen gerichte NL/EN-varianten en veelvoorkomende meervouden. Test: `rijst` matcht basmatirijst/pandanrijst/zilvervliesrijst/rice en niet willekeurige woorden; actuele catalogus bevat 67 rijst/rice-matches.
 - Fotoscanner: automatisch herkennen blijft standaard; zichtbare socialbron/account/volledig https-adres kunnen uit screenshots worden overgenomen zonder een al ingevulde bronlink te overschrijven.
 - Fotoscanner: een receptpagina met ontbrekende ingrediënten of stappen wordt niet meer als volledig herkend gemarkeerd; gebruiker krijgt controle/fallback.
