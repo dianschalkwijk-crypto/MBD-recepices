@@ -12,5 +12,6 @@ document.addEventListener('change',e=>{
  if(v.startsWith('p:')){a[day]=v.slice(2);delete state.week[day]}
  else{delete a[day];if(v.startsWith('r:'))state.week[day]=v.slice(2);else delete state.week[day]}
  localStorage.setItem('mbd_week_package_assignments_v1',JSON.stringify(a));persist();
+ try{document.dispatchEvent(new CustomEvent('mbd:week-choice',{detail:{day,value:v}}))}catch{}
 },true);
 })();
