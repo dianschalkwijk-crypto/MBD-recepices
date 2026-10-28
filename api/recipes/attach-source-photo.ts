@@ -32,18 +32,23 @@ export default async function handler(req:any,res:any){
     const mdb=cleanMdb(req.body?.mdb);
     if(!/^MDB-\d{4}$/.test(mdb))return res.status(400).json({ok:false,error:'Ongeldig receptnummer'});
     const paths=cleanPaths(req.body?.paths,mdb);
-    if(!paths.length)return res.status(400).json({ok:false,error:'Geen geldige bronfoto ontvangen'});
+    const photoKind=req.body?.photoKind==='own'?'own':'source';
+    if(!paths.length)return res.status(400).json({ok:false,error:'Geen geldige foto ontvangen'});
     const current=await getCurrent(mdb);
     if(!current)return res.status(404).json({ok:false,error:'Recept niet gevonden'});
     const recipe={...(current.recipe||{})};
-    const existing=Array.isArray(recipe.sourcePhotoPaths)?recipe.sourcePhotoPaths.map(String):[];
-    recipe.sourcePhotoPaths=[...new Set([...existing,...paths])];
-    recipe.sourcePhotoPrivate=true;
-    const kind=String(req.body?.sourceKind||recipe.sourceKind||'').trim();
-    recipe.sourcePhotoCredit=kind==='Kookboek'?'Bronfoto uit kookboek – niet van MadeByDian':'Bronafbeelding of screenshot – niet van MadeByDian';
+    if(photoKind==='own'){
+      recipe.ownPhotoPath=paths[paths.length-1];
+    }else{
+      const existing=Array.isArray(recipe.sourcePhotoPaths)?recipe.sourcePhotoPaths.map(String):[];
+      recipe.sourcePhotoPaths=[...new Set([...existing,...paths])];
+      recipe.sourcePhotoPrivate=true;
+      const kind=String(req.body?.sourceKind||recipe.sourceKind||'').trim();
+      recipe.sourcePhotoCredit=kind==='Kookboek'?'Bronfoto uit kookboek – niet van MadeByDian':'Bronafbeelding of screenshot – niet van MadeByDian';
+    }
     const result=await write(mdb,recipe,String(current.updated_at||''));
     if(!result?.ok)return res.status(409).json({ok:false,error:'Het recept is intussen gewijzigd. De bronfoto is niet gekoppeld; probeer opnieuw.',conflict:true});
-    return res.status(200).json({ok:true,mdb,paths:recipe.sourcePhotoPaths,updatedAt:result.updated_at||null});
+    return res.status(200).json({ok:true,mdb,photoKind,paths:photoKind==='own'?[recipe.ownPhotoPath]:recipe.sourcePhotoPaths,updatedAt:result.updated_at||null});
   }catch(e:any){
     console.error('Attach source photo failed',e);
     return res.status(502).json({ok:false,error:'Bronfoto kon niet veilig aan het recept worden gekoppeld.'});
