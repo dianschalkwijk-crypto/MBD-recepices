@@ -40,10 +40,22 @@ input.addEventListener("input",()=>{
   requestAnimationFrame(update);
  },35);
 });
-search.addEventListener("input",()=>setTimeout(update,0));
+search.addEventListener("input",()=>{
+ if(search.value&&input.value){
+  input.value="";
+  selected.clear();
+ }
+ clearTimeout(window.__mbdPantrySearchTimer);
+ window.__mbdPantrySearchTimer=setTimeout(()=>{
+  try{renderRecipes()}catch(_){}
+  requestAnimationFrame(update);
+ },35);
+});
 }
 function update(){
 const list=$("#recipeList"),counter=$("#mbd-result-count");if(!list||!counter)return;
+const pantry=$("#mbd-ingredients"),standard=$("#recipeSearch");
+if(pantry?.value.trim()&&standard?.value.trim()){standard.value="";}
 const all=recipes(),byId=new Map(all.map(r=>[String(r.mdb||"").toUpperCase(),r])),byLocalId=new Map(all.map(r=>[String(r.id||""),r])),words=terms();
 const q=words.length?"":norm($("#recipeSearch")?.value||""),queryWords=q.split(/\s+/).filter(Boolean);
 const cards=[...list.querySelectorAll(".recipe-card")];
