@@ -8,6 +8,12 @@
   function sourceKindFromUrl(raw){
     try{const h=new URL(raw).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";if(h.includes("youtube")||h.includes("youtu.be"))return"YouTube";return"Website"}catch{return"Social / link"}
   }
+  function likelyEnglishRecipe(...values){
+    const s=values.join(" ").toLowerCase();
+    const en=(s.match(/\b(chicken|beef|pork|flour|tablespoons?|teaspoons?|bake|cook|stir|onion|garlic|butter|cheese|rice|cream|eggs?|salt|pepper|serve|minutes|with|and|into)\b/g)||[]).length;
+    const nl=(s.match(/\b(kip|rund|varken|bloem|eetlepels?|theelepels?|bak|kook|roer|ui|knoflook|boter|kaas|rijst|room|eieren?|zout|peper|serveer|minuten|met|en|in)\b/g)||[]).length;
+    return en>=5&&en>nl+2;
+  }
 
   async function post(url,body){
     const r=await fetch(url,{
@@ -154,6 +160,11 @@
     const ingredients=($("#reviewIngredients")?.value||"").trim();
     const steps=($("#reviewSteps")?.value||"").trim();
     const sourceURL=currentDraft.sourceURL||"";
+    if(likelyEnglishRecipe(title,ingredients,steps)){
+      const msg=$("#importMessage");
+      if(typeof showMessage==="function"&&msg)showMessage(msg,"Nog niet opgeslagen: de recepttekst lijkt nog grotendeels Engels. Laat de vertaling opnieuw uitvoeren of corrigeer de tekst eerst.","warn");
+      return;
+    }
     const duplicate=localDuplicate(title,ingredients,sourceURL);
 
     if(duplicate&&!confirm('Dit lijkt al op “'+duplicate.title+'”. Toch als apart recept opslaan?'))return;
