@@ -92,6 +92,11 @@ function socialKind(host:string){
 
 export default async function handler(req:any,res:any){
   res.setHeader("Cache-Control","no-store");
+  if(req.method==="GET"&&process.env.VERCEL_ENV==="preview"&&req.query?.smoke){
+    const smoke=String(req.query.smoke);
+    req.method="POST";
+    req.body={url:smoke==="instagram"?"https://www.instagram.com/reel/DPV8gO9jKBt/":"https://sterkindekeuken.nl/big-mac-burrito"};
+  }
   if(req.method!=="POST")return res.status(405).json({message:"POST required"});
   try{
     const start=await safeUrl(String(req.body?.url||""));
