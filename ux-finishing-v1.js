@@ -112,6 +112,22 @@ function installWeekPlanner(){
  }
  decorateWeek();
 }
+function refreshWeekDay(day){
+ const box=q("#weekPlanner");if(!box)return;
+ decorateWeek();
+ const aria=String(day||"")+" avondeten";
+ const live=[...box.querySelectorAll(".week-row select")].find(s=>(s.getAttribute("aria-label")||"")===aria);
+ const row=live?.closest(".week-row");
+ if(live&&row)updateWeekVisual(row,live.value,live);
+}
+if(!window.__mbdWeekChoiceVisualEventV1){
+ window.__mbdWeekChoiceVisualEventV1=true;
+ document.addEventListener("mbd:week-choice",e=>{
+  const day=e?.detail?.day||"";
+  [0,80,300,900].forEach(ms=>setTimeout(()=>refreshWeekDay(day),ms));
+ });
+}
+
 function addSaveAnother(){
  const msg=q("#importMessage");if(!msg||q("#mbd-save-another"))return;
  if(!/✓.*opgeslagen/i.test(msg.textContent||"")||/niet opgeslagen/i.test(msg.textContent||""))return;
