@@ -139,7 +139,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
         <div class="card">
           <div class="eyebrow">Maandag t/m vrijdag</div>
           <h2>Weekmenu</h2>
-          <div id="weekPlanner" class="stack"></div>
+          <div id="weekPlanner" class="stack"></div><button id="mbdSuggestWeekBtn" class="secondary" type="button">⭐ Maak weekmenu met favoriete gerechten</button>
           <button id="saveWeekMenuBtn" class="secondary" type="button">💾 Bewaar weekmenu</button><div id="weekMenuArchive" class="stack"></div><p id="weekSyncStatus" class="muted">Weekmenu’s worden lokaal bewaard.</p><button id="syncWeekBtn" class="secondary" type="button">Synchroniseer weekmenu’s online</button><button id="shoppingBtn" class="secondary">🛒 Boodschappenlijst van weekmenu maken</button>
         </div>
         <div id="shoppingCard" class="card hidden">
@@ -483,9 +483,21 @@ function planRecipeDate(id){
  const msg=document.createElement('p');save.onclick=()=>{if(!date.value){msg.textContent='Kies eerst een datum.';return}const key='mbd-dated-meals-v1';let items=[];try{items=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(items))items=[];const existing=items.findIndex(x=>x.date===date.value&&x.meal===meal.value);const entry={date:date.value,meal:meal.value,recipeId:r.id,mdb:r.mdb||'',title:r.title||'',savedAt:new Date().toISOString()};if(existing>=0){if(!confirm('Er staat al een recept op dit eetmoment. Vervangen?'))return;items[existing]=entry}else items.push(entry);localStorage.setItem(key,JSON.stringify(items));msg.textContent='Toegevoegd: '+date.value+' · '+meal.value+'. Op dit apparaat bewaard.';setTimeout(()=>panel.remove(),1800)};
  panel.append(title,label,mealLabel,save,cancel,msg);
 }
+let mbdRatingsSyncTimer=null;
+async function mbdSyncRatings(){
+ if(!weekCloud)return;
+ try{const {data:{user}}=await weekCloud.auth.getUser();if(!user)return;
+ const {data,error}=await weekCloud.from('mbd_person_ratings').select('mdb,ratings').eq('owner_id',user.id);if(error)throw error;
+ const local=mbdRatingsRead();let changed=false;
+ for(const row of data||[]){if(!local[row.mdb]){local[row.mdb]=row.ratings;changed=true}}
+ if(changed)mbdRatingsSave(local,false);
+ const rows=Object.entries(local).filter(([mdb])=>/^MDB-\\d+/i.test(mdb)).map(([mdb,ratings])=>({owner_id:user.id,mdb,ratings,updated_at:new Date().toISOString()}));
+ if(rows.length){const {error:saveError}=await weekCloud.from('mbd_person_ratings').upsert(rows,{onConflict:'owner_id,mdb'});if(saveError)throw saveError;}
+ }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}
+}
 const MBD_RATINGS_KEY='mbd_person_ratings_v1';
 function mbdRatingsRead(){try{return JSON.parse(localStorage.getItem(MBD_RATINGS_KEY)||'{}')||{}}catch{return{}}}
-function mbdRatingsSave(all){try{localStorage.setItem(MBD_RATINGS_KEY,JSON.stringify(all))}catch(e){alert('Beoordeling kon niet worden bewaard: '+e.message)}}
+function mbdRatingsSave(all,sync=true){try{localStorage.setItem(MBD_RATINGS_KEY,JSON.stringify(all));if(sync){clearTimeout(mbdRatingsSyncTimer);mbdRatingsSyncTimer=setTimeout(mbdSyncRatings,800)}}catch(e){alert('Beoordeling kon niet worden bewaard: '+e.message)}}
 function mbdRatingPanel(recipe,body){
  const key=recipe.mdb||recipe.id,all=mbdRatingsRead(),data=all[key]||{},people=['Mama','Jake','Mace','Gast'];
  const panel=document.createElement('section');panel.className='detail-section';
@@ -631,6 +643,7 @@ function renderCollections(){
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
+setTimeout(()=>mbdSyncRatings(),2500);
 async function syncCatalogRecipes(){
  if(!weekCloud)return;
  try{
@@ -715,7 +728,16 @@ function renderWeekArchive(){
   box.innerHTML=menus.length?'<h3>Opgeslagen weekmenu’s</h3>'+menus.map(m=>`<div class="week-row"><span><b>Weekmenu ${m.number}</b><br><small>${Object.entries(m.week||{}).map(([day,id])=>day+': '+(state.recipes.find(r=>r.id===id)?.title||id)).map(esc).join(' · ')}</small></span><button type="button" data-repeat-menu="${m.number}">Herhaal</button></div>`).join(''):'<p class="muted">Nog geen opgeslagen weekmenu’s.</p>';
   box.querySelectorAll('[data-repeat-menu]').forEach(b=>b.onclick=()=>repeatWeekMenu(Number(b.dataset.repeatMenu)));
 }
+function mbdSuggestWeek(){
+ const days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
+ const ratings=mbdRatingsRead(),chosen=new Set(),pool=state.recipes.filter(r=>r.id&&r.title);
+ const score=r=>{const a=ratings[r.mdb||r.id]||{},j=Number(a.Jake?.stars||0),m=Number(a.Mace?.stars||0);return (j>=4?4:0)+(m>=4?4:0)-(j>0&&j<=2?5:0)-(m>0&&m<=2?5:0)};
+ const ranked=pool.map(r=>({r,score:score(r)})).sort((a,b)=>b.score-a.score||String(a.r.title).localeCompare(String(b.r.title),'nl'));
+ for(const day of days){const match=ranked.find(x=>!chosen.has(x.r.id)&&x.score>0)||ranked.find(x=>!chosen.has(x.r.id));if(match){state.week[day]=match.r.id;chosen.add(match.r.id)}}
+ persist();renderWeek();alert('Weekmenu ingevuld. Gerechten met 4–5 sterren bij Jake of Mace krijgen voorrang. Controleer de keuzes voordat je opslaat.');
+}
 function renderWeek(){
+  document.querySelector('#mbdSuggestWeekBtn')?.addEventListener('click',mbdSuggestWeek,{once:true});
   const days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
   const options=state.recipes.map(r=>`<option value="${r.id}">${esc((r.mdb?`${r.mdb} · `:``)+r.title)}</option>`).join('');
   const box=document.querySelector('#weekPlanner');
