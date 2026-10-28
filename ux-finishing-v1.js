@@ -85,7 +85,7 @@ function installWeekPlanner(){
 }
 function addSaveAnother(){
  const msg=q("#importMessage");if(!msg||q("#mbd-save-another"))return;
- if(!/^✓ Recept veilig online opgeslagen/i.test(msg.textContent||""))return;
+ if(!/✓.*opgeslagen/i.test(msg.textContent||"")||/niet opgeslagen/i.test(msg.textContent||""))return;
  const b=document.createElement("button");b.id="mbd-save-another";b.type="button";b.className="secondary";b.textContent="➕ Nog een recept opslaan";
  b.style.marginTop="10px";
  b.onclick=()=>{
@@ -103,6 +103,75 @@ function installSaveAnother(){
  new MutationObserver(addSaveAnother).observe(msg,{childList:true,subtree:true,characterData:true,attributes:true});
  addSaveAnother();
 }
+
+const searchSynonyms=[
+ ["rijst","rice"],["kip","chicken"],["aardappel","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","onion"],["knoflook","garlic"],
+ ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","zucchini"],["aubergine","eggplant"],
+ ["paprika","bell pepper"],["wortel","carrot"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],["bonen","beans"],
+ ["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
+].map(g=>g.map(x=>String(x).toLocaleLowerCase("nl")));
+const searchNorm=s=>String(s||"").toLocaleLowerCase("nl").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+function searchVariants(t){const n=searchNorm(t);const group=searchSynonyms.find(g=>g.includes(n));return group||[n]}
+function smartRecipeMatch(r,query){
+ const words=searchNorm(query).split(/\s+/).filter(Boolean);if(!words.length)return true;
+ const hay=searchNorm([r?.mdb,r?.title,r?.originalTitle,r?.category,r?.cuisine,r?.ingredients,r?.steps,r?.book,r?.bookPage,(r?.collections||[]).join(" ")].filter(Boolean).join(" "));
+ return words.every(w=>searchVariants(w).some(v=>hay.includes(v)));
+}
+function installSmartSearch(){
+ if(typeof window.renderRecipes!=="function"||window.renderRecipes.__mbdSmartSearch)return;
+ const baseRender=window.renderRecipes;
+ const enhanced=function(){
+  const input=q("#recipeSearch"),term=input?.value||"";
+  if(!input||!term)return baseRender.apply(this,arguments);
+  input.value="";
+  let result;
+  try{result=baseRender.apply(this,arguments)}finally{input.value=term}
+  const all=(typeof state!=="undefined"&&Array.isArray(state.recipes))?state.recipes:[];
+  const byLocal=new Map(all.map(r=>[String(r?.id||""),r]));
+  const byMdb=new Map(all.map(r=>[String(r?.mdb||"").toUpperCase(),r]));
+  for(const card of document.querySelectorAll("#recipeList .recipe-card")){
+   const local=card.querySelector("[data-view]")?.getAttribute("data-view")||"";
+   const badge=String(card.querySelector(".mdb-badge")?.textContent||"").toUpperCase();
+   const r=byLocal.get(String(local))||byMdb.get(badge);
+   const ok=smartRecipeMatch(r,term);
+   card.hidden=!ok;card.style.display=ok?"":"none";
+  }
+  return result;
+ };
+ enhanced.__mbdSmartSearch=true;window.renderRecipes=enhanced;
+ try{enhanced()}catch(_){}
+}
+function sourceKind(url){
+ try{const h=new URL(url).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";return"Website"}catch{return"Website"}
+}
+function showPhotoFallback(url,message){
+ const msg=q("#importMessage");if(msg){msg.textContent=message;msg.className="message warn"}
+ let a=q("#mbd-link-photo-fallback");
+ if(!a){a=document.createElement("a");a.id="mbd-link-photo-fallback";a.className="secondary";a.style.cssText="display:block;text-align:center;text-decoration:none;margin-top:10px";a.textContent="📷 Voeg screenshot of foto toe";msg?.insertAdjacentElement("afterend",a)}
+ a.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url));
+}
+function installAutoLinkImport(){
+ const btn=q("#analyzeBtn");if(!btn||btn.dataset.mbdAutoLink==="1")return;btn.dataset.mbdAutoLink="1";
+ btn.addEventListener("click",async e=>{
+  const url=q("#sourceUrl")?.value.trim()||"",text=q("#sourceText")?.value.trim()||"";
+  if(!url||text)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const msg=q("#importMessage");q("#mbd-link-photo-fallback")?.remove();
+  if(msg){msg.textContent="⏳ Bronlink automatisch uitlezen…";msg.className="message ok"}
+  btn.disabled=true;
+  try{
+   const r=await fetch("/api/recipes/source",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok)throw Error(d.message||"Link kon niet worden uitgelezen");
+   const found=String(d.sharedText||d.text||"").trim();if(found.length<10)throw Error("Geen bruikbare recepttekst gevonden");
+   q("#sourceText").value=found;
+   if(typeof window.analyze==="function")await window.analyze();else if(typeof analyze==="function")await analyze();
+  }catch(err){
+   showPhotoFallback(url,(err?.message||"Link kon niet worden uitgelezen")+". De bronlink blijft bewaard als je via een screenshot of foto toevoegt.");
+  }finally{btn.disabled=false}
+ },true);
+}
+
 function css(){
  if(q("#mbd-ux-finishing-css"))return;
  const s=document.createElement("style");s.id="mbd-ux-finishing-css";s.textContent=`
@@ -116,7 +185,7 @@ function css(){
  #mbd-save-another{width:100%}
  `;document.head.appendChild(s);
 }
-function boot(){css();installWeekPlanner();installSaveAnother()}
+function boot(){css();installSmartSearch();installWeekPlanner();installSaveAnother();installAutoLinkImport()}
 document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,0));
 if(document.readyState!=="loading")setTimeout(boot,0);
 setTimeout(boot,900);
