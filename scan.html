@@ -31,7 +31,7 @@ if($('keepPhoto').checked&&selected.length){
    if(uploadError)throw uploadError;paths.push(path);
   }
   if(paths.length){
-   const attach=await fetch('/api/recipes/attach-source-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mdb,paths,sourceKind:recipe.sourceKind})});
+   const attach=await fetch('/api/notion/photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'attachCatalogPhoto',mdb,paths,sourceKind:recipe.sourceKind,photoKind:'source'})});
    const attached=await attach.json().catch(()=>({}));
    if(!attach.ok||!attached?.ok){
     try{await client.storage.from('mbd-cookbook-originals').remove(paths)}catch{}
