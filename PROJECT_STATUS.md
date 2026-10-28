@@ -281,3 +281,27 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Huidige live productiealias wijst nog naar dpl_8dU4zaxQtwGj6NP4i9mSNAfMT1eu / commit e53ba6bbebd96601ef987fd85353e9ea2228053f.
 - Nieuwe preview/productiedeployment van HEAD is op dit moment geblokkeerd door Vercel Hobby-limiet: meer dan 100 API-deployments in 24 uur (api-deployments-free-per-day). Er is geen mislukte appbuild; deployment werd vóór build geweigerd.
 - De laatste UX-fixes staan veilig in GitHub maar zijn daarom nog niet live. Niet opnieuw reconstrueren; na vrijvallen van het Vercel-deployquotum exact HEAD 7a93aa8 deployen en smoke-testen.
+
+
+## LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v33
+- Actuele live productie vóór deze ronde: deployment `dpl_BdpfH1zEbyS62nx4GuR5s78f97UM`, commit `2814286639ee76a707807401ee3a21aea5feb3d4`.
+- Oudere deployment `dpl_Rej4YizpoammzWyUYngbRKpJF14W` / commit `6bd55632...` is niet meer de nieuwste productie.
+- Laatste functionele codecommit vóór deze statusnotitie: `ec4299df4bb5e7c2d705a8ff9f93402a55079acd`. Latere status-only commits wijzigen geen appcode.
+- Weekmenu: gekozen recept staat als visuele kaart met 82×82 foto/placeholder en volledige receptnaam; MDB staat klein secundair.
+- Weekmenu: nieuw zoekveld zoekt alleen binnen recepten die de bestaande allergie-/eetvoorkeurfilter al hebben doorstaan. Zoekresultaten kunnen direct aan ma–vr worden toegewezen.
+- Weekmenu: personen/porties kunnen per dag worden aangepast. Boodschappenhoeveelheden met een betrouwbaar voorgetal worden proportioneel geschaald; regels zonder schaalbare hoeveelheid blijven ongewijzigd. Porties worden ook in opgeslagen/gesynchroniseerde weekmenu’s bewaard en bij herhalen hersteld.
+- “Koken met wat ik heb”: dubbele zoeklaag verwijderd. Zoekvarianten zijn accentongevoelig en ondersteunen gerichte NL/EN-varianten en veelvoorkomende meervouden. Test: `rijst` matcht basmatirijst/pandanrijst/zilvervliesrijst/rice en niet willekeurige woorden; actuele catalogus bevat 67 rijst/rice-matches.
+- Fotoscanner: automatisch herkennen blijft standaard; zichtbare socialbron/account/volledig https-adres kunnen uit screenshots worden overgenomen zonder een al ingevulde bronlink te overschrijven.
+- Fotoscanner: een receptpagina met ontbrekende ingrediënten of stappen wordt niet meer als volledig herkend gemarkeerd; gebruiker krijgt controle/fallback.
+- Fotoscanner: meerdere afzonderlijke recepten uit één fotoselectie blijven als batch beschikbaar. Na opslaan van één recept volgt “Volgend herkend recept controleren” tot de batch klaar is.
+- Fotoscanner: bronsoorten omvatten Instagram, TikTok, Facebook, Pinterest, Website, Kookboek, Eigen recept, Screenshot en Anders; bronlink/account/porties gaan mee naar de veilige save-route.
+- Foto + social fallback: bij onvolledige linkimport blijft de bronlink behouden en kan dezelfde flow naar screenshot/foto; fotoherkenning vult conceptvelden en brongegevens aan.
+- Foto-opslag: bronfoto’s en eigen gerechtfoto’s koppelen niet meer via directe catalogus-update. Zij gebruiken nu een conflictveilige server-write met optimistic locking; mislukte koppeling verwijdert de zojuist geüploade orphan-file waar mogelijk.
+- Hoofd-save: bewaart porties, bronsoort en bronaccount; blokkeert duidelijke grotendeels Engelse concepten vóór opslaan; toont na succes “Recept opgeslagen”, “Nog een recept opslaan” en “Bekijk opgeslagen recept”.
+- Taalcontrole actuele canonieke catalogus: geen titels meer gevonden die duidelijk volledig Engels zijn; strengere EN-vs-NL tekstscan vond geen grotendeels Engelse recepten. Merknamen zoals Boursin/cottage cheese blijven bewust intact.
+- Boodschappen per afzonderlijk recept bestonden al in het receptdetail en zijn behouden; weekboodschappen blijven allergie-/eetvoorkeurbewust.
+- Gerichte runtime-writecontrole van hoofdapp/scanner/helpers vond geen resterende directe `mbd_catalog` update/insert/upsert/delete in de gecontroleerde runtimebestanden; cataloguswrites lopen via beveiligde serverroutes.
+- PWA/runtime cache verhoogd naar `madebydian-recipes-v0.10.33`; relevante helpers laden met `?v=33`.
+- Syntaxcontrole: scan-enhance, photo-fix, ux-finishing, allergy-integration, save-sync, service-worker en inline scripts van index/scan zijn groen.
+- Deployment van de nieuwe branch-head is nog niet uitgevoerd: Vercel weigert nieuwe deployments vóór build met Hobby-daglimiet `api-deployments-free-per-day` (>100 deployments/24 uur). CLI-fallback is in deze omgeving niet beschikbaar. Niet omzeilen met een oudere preview.
+- Volgende releaseactie zodra het Vercel-quotum vrij is: deploy exact de actuele branch-head, daarna smokecheck root, scan, source/import, health, weekmenu/search en runtime errors; pas daarna productie-alias wijzigen.
