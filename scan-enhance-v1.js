@@ -9,7 +9,7 @@ function kindFromUrl(raw){
 }
 function ensureSourceFields(){
  const kind=el("kind"),author=el("author"),page=el("source");if(!kind||!author||!page)return;
- for(const name of ["Instagram","TikTok","Facebook","Pinterest","Website"]){
+ for(const name of ["Instagram","TikTok","Facebook","Pinterest","Website","Anders"]){
   if(![...kind.options].some(o=>o.value===name)){const o=document.createElement("option");o.value=name;o.textContent=name;kind.append(o)}
  }
  let input=el("mbdSourceUrl");
@@ -30,8 +30,9 @@ function ensureSourceFields(){
  };
  kind.addEventListener("change",refresh);
  input.addEventListener("input",()=>{if(input.value.trim()&&!["Instagram","TikTok","Facebook","Pinterest","Website"].includes(kind.value))kind.value=kindFromUrl(input.value.trim());refresh()});
- const params=new URLSearchParams(location.search),u=params.get("sourceURL")||"",k=params.get("sourceKind")||"";
+ const params=new URLSearchParams(location.search),u=params.get("sourceURL")||"",k=params.get("sourceKind")||"",a=params.get("sourceAuthor")||"";
  if(u&&!input.value){input.value=u;kind.value=[...kind.options].some(o=>o.value===k)?k:kindFromUrl(u)}
+ if(a&&!author.value)author.value=a;
  refresh();
 }
 const oldScan=scan.onclick;
@@ -63,7 +64,7 @@ async function recognize(file,hint="auto"){
  const image=await convert(file);
  const r=await fetch("/api/recipes/recognize-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image,hint})});
  const d=await r.json().catch(()=>({error:"De herkenningsdienst gaf geen geldig antwoord."}));
- if(!r.ok)throw Error((d.error||"Herkenning mislukt")+" (HTTP "+r.status+")");
+ if(!r.ok)throw Error(d.error||"Herkenning mislukt. Probeer een scherpere foto of vul het recept handmatig in.");
  return d;
 }
 function fill(d){
@@ -73,9 +74,9 @@ function fill(d){
  el("steps").value=(d.steps||[]).join("\n");
  el("method").value=["Airfryer","Oven","Pan","Koken"].includes(d.method)?d.method:"Overig";
  el("category").value=["Ontbijt","Lunch","Avondeten","Snack","Bijgerecht"].includes(d.category)?d.category:"Overig";
- el("mainIngredient").value=d.mainIngredient||"";el("ack").checked=false;
+ el("mainIngredient").value=d.mainIngredient||"";if(el("portions"))el("portions").value=d.portions||"";el("ack").checked=false;
  const linked=el("mbdSourceUrl")?.value.trim(),current=el("kind").value;
- if(linked&&["Instagram","TikTok","Facebook","Pinterest","Website"].includes(current)){}
+ if(linked&&["Instagram","TikTok","Facebook","Pinterest","Website","Anders"].includes(current)){}
  else if(d.imageType==="food_photo")el("kind").value="Eigen recept";
  else if(d.imageType==="recipe_page")el("kind").value=d.book?"Kookboek":"Screenshot";
  el("kind").dispatchEvent(new Event("change"));
@@ -107,13 +108,14 @@ function combine(results){
   method:results.find(x=>x.method&&x.method!=="Overig")?.method||"Overig",
   category:results.find(x=>x.category&&x.category!=="Overig")?.category||"Overig",
   mainIngredient:results.find(x=>x.mainIngredient)?.mainIngredient||"",
+  portions:results.find(x=>x.portions)?.portions||"",
   bookPage:results.map(x=>x.bookPage).filter(Boolean).join(", "),
   book:results.find(x=>x.book)?.book||"",
   imageType:"recipe_page",
   confidence:results.some(x=>x.confidence==="low")?"low":"medium",
   notes:"Meerdere pagina’s samengevoegd."
  };
- fill(d);el("kind").value="Kookboek";clearChoices();
+ fill(d);if(!el("mbdSourceUrl")?.value.trim())el("kind").value="Kookboek";el("kind").dispatchEvent(new Event("change"));clearChoices();
  setStatus("Ik heb de foto’s samengevoegd als één recept. Controleer de volgorde en dubbele regels.");
 }
 function showBatch(results){
@@ -122,7 +124,7 @@ function showBatch(results){
  results.forEach((d,i)=>{
   const wrap=document.createElement("div"),label=document.createElement("strong"),edit=document.createElement("button");
   label.textContent=(i+1)+". "+(d.title||"Niet herkend");edit.type="button";edit.textContent="Controleer dit recept";
-  edit.onclick=()=>{try{activePhotoIndex=i}catch(_){}fill(d);el("kind").value=d.imageType==="food_photo"?"Eigen recept":"Kookboek";setStatus("Controleer titel, ingrediënten en bereiding voordat je opslaat.")};
+  edit.onclick=()=>{try{activePhotoIndex=i}catch(_){}fill(d);if(!el("mbdSourceUrl")?.value.trim())el("kind").value=d.imageType==="food_photo"?"Eigen recept":(d.book?"Kookboek":"Screenshot");el("kind").dispatchEvent(new Event("change"));setStatus("Controleer titel, ingrediënten en bereiding voordat je opslaat.")};
   wrap.append(label,document.createElement("br"),edit);box.append(wrap);
  });
  clearChoices();setStatus("Ik heb meerdere recepten herkend. Controleer ze één voor één.");
@@ -145,17 +147,23 @@ async function autoScan(){
   ]);
   setStatus("Kies alleen nog hoe de foto’s bij elkaar horen; de inhoud is al uitgelezen.");
  }catch(e){
-  setStatus("Niet goed genoeg herkend: "+e.message+" Er is niets opgeslagen.");
-  makeChoices("Wat wil je proberen?",[
-   {label:"📖 Als receptpagina lezen",action:()=>files()[0]&&one(files()[0],"recipe_page").catch(x=>setStatus(x.message))},
-   {label:"🍽️ Als gerechtfoto lezen",action:()=>files()[0]&&one(files()[0],"food_photo").catch(x=>setStatus(x.message))},
-   {label:"📷 Andere foto kiezen",action:()=>{photo.value="";photo.click()}}
-  ]);
+  const message=String(e?.message||"Foto niet herkend");
+  const serviceUnavailable=/tijdelijk|tegoed|gekoppeld|druk|beschikbaar/i.test(message);
+  setStatus((serviceUnavailable?"Automatisch uitlezen is nu niet beschikbaar. ":"Niet goed genoeg herkend. ")+message+" De geselecteerde foto blijft staan en er is niets opgeslagen.");
+  const choices=[
+   {label:"✍️ Zelf invullen of corrigeren",action:()=>{clearChoices();el("title")?.focus();setStatus("Vul alleen aan wat je op de foto kunt controleren. De foto en brongegevens blijven staan.")}}
+  ];
+  if(!serviceUnavailable){
+   choices.push({label:"📖 Als receptpagina lezen",action:()=>files()[0]&&one(files()[0],"recipe_page").catch(x=>setStatus(x.message))});
+   choices.push({label:"🍽️ Als gerechtfoto lezen",action:()=>files()[0]&&one(files()[0],"food_photo").catch(x=>setStatus(x.message))});
+  }
+  choices.push({label:"📷 Andere foto kiezen",action:()=>{photo.value="";photo.click()}});
+  makeChoices("Kies een vervolgstap:",choices.slice(0,4));
  }finally{scan.disabled=false}
 }
 function resetForAnother(){
  clearChoices();lastMultiResults=null;setFiles([]);photo.value="";el("preview").removeAttribute("src");el("preview").classList.add("hide");
- for(const id of ["title","ingredients","steps","mainIngredient","author","source","foodname"])if(el(id))el(id).value="";
+ for(const id of ["title","ingredients","steps","mainIngredient","portions","author","source","foodname"])if(el(id))el(id).value="";
  el("method").value="Overig";el("category").value="Overig";if(el("mbdSourceUrl"))el("mbdSourceUrl").value="";el("kind").value="Screenshot";el("kind").dispatchEvent(new Event("change"));el("ack").checked=false;
  el("batch").classList.add("hide");el("batchlist").replaceChildren();el("savestatus").textContent="";
  try{updatePhotos()}catch(_){el("photocount").textContent="Nog geen foto’s geselecteerd.";scan.disabled=true}
