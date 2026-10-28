@@ -6,10 +6,10 @@ const selected=new Set();let timer,allTerms=true;
 function recipes(){try{return typeof state!=="undefined"&&Array.isArray(state.recipes)?state.recipes:[]}catch(e){return []}}
 const norm=s=>String(s??"").toLocaleLowerCase("nl").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
 const synonymGroups=[
- ["rijst","rice"],["kip","chicken"],["aardappel","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","onion"],["knoflook","garlic"],
- ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","zucchini"],["aubergine","eggplant"],
- ["paprika","bell pepper","pepper"],["wortel","carrot"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],
- ["bonen","beans"],["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
+ ["rijst","rice"],["kip","chicken"],["aardappel","aardappels","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","uien","onion","onions"],["knoflook","garlic"],
+ ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","courgettes","zucchini","zucchinis"],["aubergine","aubergines","eggplant","eggplants"],
+ ["paprika","paprikas","paprika's","bell pepper","bell peppers","pepper","peppers"],["wortel","wortels","carrot","carrots"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],
+ ["boon","bonen","bean","beans"],["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
 ].map(g=>g.map(norm));
 function variants(t){const n=norm(t);const g=synonymGroups.find(x=>x.includes(n));return g||[n]}
 function hasTerm(hay,t){
