@@ -146,7 +146,7 @@ export default async function handler(req:any,res:any){
       id:mdb,mdb,title,originalTitle:title,author:sourceAuthor||author,ingredients,steps,
       sourceURL,contentURL:sourceURL,notionURL,
       sourceKind,sourceAuthor,platform:sourcePlatform,method,category,cuisine:'',mainIngredient,
-      book:book.name,bookNo:book.number,bookPage,sourceNotes,
+      book:(sourceKind==='Kookboek'&&sourceAuthor)?sourceAuthor:book.name,bookNo:sourceKind==='Kookboek'?null:book.number,bookPage,sourceNotes,notionBook:book.name,notionBookNo:book.number,
       portions:'',time:'',collections,warnings,seeded:false,
       contentSynced:!!(ingredients&&steps),hasPhoto:false,createdAt:new Date().toISOString(),
       syncedFrom:'App → Notion → Supabase'
