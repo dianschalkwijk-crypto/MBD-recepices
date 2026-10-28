@@ -24,6 +24,28 @@ const Recipe = z.object({
   source_completeness: z.enum(["complete","partial","insufficient"])
 });
 
+
+function looksEnglish(value:any){
+  const s=(typeof value==="string"?value:JSON.stringify(value||"")).toLowerCase();
+  if(!s.trim())return false;
+  const en=(s.match(/\b(chicken|beef|pork|flour|cup|cups|tablespoon|tablespoons|teaspoon|teaspoons|bake|baked|cook|cooked|fry|fried|add|mix|stir|minutes|onion|garlic|butter|cheese|rice|cream|eggs?|salt|pepper|oven|serve|until|with|and|into)\b/g)||[]).length;
+  const nl=(s.match(/\b(kip|rund|varken|bloem|eetlepel|theelepel|bak|kook|voeg|meng|roer|minuten|ui|knoflook|boter|kaas|rijst|room|eieren?|zout|peper|oven|serveer|tot|met|en|in)\b/g)||[]).length;
+  return en>=3&&en>nl;
+}
+async function ensureDutch(ai:OpenAI,model:string,result:z.infer<typeof Recipe>){
+  if(!looksEnglish([result.title_nl,result.ingredients.map(x=>[x.ingredient,x.note]),result.steps]))return result;
+  const second=await ai.chat.completions.create({
+    model,response_format:{type:"json_object"},messages:[
+      {role:"system",content:"Vertaal uitsluitend de menselijk leesbare recepttekst in dit JSON-object naar natuurlijk Nederlands. Behoud source_url, source_author, hoeveelheden, getallen, merknamen, collections, warnings-structuur en source_completeness. Vertaal title_nl, original_line, ingredient, note, steps en waarschuwingstekst waar nodig. Voeg niets toe en laat niets weg. Antwoord uitsluitend met hetzelfde JSON-schema."},
+      {role:"user",content:JSON.stringify(result)}
+    ]
+  });
+  const raw=second.choices[0]?.message?.content;if(!raw)return result;
+  const translated=Recipe.parse(JSON.parse(raw));
+  translated.source_url=result.source_url;translated.source_author=result.source_author;
+  return translated;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const parsed = Request.safeParse(req.body);
@@ -42,7 +64,10 @@ export default async function handler(req: any, res: any) {
     });
     const raw=completion.choices[0]?.message?.content;
     if(!raw)throw Error("Lege AI-respons");
-    const result=Recipe.parse(JSON.parse(raw));
+    let result=Recipe.parse(JSON.parse(raw));
+    result.source_url=sourceURL||null;
+    result.source_author=sourceAuthor||result.source_author||null;
+    result=await ensureDutch(ai,process.env.OPENAI_MODEL || "gpt-4.1-mini",result);
     result.source_url=sourceURL||null;
     result.source_author=sourceAuthor||result.source_author||null;
     return res.status(200).json(result);
