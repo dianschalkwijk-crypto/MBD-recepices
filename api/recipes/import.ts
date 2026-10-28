@@ -33,7 +33,6 @@ function looksEnglish(value:any){
   return en>=3&&en>nl;
 }
 async function ensureDutch(ai:OpenAI,model:string,result:z.infer<typeof Recipe>){
-  if(!looksEnglish([result.title_nl,result.ingredients.map(x=>[x.ingredient,x.note]),result.steps]))return result;
   const second=await ai.chat.completions.create({
     model,response_format:{type:"json_object"},messages:[
       {role:"system",content:"Vertaal uitsluitend de menselijk leesbare recepttekst in dit JSON-object naar natuurlijk Nederlands. Behoud source_url, source_author, hoeveelheden, getallen, merknamen, collections, warnings-structuur en source_completeness. Vertaal title_nl, original_line, ingredient, note, steps en waarschuwingstekst waar nodig. Voeg niets toe en laat niets weg. Antwoord uitsluitend met hetzelfde JSON-schema."},
