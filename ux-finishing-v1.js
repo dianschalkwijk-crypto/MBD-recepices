@@ -17,19 +17,27 @@ function visualEmoji(r){
  return "🍽️";
 }
 async function loadWeekImage(img,placeholder,r){
+ const show=url=>{
+  if(!url)return false;
+  img.onload=()=>{img.hidden=false;placeholder.hidden=true};
+  img.onerror=()=>{img.hidden=true;placeholder.hidden=false;img.removeAttribute("src")};
+  img.src=url;return true;
+ };
  const direct=r?.ownPhotoURL||r?.photoURL||r?.imageURL||r?.image||"";
- if(/^https?:|^data:image\//i.test(String(direct||""))){
-  img.src=direct;img.hidden=false;placeholder.hidden=true;return;
- }
+ if(/^https?:|^data:image\//i.test(String(direct||""))){show(direct);return}
  const path=r?.ownPhotoPath||(Array.isArray(r?.sourcePhotoPaths)&&r.sourcePhotoPaths[0]);
- if(!path)return;
- try{
-  if(typeof weekCloud==="undefined"||!weekCloud)return;
-  const {data:{session}}=await weekCloud.auth.getSession();if(!session)return;
-  const {data,error}=await weekCloud.storage.from("mbd-cookbook-originals").createSignedUrl(path,180);
-  if(error||!data?.signedUrl)return;
-  img.src=data.signedUrl;img.hidden=false;placeholder.hidden=true;
- }catch(_){}
+ if(path){
+  try{
+   if(typeof weekCloud!=="undefined"&&weekCloud){
+    const {data:{session}}=await weekCloud.auth.getSession();
+    if(session){
+     const {data,error}=await weekCloud.storage.from("mbd-cookbook-originals").createSignedUrl(path,180);
+     if(!error&&data?.signedUrl){show(data.signedUrl);return}
+    }
+   }
+  }catch(_){}
+ }
+ if(r?.mdb)show("/api/notion/photo?mdb="+encodeURIComponent(r.mdb));
 }
 function updateWeekVisual(row,value,select){
  const img=row.querySelector("[data-week-img]"),placeholder=row.querySelector("[data-week-emoji]"),title=row.querySelector("[data-week-title]");
@@ -47,26 +55,30 @@ function updateWeekVisual(row,value,select){
 function decorateWeek(){
  const box=q("#weekPlanner");if(!box||typeof state==="undefined"||!Array.isArray(state.recipes))return;
  for(const row of box.querySelectorAll(".week-row")){
-  if(row.dataset.mbdVisual==="1")continue;
   const select=row.querySelector("select"),label=row.querySelector("b");if(!select||!label)continue;
   for(const opt of select.options){
    if(!String(opt.value).startsWith("r:"))continue;
    const id=String(opt.value).slice(2),r=state.recipes.find(x=>String(x.id)===id);
    if(r)opt.textContent=r.title||r.originalTitle||"Naamloos recept";
   }
-  row.dataset.mbdVisual="1";row.classList.add("mbd-week-row");
-  const choice=document.createElement("div");choice.className="mbd-week-choice";
-  const thumb=document.createElement("div");thumb.className="mbd-week-thumb";thumb.setAttribute("aria-hidden","true");
-  const emoji=document.createElement("span");emoji.setAttribute("data-week-emoji","");
-  const img=document.createElement("img");img.setAttribute("data-week-img","");img.hidden=true;img.alt="";
-  thumb.append(emoji,img);
-  const fields=document.createElement("div");fields.className="mbd-week-fields";
-  const selectedTitle=document.createElement("div");selectedTitle.className="mbd-week-title";selectedTitle.setAttribute("data-week-title","");
-  select.parentNode?.insertBefore(choice,select);
-  fields.append(select,selectedTitle);choice.append(thumb,fields);
-  label.insertAdjacentElement("afterend",choice);
+  row.querySelectorAll(".mbd-week-preview").forEach(x=>x.remove());
+  row.classList.add("mbd-week-row");
+  let choice=row.querySelector(".mbd-week-choice");
+  if(!choice){
+   choice=document.createElement("div");choice.className="mbd-week-choice";
+   const thumb=document.createElement("div");thumb.className="mbd-week-thumb";thumb.setAttribute("aria-hidden","true");
+   const emoji=document.createElement("span");emoji.setAttribute("data-week-emoji","");
+   const img=document.createElement("img");img.setAttribute("data-week-img","");img.hidden=true;img.alt="";
+   thumb.append(emoji,img);
+   const fields=document.createElement("div");fields.className="mbd-week-fields";
+   const selectedTitle=document.createElement("div");selectedTitle.className="mbd-week-title";selectedTitle.setAttribute("data-week-title","");
+   fields.append(select,selectedTitle);choice.append(thumb,fields);label.insertAdjacentElement("afterend",choice);
+  }
   updateWeekVisual(row,select.value,select);
-  select.addEventListener("change",()=>setTimeout(()=>updateWeekVisual(row,select.value,select),0));
+  if(select.dataset.mbdWeekVisualBound!=="1"){
+   select.dataset.mbdWeekVisualBound="1";
+   select.addEventListener("change",()=>setTimeout(()=>updateWeekVisual(row,select.value,select),0));
+  }
  }
 }
 function installWeekPlanner(){
