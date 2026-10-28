@@ -9,6 +9,9 @@ document.addEventListener('change',e=>{
  const day=s.getAttribute('aria-label')?.replace(' avondeten','')||s.dataset.day;if(!day)return;
  let a={};try{a=JSON.parse(localStorage.getItem('mbd_week_package_assignments_v1')||'{}')||{}}catch{}
  const v=s.value;
+ let portions={};try{portions=JSON.parse(localStorage.getItem('mbd_week_portions_v1')||'{}')||{}}catch{}
+ delete portions[day];
+ localStorage.setItem('mbd_week_portions_v1',JSON.stringify(portions));
  if(v.startsWith('p:')){a[day]=v.slice(2);delete state.week[day]}
  else{delete a[day];if(v.startsWith('r:'))state.week[day]=v.slice(2);else delete state.week[day]}
  localStorage.setItem('mbd_week_package_assignments_v1',JSON.stringify(a));persist();
