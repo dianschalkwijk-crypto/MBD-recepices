@@ -249,3 +249,21 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Alle aangepaste JS en inline scan-JS syntax-gecontroleerd: groen.
 - Live smokecheck: root, scanpagina, weekmenu-script, save-script en API-health HTTP 200; AI geconfigureerd.
 - Vercel runtime-error scan na release: 0 runtime-errors in de gecontroleerde 30 minuten.
+
+## UX-/IMPORT-AFMAAKRONDE LIVE — 28-10-2026
+- Productiecommit: `e53ba6bbebd96601ef987fd85353e9ea2228053f`.
+- Productiedeployment: `dpl_8dU4zaxQtwGj6NP4i9mSNAfMT1eu`.
+- Vaste live alias `madebydian-recipes-dian.vercel.app` expliciet aan deze deployment gekoppeld. Vorige live deployment `dpl_5hCkNDC2XYd8NuyLy6QCCFdG5UFA` blijft rollbackpunt.
+- App-cache verhoogd naar `madebydian-recipes-v0.10.26`; helper-scripts laden met `?v=26`.
+- Zoeken: Nederlands/Engels synoniemen toegevoegd; o.a. `rijst` vindt ook `rice`. Datacontrole: 67 canonieke recepten bevatten rijst/rice in titel of ingrediënten.
+- Weekmenu: zichtbare selectie toont receptnaam + foto/visueel + nuttige info in plaats van MDB als hoofdinfo.
+- Linkimport: Instagram real-world smoke test gaf HTTP 200 en leverde volledige caption met ingrediënten en bereidingsstappen. Gewone websites gebruiken Recipe JSON-LD/meta wanneer bereikbaar; bij blokkade volgt foto/screenshot-fallback met behoud van bronlink.
+- Engelse import: compatibiliteitsfout `temperature:0` verwijderd. Echte previewtest vertaalde “Chicken rice bowl” correct naar Nederlands inclusief titel, ingrediënten en stappen.
+- Fotoherkenning: prompt dwingt natuurlijke Nederlandse titel, ingrediënten en stappen af; bronhoeveelheden/merknamen blijven behouden.
+- Fotoscanner: bronsoorten Instagram/TikTok/Facebook/Pinterest/Website/Screenshot/Kookboek/Eigen recept en een bronlinkveld beschikbaar.
+- Fotoscanner-save gebruikt voortaan dezelfde serverroute als gewone import: Notion + Supabase met één MDB-ID. Beheerder-login is alleen nodig om de oorspronkelijke bronfoto privé in Storage te bewaren.
+- `MDB-0673`, `MDB-0674` en `MDB-0675` waren oude scan-only Supabase-records zonder Notion-link. Ze zijn met exact dezelfde MDB-ID’s in Notion hersteld en teruggekoppeld.
+- `MDB-0675` vertaald naar “Romige citroen-Boursin-orzo met kippendijen” en als Instagram-bron gemarkeerd. Geen bronlink verzonnen omdat die bij de oude scan niet was opgeslagen.
+- Eindtelling na herstel: Supabase 656 canonieke recepten, Notion 656 unieke MDB-ID’s, hoogste MDB-0675, 0 canonieke Supabase-records zonder Notion-link.
+- Tijdelijke smoke-GET-routes verwijderd: `/api/recipes/source` GET = 405 en `/api/recipes/import` GET = 405.
+- Productiesmoke: home 200, scan 200, health 200, notion health/save 200. Runtime logs op uitsluitend de nieuwe deployment: geen error/warning/fatal logs.
