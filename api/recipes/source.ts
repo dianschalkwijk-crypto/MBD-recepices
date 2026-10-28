@@ -66,7 +66,7 @@ function jsonLdRecipe(html:string){
     try{
       const r=findRecipeJson(JSON.parse(body));
       if(!r)continue;
-      const ingredients=Array.isArray(r.recipeIngredient)?r.recipeIngredient.map(clean).filter(Boolean):[];
+      const ingredients:string[]=Array.isArray(r.recipeIngredient)?r.recipeIngredient.map((x:any)=>clean(x)).filter(Boolean):[];
       const steps=instructionText(r.recipeInstructions);
       const author=typeof r.author==="string"?clean(r.author):Array.isArray(r.author)?clean(r.author[0]?.name||""):clean(r.author?.name||"");
       const title=clean(r.name||"");
