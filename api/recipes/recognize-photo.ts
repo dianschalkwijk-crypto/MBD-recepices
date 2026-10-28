@@ -20,9 +20,13 @@ async function translateRecognition(ai:OpenAI,result:any){
 export default async function handler(req:any,res:any){
  if(req.method!=="POST")return res.status(405).json({error:"Methode niet toegestaan"});
  const {image,hint}=req.body||{};
+ const sourceContext=typeof req.body?.sourceContext==="string"?req.body.sourceContext.slice(0,12000):"";
+ const sourceURL=typeof req.body?.sourceURL==="string"?req.body.sourceURL.slice(0,4000):"";
+ const sourceAuthor=typeof req.body?.sourceAuthor==="string"?req.body.sourceAuthor.slice(0,500):"";
  if(typeof image!=="string"||!/^data:image\/(jpeg|png|webp);base64,/.test(image)||image.length>9000000)return res.status(400).json({error:"Upload een JPG, PNG of WebP kleiner dan ongeveer 6 MB."});
  if(!process.env.OPENAI_API_KEY)return res.status(503).json({error:"Fotoherkenning is nog niet geconfigureerd."});
- const typeHint=hint==="recipe_page"?"Behandel de afbeelding als receptpagina en lees uitsluitend zichtbare tekst.":hint==="food_photo"?"Behandel de afbeelding als foto van een bereid gerecht. Maak alleen een voorzichtig voorstel en benoem onzekerheid.":"Bepaal eerst zelf of dit een receptpagina, een foto van een bereid gerecht of iets onduidelijks is.";
+ const typeHint=hint==="recipe_page"?"Behandel de afbeelding als receptpagina en lees de zichtbare tekst zorgvuldig.":hint==="food_photo"?"Behandel de afbeelding als foto van een bereid gerecht. Maak alleen een voorzichtig voorstel en benoem onzekerheid.":"Bepaal eerst zelf of dit een receptpagina, een foto van een bereid gerecht of iets onduidelijks is.";
+ const contextHint=sourceContext?("Bij dezelfde bronlink is deze tekst/caption al gevonden. Gebruik dit uitsluitend als tweede bron naast de foto. Neem alleen ingrediënten, hoeveelheden of stappen over die expliciet in deze context staan; verzin niets en laat bij conflict de onzekerheid staan. Bron/account niet vertalen.\nBron: "+sourceURL+"\nAccount: "+sourceAuthor+"\nContext:\n"+sourceContext):"";
  try{
   const ai=new OpenAI({apiKey:process.env.OPENAI_API_KEY});
   const completion=await ai.chat.completions.create({
@@ -30,7 +34,7 @@ export default async function handler(req:any,res:any){
    response_format:{type:"json_object"},
    messages:[
     {role:"system",content:"Analyseer de afbeelding als mogelijk recept of gerecht. Antwoord volledig in natuurlijk Nederlands als JSON met: title (string), ingredients (array strings), steps (array strings), confidence (low/medium/high), notes (string), imageType (recipe_page, food_photo of unclear), alternatives (array met maximaal 3 korte mogelijke gerechtstitels, alleen bij twijfel; anders leeg), method (Airfryer, Oven, Pan, Koken of Overig), category (Ontbijt, Lunch, Avondeten, Snack of Bijgerecht), mainIngredient (string), portions (string; alleen als het aantal personen/porties duidelijk zichtbaar is, anders leeg), bookPage (alleen duidelijk zichtbaar paginanummer, anders leeg), book (alleen als boeknaam zichtbaar, anders leeg), sourceKind (Instagram, TikTok, Facebook, Pinterest, Website, Kookboek, Eigen recept, Anders of leeg; alleen als zichtbaar/herkenbaar), sourceAuthor (zichtbare accountnaam/auteur/website of leeg), sourceURL (alleen een volledig zichtbaar webadres, anders leeg). Bij een receptpagina: gebruik uitsluitend daadwerkelijk zichtbare ingrediënten en instructies en verzin niets, maar vertaal titel, ingrediëntnamen, opmerkingen en bereidingsstappen naar natuurlijk Nederlands wanneer de zichtbare bron een andere taal gebruikt. Behoud hoeveelheden, merknamen en betekenis exact. Zoek paginanummers onderaan of bovenaan de pagina, ook in een gekleurd rondje. Verwar paginanummers niet met bereidingstijden of hoeveelheden. Bij een foto van bereid eten zonder recepttekst: maak een plausibel voorstel, maar vermeld in notes duidelijk dat hoeveelheden en samenstelling onzeker zijn. Geef bij lage of middelhoge zekerheid 2 of 3 korte, duidelijk verschillende mogelijke gerechtstitels in alternatives. Als niet duidelijk is wat er staat, kies imageType unclear en geef zo mogelijk 2 of 3 mogelijke titels in alternatives, maar laat ingrediënten en stappen leeg of beperkt in plaats van te gokken."},
-    {role:"user",content:[{type:"text",text:typeHint},{type:"image_url",image_url:{url:image,detail:"high"}}]}
+    {role:"user",content:[{type:"text",text:[typeHint,contextHint].filter(Boolean).join("\n\n")},{type:"image_url",image_url:{url:image,detail:"high"}}]}
    ]
   });
   let result=JSON.parse(completion.choices[0]?.message?.content||"{}");
