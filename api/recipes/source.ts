@@ -1,135 +1,120 @@
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import {lookup} from "node:dns/promises";
+import {isIP} from "node:net";
 
 function dec(s:string){
-  return String(s||"")
-    .replace(/&#(x[0-9a-f]+|[0-9]+);/gi,(_:string,n:string)=>String.fromCodePoint(n[0].toLowerCase()==="x"?parseInt(n.slice(1),16):Number(n)))
-    .replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#39;/g,"'");
+ return String(s||"")
+  .replace(/&#(x[0-9a-f]+|[0-9]+);/gi,(_:string,n:string)=>String.fromCodePoint(n[0].toLowerCase()==="x"?parseInt(n.slice(1),16):Number(n)))
+  .replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'");
 }
-function clean(s:any){return dec(String(s||"")).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim()}
-function blockedIp(ip:string){
-  const v=isIP(ip);
-  if(v===4){
-    const p=ip.split(".").map(Number),a=p[0],b=p[1];
-    return a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&b===168)||(a===198&&(b===18||b===19));
+function privateAddress(addr:string){
+ const a=String(addr||"").toLowerCase();
+ if(!a)return true;
+ if(a==="::"||a==="::1"||a.startsWith("fc")||a.startsWith("fd")||a.startsWith("fe8")||a.startsWith("fe9")||a.startsWith("fea")||a.startsWith("feb")||a.startsWith("ff")||a.startsWith("2001:db8:"))return true;
+ const v4=a.startsWith("::ffff:")?a.slice(7):a;
+ if(isIP(v4)!==4)return false;
+ const p=v4.split(".").map(Number),x=p[0],y=p[1];
+ return x===0||x===10||x===127||x>=224||x>=240||
+  (x===100&&y>=64&&y<=127)||(x===169&&y===254)||(x===172&&y>=16&&y<=31)||
+  (x===192&&y===168)||(x===192&&y===0)||(x===192&&y===2)||
+  (x===198&&(y===18||y===19||y===51))||(x===203&&y===0);
+}
+async function validate(raw:string){
+ const u=new URL(raw);
+ if(u.protocol!=="https:"||u.username||u.password||u.port)throw new Error("Alleen openbare HTTPS-links zijn toegestaan");
+ const host=u.hostname.replace(/\.$/,"").toLowerCase();
+ if(!host||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local"))throw new Error("Deze host is niet toegestaan");
+ const records=await lookup(host,{all:true,verbatim:true});
+ if(!records.length||records.some(r=>privateAddress(r.address)))throw new Error("Deze host is niet openbaar bereikbaar");
+ return u;
+}
+async function fetchHtml(raw:string){
+ let u=await validate(raw);
+ for(let i=0;i<4;i++){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);
+  let r:Response;
+  try{
+   r=await fetch(u.toString(),{
+    headers:{
+     "User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
+     "Accept":"text/html,application/xhtml+xml;q=0.9,text/plain;q=0.7,*/*;q=0.2",
+     "Accept-Language":"nl-NL,nl;q=0.9,en;q=0.7"
+    },
+    redirect:"manual",signal:c.signal
+   });
+  }finally{clearTimeout(t)}
+  if(r.status>=300&&r.status<400){
+   const loc=r.headers.get("location");if(!loc)throw new Error("Bron stuurde door zonder doel");
+   u=await validate(new URL(loc,u).toString());continue;
   }
-  if(v===6){
-    const x=ip.toLowerCase();
-    return x==="::1"||x==="::"||x.startsWith("fc")||x.startsWith("fd")||x.startsWith("fe80")||x.startsWith("::ffff:127.")||x.startsWith("::ffff:10.")||x.startsWith("::ffff:192.168.");
-  }
-  return true;
-}
-async function safeUrl(raw:string){
-  const u=new URL(raw);
-  if(u.protocol!=="https:"||u.username||u.password||u.port)throw Error("Alleen openbare HTTPS-links worden ondersteund");
-  const h=u.hostname.toLowerCase();
-  if(h==="localhost"||h.endsWith(".local"))throw Error("Lokale links worden niet ondersteund");
-  const addrs=await lookup(h,{all:true,verbatim:true});
-  if(!addrs.length||addrs.some(x=>blockedIp(x.address)))throw Error("Deze link kan niet veilig worden geopend");
-  return u;
-}
-function attr(tag:string,name:string){
-  const m=tag.match(new RegExp('\\b'+name+'\\s*=\\s*["\\\']([^"\\\']*)["\\\']','i'));
-  return m?.[1]||"";
+  if(!r.ok)throw new Error("Bron niet bereikbaar (HTTP "+r.status+")");
+  const type=(r.headers.get("content-type")||"").toLowerCase();
+  if(type&&!type.includes("text/html")&&!type.includes("text/plain")&&!type.includes("application/xhtml"))throw new Error("Bron bevat geen leesbare webpagina");
+  return{url:u,html:(await r.text()).slice(0,1800000)};
+ }
+ throw new Error("Te veel doorverwijzingen");
 }
 function meta(html:string,key:string){
-  for(const tag of html.match(/<meta\b[^>]*>/gi)||[]){
-    const n=(attr(tag,"property")||attr(tag,"name")).toLowerCase();
-    if(n===key.toLowerCase())return clean(attr(tag,"content"));
-  }
-  return "";
+ const escaped=key.replace(/[.*+?^$()|[\]\\{}]/g,"\\$&");
+ const a=new RegExp('<meta[^>]+(?:property|name)=["\\\']'+escaped+'["\\\'][^>]+content=["\\\']([^"\\\']*)["\\\']','i').exec(html);
+ if(a?.[1])return dec(a[1]).trim();
+ const b=new RegExp('<meta[^>]+content=["\\\']([^"\\\']*)["\\\'][^>]+(?:property|name)=["\\\']'+escaped+'["\\\']','i').exec(html);
+ return dec(b?.[1]||"").trim();
 }
-function instructionText(v:any):string[]{
-  if(!v)return[];
-  if(typeof v==="string")return[clean(v)].filter(Boolean);
-  if(Array.isArray(v))return v.flatMap(instructionText);
-  if(typeof v==="object"){
-    if(v.text)return[clean(v.text)].filter(Boolean);
-    if(v.itemListElement)return instructionText(v.itemListElement);
-  }
-  return[];
+function textOf(v:any):string{
+ if(typeof v==="string")return v.trim();
+ if(Array.isArray(v))return v.map(textOf).filter(Boolean).join("\n");
+ if(!v||typeof v!=="object")return"";
+ if(v.text)return textOf(v.text);
+ if(v.name)return textOf(v.name);
+ if(v.itemListElement)return textOf(v.itemListElement);
+ return"";
 }
-function findRecipeJson(x:any):any{
-  if(!x)return null;
-  if(Array.isArray(x)){for(const y of x){const z=findRecipeJson(y);if(z)return z}return null}
-  if(typeof x!=="object")return null;
-  const t=x["@type"];
-  if(t==="Recipe"||(Array.isArray(t)&&t.includes("Recipe")))return x;
-  if(x["@graph"]){const z=findRecipeJson(x["@graph"]);if(z)return z}
-  for(const v of Object.values(x)){const z=findRecipeJson(v);if(z)return z}
-  return null;
+function findRecipe(v:any):any{
+ if(Array.isArray(v)){for(const x of v){const r=findRecipe(x);if(r)return r}return null}
+ if(!v||typeof v!=="object")return null;
+ const t=v["@type"],types=Array.isArray(t)?t:[t];
+ if(types.some((x:any)=>String(x).toLowerCase()==="recipe"))return v;
+ if(v["@graph"]){const r=findRecipe(v["@graph"]);if(r)return r}
+ for(const k of Object.keys(v)){if(k==="@context")continue;const r=findRecipe(v[k]);if(r)return r}
+ return null;
 }
-function jsonLdRecipe(html:string){
-  const scripts=html.match(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi)||[];
-  for(const tag of scripts){
-    const body=tag.replace(/^.*?>/s,"").replace(/<\/script>\s*$/i,"").trim();
-    try{
-      const r=findRecipeJson(JSON.parse(body));
-      if(!r)continue;
-      const ingredients:string[]=Array.isArray(r.recipeIngredient)?r.recipeIngredient.map((x:any)=>clean(x)).filter(Boolean):[];
-      const steps=instructionText(r.recipeInstructions);
-      const author=typeof r.author==="string"?clean(r.author):Array.isArray(r.author)?clean(r.author[0]?.name||""):clean(r.author?.name||"");
-      const title=clean(r.name||"");
-      const description=clean(r.description||"");
-      const parts=[title];
-      if(author)parts.push("Maker: "+author);
-      if(description)parts.push(description);
-      if(ingredients.length)parts.push("Ingrediënten:\n"+ingredients.map(x=>"• "+x).join("\n"));
-      if(steps.length)parts.push("Bereiding:\n"+steps.map((x,i)=>(i+1)+". "+x).join("\n"));
-      return {text:parts.filter(Boolean).join("\n\n"),author,title};
-    }catch{}
-  }
-  return null;
-}
-function socialKind(host:string){
-  if(host.includes("instagram"))return"Instagram";
-  if(host.includes("tiktok"))return"TikTok";
-  if(host.includes("facebook"))return"Facebook";
-  if(host.includes("pinterest")||host==="pin.it")return"Pinterest";
-  if(host.includes("youtube")||host==="youtu.be")return"YouTube";
-  return"Website";
-}
-
-export default async function handler(req:any,res:any){
-  res.setHeader("Cache-Control","no-store");
-  if(req.method!=="POST")return res.status(405).json({message:"POST required"});
+function structuredRecipe(html:string){
+ const re=/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+ let m:RegExpExecArray|null;
+ while((m=re.exec(html))){
   try{
-    const start=await safeUrl(String(req.body?.url||""));
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
-    let response:Response;
-    try{
-      response=await fetch(start.toString(),{
-        headers:{
-          "User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
-          "Accept":"text/html,application/xhtml+xml",
-          "Accept-Language":"nl-NL,nl;q=0.9,en;q=0.8"
-        },
-        redirect:"follow",
-        signal:controller.signal
-      });
-    }finally{clearTimeout(timer)}
-    if(!response.ok)return res.status(422).json({message:"Bron niet bereikbaar"});
-    const finalUrl=await safeUrl(response.url||start.toString());
-    const ct=response.headers.get("content-type")||"";
-    if(!/text\/html|application\/xhtml\+xml/i.test(ct))return res.status(422).json({message:"Deze link bevat geen leesbare receptpagina"});
-    const len=Number(response.headers.get("content-length")||0);
-    if(len>5000000)return res.status(422).json({message:"Deze pagina is te groot om veilig uit te lezen"});
-    const html=(await response.text()).slice(0,2500000);
-    const ld=jsonLdRecipe(html);
-    if(ld?.text&&ld.text.length>=10){
-      return res.status(200).json({sourceURL:start.toString(),resolvedURL:finalUrl.toString(),sharedText:ld.text,text:ld.text,sourceAuthor:ld.author||null,author:ld.author||null,title:ld.title||null,sourceType:socialKind(finalUrl.hostname)});
-    }
-    const description=meta(html,"og:description")||meta(html,"twitter:description")||meta(html,"description");
-    const title=meta(html,"og:title")||meta(html,"twitter:title")||clean((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]);
-    const author=(description.match(/-\s+([a-z0-9_.@]+)\s+on\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)/i)||[])[1]||null;
-    const text=[title,description].filter(Boolean).join("\n\n").trim();
-    if(text.length<10){
-      const kind=socialKind(finalUrl.hostname);
-      return res.status(422).json({message:kind!=="Website"?"Deze socialmedia-caption is door het platform afgeschermd. Voeg een screenshot of foto toe; de bronlink kan wel bewaard blijven.":"Geen bruikbare recepttekst op deze website gevonden."});
-    }
-    return res.status(200).json({sourceURL:start.toString(),resolvedURL:finalUrl.toString(),sharedText:text,text,sourceAuthor:author,author,title:title||null,sourceType:socialKind(finalUrl.hostname)});
-  }catch(e:any){
-    if(e?.name==="AbortError")return res.status(504).json({message:"Bron ophalen duurde te lang"});
-    return res.status(400).json({message:e?.message||"Link kon niet worden verwerkt"});
-  }
+   const json=JSON.parse(m[1].trim()),r=findRecipe(json);if(!r)continue;
+   const title=textOf(r.name),ings=Array.isArray(r.recipeIngredient)?r.recipeIngredient.map(textOf).filter(Boolean):[];
+   const rawSteps=r.recipeInstructions,steps=Array.isArray(rawSteps)?rawSteps.map(textOf).filter(Boolean):textOf(rawSteps).split("\n").filter(Boolean);
+   const author=textOf(r.author);
+   if(title||ings.length||steps.length){
+    const lines=[title,author?"Maker: "+author:"",ings.length?"Ingrediënten:\n"+ings.map(x=>"• "+x).join("\n"):"",steps.length?"Bereiding:\n"+steps.map((x,i)=>(i+1)+". "+x).join("\n"):""].filter(Boolean);
+    return{text:lines.join("\n\n"),author};
+   }
+  }catch{}
+ }
+ return null;
+}
+function cleanTitle(s:string){return dec(String(s||"").replace(/\s+/g," ").trim()).slice(0,300)}
+function socialAuthor(text:string){
+ return (text.match(/@([a-z0-9_.]{2,40})/i)||text.match(/- ([a-z0-9_.]+) on (?:January|February|March|April|May|June|July|August|September|October|November|December)/i)||[])[1]||null;
+}
+export default async function handler(req:any,res:any){
+ res.setHeader("Cache-Control","no-store");
+ if(req.method!=="POST")return res.status(405).json({message:"POST required"});
+ try{
+  const raw=String(req.body?.url||"").trim();if(!raw)return res.status(400).json({message:"Vul een bronlink in"});
+  const {url,html}=await fetchHtml(raw);
+  const structured=structuredRecipe(html);
+  const ogTitle=cleanTitle(meta(html,"og:title")||meta(html,"twitter:title")||"");
+  const description=dec(meta(html,"og:description")||meta(html,"description")||meta(html,"twitter:description")||"").replace(/\s+/g," ").trim();
+  let text=structured?.text||[ogTitle,description].filter(Boolean).join("\n\n");
+  const author=structured?.author||socialAuthor(description)||socialAuthor(ogTitle);
+  if(text.length<10)return res.status(422).json({message:"Geen bruikbare recepttekst gevonden op deze link"});
+  if(text.length>60000)text=text.slice(0,60000);
+  return res.status(200).json({sourceURL:url.toString(),sharedText:text,text,sourceAuthor:author,author,title:ogTitle||null,structured:!!structured});
+ }catch(e:any){
+  const msg=e?.name==="AbortError"?"Bron ophalen duurde te lang":e?.message||"Link kon niet worden verwerkt";
+  return res.status(422).json({message:msg});
+ }
 }
