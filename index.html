@@ -97,6 +97,9 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <label>Maker / bron
             <input id="reviewAuthor" placeholder="@maker" />
           </label>
+          <label>Personen / porties
+            <input id="reviewPortions" placeholder="Bijvoorbeeld: 4 personen" />
+          </label>
 
           <div class="field-group">
             <div class="label-text">Collecties</div>
@@ -346,6 +349,7 @@ async function analyze(){
       sourceURL, sourceText,
       title:data.title_nl||inferTitle(sourceText),
       author:data.source_author||author,
+      portions:data.servings_text||'',
       ingredients, steps,
       collections:(data.collections&&data.collections.length)?data.collections:classify(`${data.title_nl||''}\n${sourceText}`),
       warnings:data.warnings||[],
@@ -361,7 +365,7 @@ async function analyze(){
     warnings.unshift('Online AI-import was niet bereikbaar; lokale parser gebruikt. Controleer het recept extra goed.');
     const collections=classify(`${parsed.title}\n${normalized}`);
     const completeness=parsed.ingredients.length&&parsed.steps.length?'redelijk compleet':'gedeeltelijk';
-    currentDraft={sourceURL,sourceText:normalized,title:parsed.title,author,ingredients:parsed.ingredients,steps:parsed.steps,collections,warnings,completeness};
+    currentDraft={sourceURL,sourceText:normalized,title:parsed.title,author,portions:'',ingredients:parsed.ingredients,steps:parsed.steps,collections,warnings,completeness};
     showMessage(msg,'⚠️ Online verwerking niet bereikbaar. Lokale veilige parser gebruikt.');
     fillReview();
   }finally{ clearTimeout(timer); }
@@ -370,6 +374,7 @@ function fillReview(){
   const d=currentDraft; if(!d) return;
   document.querySelector('#reviewTitle').value=d.title;
   document.querySelector('#reviewAuthor').value=d.author;
+  document.querySelector('#reviewPortions').value=d.portions||'';
   document.querySelector('#reviewIngredients').value=d.ingredients.join('\n');
   document.querySelector('#reviewSteps').value=d.steps.map((s,i)=>`${i+1}. ${s}`).join('\n');
   document.querySelector('#completenessBadge').textContent=d.completeness;
@@ -393,6 +398,7 @@ async function saveRecipe(){
   if(!currentDraft) return;
   const title=document.querySelector('#reviewTitle').value.trim()||currentDraft.title;
   const author=document.querySelector('#reviewAuthor').value.trim();
+  const portions=document.querySelector('#reviewPortions').value.trim();
   const ingredients=document.querySelector('#reviewIngredients').value.trim();
   const steps=document.querySelector('#reviewSteps').value.trim();
   const sourceURL=currentDraft.sourceURL;
@@ -402,7 +408,7 @@ async function saveRecipe(){
   if(exact||fuzzy){
     if(!confirm(`Dit lijkt al op “${(exact||fuzzy).title}”. Toch als apart recept opslaan?`)) return;
   }
-  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions:'',time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:'Social / link'};
+  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions,time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:'Social / link'};
   const button=document.querySelector('#saveRecipeBtn');button.disabled=true;
   let savedId='';
   try{
