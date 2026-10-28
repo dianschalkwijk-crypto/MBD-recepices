@@ -9,7 +9,7 @@ function looksEnglish(value:any){
 async function translateRecognition(ai:OpenAI,result:any){
  const completion=await ai.chat.completions.create({
   model:process.env.OPENAI_MODEL||"gpt-4.1-mini",response_format:{type:"json_object"},messages:[
-   {role:"system",content:"Vertaal alleen de menselijk leesbare tekstvelden van dit fotoherkennings-JSON naar natuurlijk Nederlands. Vertaal title, ingredients, steps, notes, alternatives, mainIngredient en portions. Behoud confidence en imageType exact. Gebruik voor method alleen Airfryer, Oven, Pan, Koken of Overig; voor category alleen Ontbijt, Lunch, Avondeten, Snack of Bijgerecht. Behoud book als eigennaam en bookPage exact. Verzin niets. Antwoord uitsluitend als JSON."},
+   {role:"system",content:"Vertaal alleen de menselijk leesbare recepttekstvelden van dit fotoherkennings-JSON naar natuurlijk Nederlands. Vertaal title, ingredients, steps, notes, alternatives, mainIngredient en portions. Behoud confidence, imageType, sourceKind, sourceAuthor en sourceURL exact. Gebruik voor method alleen Airfryer, Oven, Pan, Koken of Overig; voor category alleen Ontbijt, Lunch, Avondeten, Snack of Bijgerecht. Behoud book als eigennaam en bookPage exact. Verzin niets. Antwoord uitsluitend als JSON."},
    {role:"user",content:JSON.stringify(result)}
   ]
  });
@@ -29,7 +29,7 @@ export default async function handler(req:any,res:any){
    model:process.env.OPENAI_MODEL||"gpt-5.6-luna",
    response_format:{type:"json_object"},
    messages:[
-    {role:"system",content:"Analyseer de afbeelding als mogelijk recept of gerecht. Antwoord volledig in natuurlijk Nederlands als JSON met: title (string), ingredients (array strings), steps (array strings), confidence (low/medium/high), notes (string), imageType (recipe_page, food_photo of unclear), alternatives (array met maximaal 3 korte mogelijke gerechtstitels, alleen bij twijfel; anders leeg), method (Airfryer, Oven, Pan, Koken of Overig), category (Ontbijt, Lunch, Avondeten, Snack of Bijgerecht), mainIngredient (string), portions (string; alleen als het aantal personen/porties duidelijk zichtbaar is, anders leeg), bookPage (alleen duidelijk zichtbaar paginanummer, anders leeg), book (alleen als boeknaam zichtbaar, anders leeg). Bij een receptpagina: gebruik uitsluitend daadwerkelijk zichtbare ingrediënten en instructies en verzin niets, maar vertaal titel, ingrediëntnamen, opmerkingen en bereidingsstappen naar natuurlijk Nederlands wanneer de zichtbare bron een andere taal gebruikt. Behoud hoeveelheden, merknamen en betekenis exact. Zoek paginanummers onderaan of bovenaan de pagina, ook in een gekleurd rondje. Verwar paginanummers niet met bereidingstijden of hoeveelheden. Bij een foto van bereid eten zonder recepttekst: maak een plausibel voorstel, maar vermeld in notes duidelijk dat hoeveelheden en samenstelling onzeker zijn. Geef bij lage of middelhoge zekerheid 2 of 3 korte, duidelijk verschillende mogelijke gerechtstitels in alternatives. Als niet duidelijk is wat er staat, kies imageType unclear en geef zo mogelijk 2 of 3 mogelijke titels in alternatives, maar laat ingrediënten en stappen leeg of beperkt in plaats van te gokken."},
+    {role:"system",content:"Analyseer de afbeelding als mogelijk recept of gerecht. Antwoord volledig in natuurlijk Nederlands als JSON met: title (string), ingredients (array strings), steps (array strings), confidence (low/medium/high), notes (string), imageType (recipe_page, food_photo of unclear), alternatives (array met maximaal 3 korte mogelijke gerechtstitels, alleen bij twijfel; anders leeg), method (Airfryer, Oven, Pan, Koken of Overig), category (Ontbijt, Lunch, Avondeten, Snack of Bijgerecht), mainIngredient (string), portions (string; alleen als het aantal personen/porties duidelijk zichtbaar is, anders leeg), bookPage (alleen duidelijk zichtbaar paginanummer, anders leeg), book (alleen als boeknaam zichtbaar, anders leeg), sourceKind (Instagram, TikTok, Facebook, Pinterest, Website, Kookboek, Eigen recept, Anders of leeg; alleen als zichtbaar/herkenbaar), sourceAuthor (zichtbare accountnaam/auteur/website of leeg), sourceURL (alleen een volledig zichtbaar webadres, anders leeg). Bij een receptpagina: gebruik uitsluitend daadwerkelijk zichtbare ingrediënten en instructies en verzin niets, maar vertaal titel, ingrediëntnamen, opmerkingen en bereidingsstappen naar natuurlijk Nederlands wanneer de zichtbare bron een andere taal gebruikt. Behoud hoeveelheden, merknamen en betekenis exact. Zoek paginanummers onderaan of bovenaan de pagina, ook in een gekleurd rondje. Verwar paginanummers niet met bereidingstijden of hoeveelheden. Bij een foto van bereid eten zonder recepttekst: maak een plausibel voorstel, maar vermeld in notes duidelijk dat hoeveelheden en samenstelling onzeker zijn. Geef bij lage of middelhoge zekerheid 2 of 3 korte, duidelijk verschillende mogelijke gerechtstitels in alternatives. Als niet duidelijk is wat er staat, kies imageType unclear en geef zo mogelijk 2 of 3 mogelijke titels in alternatives, maar laat ingrediënten en stappen leeg of beperkt in plaats van te gokken."},
     {role:"user",content:[{type:"text",text:typeHint},{type:"image_url",image_url:{url:image,detail:"high"}}]}
    ]
   });
@@ -49,7 +49,10 @@ export default async function handler(req:any,res:any){
    mainIngredient:String(result.mainIngredient||""),
    portions:String(result.portions||"").slice(0,100),
    bookPage:String(result.bookPage||"").slice(0,30),
-   book:String(result.book||"").slice(0,200)
+   book:String(result.book||"").slice(0,200),
+   sourceKind:["Instagram","TikTok","Facebook","Pinterest","Website","Kookboek","Eigen recept","Anders"].includes(String(result.sourceKind))?String(result.sourceKind):"",
+   sourceAuthor:String(result.sourceAuthor||"").slice(0,300),
+   sourceURL:/^https:\/\//i.test(String(result.sourceURL||""))?String(result.sourceURL).slice(0,2000):""
   });
  }catch(e:any){
   const code=Number(e?.status||0);
