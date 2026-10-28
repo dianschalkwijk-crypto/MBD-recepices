@@ -40,6 +40,6 @@ De Vercel-connector kapt de broninhoud van serverbestanden af. Daarom geldt niet
 
 ## Afbakening na herstel — 28 oktober 2026
 - Broncodeherstel zelf niet opnieuw uitvoeren: de huidige werkzaamheden zijn functionele UX-/veiligheidsafbouw op dezelfde recovery-branch.
-- Laatste functionele afbouwcode is nieuwer dan de eerder gedocumenteerde herstelstatus; zie `PROJECT_STATUS.md` onder “LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v33”.
-- Nieuwe deployment is momenteel uitsluitend geblokkeerd door de Vercel Hobby-daglimiet (>100 deployments/24 uur), niet door een bekende buildfout.
+- Laatste functionele afbouwcode is nieuwer dan de eerder gedocumenteerde herstelstatus; zie `PROJECT_STATUS.md` onder “LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v35”.
+- De tijdelijke 13e API-route veroorzaakte één previewfout door Vercels Hobby-limiet van maximaal 12 serverfuncties. Dit is opgelost: de foto-koppeling zit nu in `/api/notion/photo` en de extra route is verwijderd; actuele routecount is 12. De gerepareerde head kan nu alleen nog niet opnieuw worden gebouwd door de aparte Vercel Hobby-daglimiet (>100 deployments/24 uur).
 - Geen oude productie- of previewdeployment promoveren als vervanging voor de huidige branch-head; eerst de actuele head bouwen en testen zodra het quotum vrij is.
