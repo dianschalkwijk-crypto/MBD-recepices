@@ -283,10 +283,10 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - De laatste UX-fixes staan veilig in GitHub maar zijn daarom nog niet live. Niet opnieuw reconstrueren; na vrijvallen van het Vercel-deployquotum exact HEAD 7a93aa8 deployen en smoke-testen.
 
 
-## LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v35
+## LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v36
 - Actuele live productie vóór deze ronde: deployment `dpl_BdpfH1zEbyS62nx4GuR5s78f97UM`, commit `2814286639ee76a707807401ee3a21aea5feb3d4`.
 - Oudere deployment `dpl_Rej4YizpoammzWyUYngbRKpJF14W` / commit `6bd55632...` is niet meer de nieuwste productie.
-- Laatste functionele codecommit vóór deze statusnotitie: `e47308bb2475f8ce70c18879d8c654c7a14436a8`. Latere status-only commits wijzigen geen appcode.
+- Laatste functionele codecommit vóór deze statusnotitie: `cafb8c3180eeb047ea97c72d9a03ad55b6096426`. Latere status-only commits wijzigen geen appcode.
 - Weekmenu: gekozen recept staat als visuele kaart met 82×82 foto/placeholder en volledige receptnaam; MDB staat klein secundair.
 - Weekmenu: nieuw zoekveld zoekt alleen binnen recepten die de bestaande allergie-/eetvoorkeurfilter al hebben doorstaan. Zoekresultaten kunnen direct aan ma–vr worden toegewezen.
 - Weekmenu: personen/porties kunnen per dag worden aangepast. Boodschappenhoeveelheden met een betrouwbaar voorgetal worden proportioneel geschaald; regels zonder schaalbare hoeveelheid blijven ongewijzigd. Porties worden ook in opgeslagen/gesynchroniseerde weekmenu’s bewaard en bij herhalen hersteld.
@@ -301,7 +301,7 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Taalcontrole actuele canonieke catalogus: geen titels meer gevonden die duidelijk volledig Engels zijn; strengere EN-vs-NL tekstscan vond geen grotendeels Engelse recepten. Merknamen zoals Boursin/cottage cheese blijven bewust intact.
 - Boodschappen per afzonderlijk recept bestonden al in het receptdetail en zijn behouden; weekboodschappen blijven allergie-/eetvoorkeurbewust.
 - Gerichte runtime-writecontrole van hoofdapp/scanner/helpers vond geen resterende directe `mbd_catalog` update/insert/upsert/delete in de gecontroleerde runtimebestanden; cataloguswrites lopen via beveiligde serverroutes.
-- PWA/runtime cache staat op `madebydian-recipes-v0.10.35`; hoofdapp, serviceworker, save-loader en scanner gebruiken dezelfde `?v=35` runtime-assets.
+- PWA/runtime cache staat op `madebydian-recipes-v0.10.36`; hoofdapp, serviceworker, save-loader en scanner gebruiken dezelfde `?v=36` runtime-assets.
 - Syntaxcontrole: scan-enhance, photo-fix, ux-finishing, allergy-integration, save-sync, service-worker en inline scripts van index/scan zijn groen.
 - Een automatische preview op `f804ee2e...` faalde met `exceeded_serverless_functions_per_deployment`: er waren tijdelijk 13 API-routes terwijl Vercel Hobby maximaal 12 serverfuncties toestaat. Dit is opgelost door de foto-koppelactie samen te voegen in de bestaande `/api/notion/photo`-route en `api/recipes/attach-source-photo.ts` te verwijderen. **Die aparte route niet opnieuw herstellen.** Actuele API-routecount: 12.
 - Een nieuwe deployment van de gerepareerde branch-head is daarna opnieuw geprobeerd, maar Vercel weigert nu vóór build vanwege de aparte Hobby-daglimiet `api-deployments-free-per-day` (>100 deployments/24 uur). De verplichte CLI-fallback is gecontroleerd maar de `vercel` CLI is in deze omgeving niet geïnstalleerd. Niet omzeilen met een oudere preview.
