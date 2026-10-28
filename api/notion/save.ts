@@ -35,8 +35,10 @@ const tt=(s:string)=>[{type:'text',text:{content:String(s||'Naamloos recept').sl
 const plain=(p:any)=>p&&((p.title)||(p.rich_text)||[]).map((x:any)=>x.plain_text||(x.text&&x.text.content)||'').join('')||'';
 const num=(p:any)=>typeof p?.number==='number'?p.number:null;
 const platform=(u:string)=>{
-  try{const h=new URL(u).hostname.toLowerCase();if(h.includes('instagram'))return'Instagram';if(h.includes('tiktok'))return'TikTok';if(h.includes('facebook'))return'Facebook';if(h.includes('youtube')||h.includes('youtu.be'))return'YouTube';return'Website'}catch{return''}
+  try{const h=new URL(u).hostname.toLowerCase();if(h.includes('instagram'))return'Instagram';if(h.includes('tiktok'))return'TikTok';if(h.includes('facebook'))return'Facebook';if(h.includes('pinterest')||h==='pin.it')return'Pinterest';if(h.includes('youtube')||h.includes('youtu.be'))return'YouTube';return'Website'}catch{return''}
 };
+const safeText=(v:any,max=2000)=>String(v||'').trim().slice(0,max);
+const allowedKinds=new Set(['Kookboek','Screenshot','Eigen recept','Instagram','TikTok','Facebook','Pinterest','Website','YouTube','Social / link']);
 const mdbNo=(v:string)=>{const m=String(v||'').match(/^MDB-(\d{4})$/i);return m?Number(m[1]):0};
 const fmt=(n:number)=>'MDB-'+String(n).padStart(4,'0');
 
@@ -108,6 +110,16 @@ export default async function handler(req:any,res:any){
     const author=String(b.author||'').trim();
     const collections=Array.isArray(b.collections)?b.collections.map(String):[];
     const warnings=Array.isArray(b.warnings)?b.warnings.map(String):[];
+    const extra=(b.extra&&typeof b.extra==='object'&&!Array.isArray(b.extra))?b.extra:{};
+    const sourceKind=allowedKinds.has(String(extra.sourceKind||''))?String(extra.sourceKind):'Social / link';
+    const sourceAuthor=safeText(extra.sourceAuthor||author,500);
+    const method=safeText(extra.method,120);
+    const category=safeText(extra.category,200);
+    const mainIngredient=safeText(extra.mainIngredient,300);
+    const sourceNotes=safeText(extra.sourceNotes,2000);
+    const bookPageRaw=safeText(extra.bookPage,30);
+    const bookPage=/^\d+(?:\s*[-–,]\s*\d+)*$/.test(bookPageRaw)?bookPageRaw:'';
+    const sourcePlatform=sourceURL?platform(sourceURL):(sourceKind==='Social / link'?'':sourceKind);
     if(!title)return res.status(400).json({ok:false,error:'Titel ontbreekt'});
     if(title.length>1000||ingredients.length>60000||steps.length>60000)return res.status(400).json({ok:false,error:'Recept is te groot'});
     if(sourceURL){try{const u=new URL(sourceURL);if(u.protocol!=='https:'&&u.protocol!=='http:')throw 0}catch{return res.status(400).json({ok:false,error:'Bronlink is ongeldig'})}}
@@ -123,14 +135,19 @@ export default async function handler(req:any,res:any){
       'Kookboek':{relation:[{id:book.id}]},
       'Boeknr.':{number:book.number}
     };
-    if(sourceURL){props['Oorspronkelijke bron']={url:sourceURL};props['Bronplatform']={rich_text:rt(platform(sourceURL))}}
+    if(sourceURL){props['Oorspronkelijke bron']={url:sourceURL};props['Inhoudsbron']={url:sourceURL}}
+    if(sourcePlatform)props['Bronplatform']={rich_text:rt(sourcePlatform)};
+    if(category)props['Categorie']={rich_text:rt(category)};
+    if(bookPage&&/^\d+$/.test(bookPage))props['Pagina']={number:Number(bookPage)};
 
     const page=await notion('/pages',{method:'POST',body:JSON.stringify({parent:{type:'data_source_id',data_source_id:R},properties:props})});
     const notionURL=String(page.url||'');
     const recipe={
-      id:mdb,mdb,title,originalTitle:title,author,ingredients,steps,
-      sourceURL,contentURL:sourceURL,notionURL,category:'',cuisine:'',portions:'',time:'',
-      book:book.name,bookNo:book.number,collections,warnings,seeded:false,
+      id:mdb,mdb,title,originalTitle:title,author:sourceAuthor||author,ingredients,steps,
+      sourceURL,contentURL:sourceURL,notionURL,
+      sourceKind,sourceAuthor,platform:sourcePlatform,method,category,cuisine:'',mainIngredient,
+      book:book.name,bookNo:book.number,bookPage,sourceNotes,
+      portions:'',time:'',collections,warnings,seeded:false,
       contentSynced:!!(ingredients&&steps),hasPhoto:false,createdAt:new Date().toISOString(),
       syncedFrom:'App → Notion → Supabase'
     };
