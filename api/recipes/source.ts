@@ -88,7 +88,7 @@ function structuredRecipe(html:string){
    const rawSteps=r.recipeInstructions,steps=Array.isArray(rawSteps)?rawSteps.map(textOf).filter(Boolean):textOf(rawSteps).split("\n").filter(Boolean);
    const author=textOf(r.author);
    if(title||ings.length||steps.length){
-    const lines=[title,author?"Maker: "+author:"",ings.length?"Ingrediënten:\n"+ings.map(x=>"• "+x).join("\n"):"",steps.length?"Bereiding:\n"+steps.map((x,i)=>(i+1)+". "+x).join("\n"):""].filter(Boolean);
+    const lines=[title,author?"Maker: "+author:"",ings.length?"Ingrediënten:\n"+ings.map((x:string)=>"• "+x).join("\n"):"",steps.length?"Bereiding:\n"+steps.map((x:string,i:number)=>(i+1)+". "+x).join("\n"):""].filter(Boolean);
     return{text:lines.join("\n\n"),author};
    }
   }catch{}
