@@ -5,7 +5,16 @@ const categories=["Gezin","Airfryer","Borrel","Zomer","Seizoens","Lunch","Campin
 const selected=new Set();let timer,allTerms=true;
 function recipes(){try{return typeof state!=="undefined"&&Array.isArray(state.recipes)?state.recipes:[]}catch(e){return []}}
 const norm=s=>String(s??"").toLocaleLowerCase("nl").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+const synonymGroups=[
+ ["rijst","rice"],["kip","chicken"],["aardappel","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","onion"],["knoflook","garlic"],
+ ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","zucchini"],["aubergine","eggplant"],
+ ["paprika","bell pepper","pepper"],["wortel","carrot"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],
+ ["bonen","beans"],["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
+].map(g=>g.map(norm));
+function variants(t){const n=norm(t);const g=synonymGroups.find(x=>x.includes(n));return g||[n]}
+function hasTerm(hay,t){return variants(t).some(v=>hay.includes(v))}
 function ingredientText(r){const v=r?.ingredients;if(Array.isArray(v))return v.map(x=>typeof x==="string"?x:JSON.stringify(x||"")).join("\n");if(v&&typeof v==="object")return JSON.stringify(v);return String(v||"")}
+function searchableText(r){return [r?.mdb,r?.title,r?.originalTitle,r?.category,r?.cuisine,r?.book,r?.bookPage,ingredientText(r),r?.steps,(r?.collections||[]).join(" ")].filter(Boolean).join(" ")}
 function terms(){return ($("#mbd-ingredients")?.value||"").split(/[,;\n]+/).map(norm).filter(Boolean)}
 function setup(){
 const list=$("#recipeList"),search=$("#recipeSearch");if(!list||!search||$("#mbd-search-tools"))return;
@@ -26,11 +35,13 @@ search.addEventListener("input",()=>setTimeout(update,0));
 function update(){
 const list=$("#recipeList"),counter=$("#mbd-result-count");if(!list||!counter)return;
 const all=recipes(),byId=new Map(all.map(r=>[String(r.mdb||"").toUpperCase(),r])),byLocalId=new Map(all.map(r=>[String(r.id||""),r])),words=terms();
+const q=norm($("#recipeSearch")?.value||""),queryWords=q.split(/\s+/).filter(Boolean);
 const cards=[...list.querySelectorAll(".recipe-card")];
 for(const card of cards){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=byLocalId.get(String(localId))||byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(r?.collections||[]),r?.category||""].map(norm);const categoryOk=!selected.size||[...selected].some(c=>cats.includes(norm(c)));
-const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?words.every(w=>hay.includes(w)):words.some(w=>hay.includes(w)));
-const ok=categoryOk&&ingredientsOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
-const count=cards.filter(c=>!c.hidden).length,q=$("#recipeSearch")?.value.trim()||"";
+const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?words.every(w=>hasTerm(hay,w)):words.some(w=>hasTerm(hay,w)));
+const fullHay=norm(searchableText(r));const queryOk=!queryWords.length||queryWords.every(w=>hasTerm(fullHay,w));
+const ok=categoryOk&&ingredientsOk&&queryOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
+const count=cards.filter(c=>!c.hidden).length;
 const query=words.length?words.join(" + "):q;const msg=count+" "+(count===1?"gerecht gevonden":"gerechten gevonden")+(query?" met "+query:"")+(selected.size?" · "+[...selected].join(", "):"");
 if(counter.textContent!==msg)counter.textContent=msg;
 }
