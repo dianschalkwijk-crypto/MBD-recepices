@@ -47,9 +47,9 @@ function updateWeekVisual(row,value,select){
   placeholder.textContent="📦";title.textContent=select?.selectedOptions?.[0]?.textContent||"Maaltijdpakket";return;
  }
  const id=String(value||"").replace(/^r:/,"");
- const r=state.recipes.find(x=>String(x.id)===id);
+ const r=state.recipes.find(x=>String(x.id)===id||String(x.mdb||"")===id);
  placeholder.textContent=r?visualEmoji(r):"🍽️";
- title.textContent=r?(r.title||r.originalTitle||"Recept"):"Nog geen recept gekozen";
+ title.textContent=r?(r.title||r.originalTitle||"Recept"):(select?.selectedOptions?.[0]?.textContent||"Nog geen recept gekozen");
  if(r)loadWeekImage(img,placeholder,r);
 }
 function decorateWeek(){
@@ -82,17 +82,32 @@ function decorateWeek(){
  }
 }
 function installWeekPlanner(){
- if(typeof window.renderWeek!=="function")return;
- if(window.renderWeek.__mbdVisualWeek)return;
- const baseRender=window.renderWeek;
- const enhanced=function(){
-  const result=baseRender.apply(this,arguments);
-  decorateWeek();
-  if(typeof renderWeekArchive==="function")renderWeekArchive();
-  return result;
- };
- enhanced.__mbdVisualWeek=true;
- window.renderWeek=enhanced;
+ const box=q("#weekPlanner");
+ if(box&&box.dataset.mbdWeekDelegate!=="1"){
+  box.dataset.mbdWeekDelegate="1";
+  box.addEventListener("change",e=>{
+   const changed=e.target?.closest?.("select");if(!changed)return;
+   const aria=changed.getAttribute("aria-label")||"";
+   setTimeout(()=>{
+    decorateWeek();
+    const live=[...box.querySelectorAll(".week-row select")].find(s=>(s.getAttribute("aria-label")||"")===aria);
+    const row=live?.closest(".week-row");
+    if(live&&row)updateWeekVisual(row,live.value,live);
+   },60);
+  },true);
+ }
+ if(typeof window.renderWeek!=="function"){decorateWeek();return}
+ if(!window.renderWeek.__mbdVisualWeek){
+  const baseRender=window.renderWeek;
+  const enhanced=function(){
+   const result=baseRender.apply(this,arguments);
+   decorateWeek();
+   if(typeof renderWeekArchive==="function")renderWeekArchive();
+   return result;
+  };
+  enhanced.__mbdVisualWeek=true;
+  window.renderWeek=enhanced;
+ }
  decorateWeek();
 }
 function addSaveAnother(){
