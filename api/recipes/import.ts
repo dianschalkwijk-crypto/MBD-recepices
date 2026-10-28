@@ -36,7 +36,7 @@ function looksEnglish(value:any){
 async function ensureDutch(ai:OpenAI,model:string,result:z.infer<typeof Recipe>){
   const second=await ai.chat.completions.create({
     model,response_format:{type:"json_object"},messages:[
-      {role:"system",content:"Vertaal uitsluitend de menselijk leesbare recepttekst in dit JSON-object naar natuurlijk Nederlands. Behoud source_url, source_author, hoeveelheden, getallen, merknamen, collections, warnings-structuur en source_completeness. Vertaal title_nl, servings_text, original_line, ingredient, note, steps en waarschuwingstekst waar nodig. Voeg niets toe en laat niets weg. Antwoord uitsluitend met hetzelfde JSON-schema."},
+      {role:"system",content:"Vertaal uitsluitend de menselijk leesbare recepttekst in dit JSON-object naar natuurlijk Nederlands. Behoud source_url, source_author, hoeveelheden, getallen, merknamen, collections, warnings-structuur en source_completeness. Het woord mealprep mag blijven staan. Vertaal title_nl, servings_text, original_line, unit, ingredient, note, steps en waarschuwingstekst waar nodig. Zet tablespoon/tbsp naar el en teaspoon/tsp naar tl; zet alleen andere maten metrisch om als dat zonder inhoudelijk gokken kan. Voeg niets toe en laat niets weg. Antwoord uitsluitend met hetzelfde JSON-schema."},
       {role:"user",content:JSON.stringify(result)}
     ]
   });
@@ -58,7 +58,7 @@ export default async function handler(req: any, res: any) {
       model:process.env.OPENAI_MODEL || "gpt-4.1-mini",
       response_format:{type:"json_object"},
       messages:[
-        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een natuurlijk Nederlands recept. Vertaal de titel, alle ingrediëntnamen, opmerkingen en alle bereidingsstappen naar Nederlands, ook wanneer de bron Engels is. Behoud merknamen, hoeveelheden en betekenis exact. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, servings_text (string of null; alleen als de bron expliciet het aantal personen/porties/servings noemt, nooit gokken), ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur uit de input. Als informatie ontbreekt: geef een waarschuwing."},
+        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een natuurlijk Nederlands recept. Vertaal de titel, alle ingrediëntnamen, eenheden, opmerkingen en alle bereidingsstappen naar natuurlijk Nederlands, ook wanneer de bron Engels is. Het woord mealprep mag blijven staan. Behoud merknamen, hoeveelheden en betekenis exact. Zet tablespoon/tbsp naar el en teaspoon/tsp naar tl; zet andere buitenlandse maten alleen metrisch om als dat betrouwbaar kan. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, servings_text (string of null; alleen als de bron expliciet het aantal personen/porties/servings noemt, nooit gokken), ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur/accountnaam uit de input exact. Als informatie ontbreekt: geef een waarschuwing."},
         {role:"user",content:JSON.stringify({sourceURL,sourceAuthor,sharedText})}
       ]
     });
@@ -67,7 +67,8 @@ export default async function handler(req: any, res: any) {
     let result=Recipe.parse(JSON.parse(raw));
     result.source_url=sourceURL||null;
     result.source_author=sourceAuthor||result.source_author||null;
-    result=await ensureDutch(ai,process.env.OPENAI_MODEL || "gpt-4.1-mini",result);
+    const readable=[result.title_nl,result.servings_text,...result.ingredients.flatMap(x=>[x.original_line,x.unit,x.ingredient,x.note]),...result.steps].filter(Boolean).join(" ");
+    if(looksEnglish(readable))result=await ensureDutch(ai,process.env.OPENAI_MODEL || "gpt-4.1-mini",result);
     result.source_url=sourceURL||null;
     result.source_author=sourceAuthor||result.source_author||null;
     return res.status(200).json(result);
