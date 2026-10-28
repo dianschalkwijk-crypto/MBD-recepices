@@ -12,7 +12,10 @@ const synonymGroups=[
  ["bonen","beans"],["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
 ].map(g=>g.map(norm));
 function variants(t){const n=norm(t);const g=synonymGroups.find(x=>x.includes(n));return g||[n]}
-function hasTerm(hay,t){return variants(t).some(v=>hay.includes(v))}
+function hasTerm(hay,t){
+ const h=norm(hay),list=variants(t).filter(Boolean);
+ return list.some(v=>v.length<=2?(" "+h.replace(/[^a-z0-9]+/g," ")+" ").includes(" "+v+" "):h.includes(v));
+}
 function ingredientText(r){const v=r?.ingredients;if(Array.isArray(v))return v.map(x=>typeof x==="string"?x:JSON.stringify(x||"")).join("\n");if(v&&typeof v==="object")return JSON.stringify(v);return String(v||"")}
 function searchableText(r){return [r?.mdb,r?.title,r?.originalTitle,r?.category,r?.cuisine,r?.book,r?.bookPage,ingredientText(r),r?.steps,(r?.collections||[]).join(" ")].filter(Boolean).join(" ")}
 function terms(){return ($("#mbd-ingredients")?.value||"").split(/[,;\n]+/).map(norm).filter(Boolean)}
@@ -33,6 +36,10 @@ input.addEventListener("input",()=>{
  if(search.value){
   search.value="";
   search.dispatchEvent(new Event("input",{bubbles:true}));
+ }
+ if(input.value.trim()&&selected.size){
+  selected.clear();
+  chips.querySelectorAll("button").forEach(b=>{b.setAttribute("aria-pressed","false");b.style.background="white"});
  }
  clearTimeout(window.__mbdPantryRenderTimer);
  window.__mbdPantryRenderTimer=setTimeout(()=>{
@@ -64,7 +71,10 @@ const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?w
 const fullHay=norm(searchableText(r));const queryOk=!queryWords.length||queryWords.every(w=>hasTerm(fullHay,w));
 const ok=categoryOk&&ingredientsOk&&queryOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
 const count=cards.filter(c=>!c.hidden).length;
-const query=words.length?words.join(" + "):q;const msg=count+" "+(count===1?"gerecht gevonden":"gerechten gevonden")+(query?" met "+query:"")+(selected.size?" · "+[...selected].join(", "):"");
+const rawIngredientMatches=words.length?all.filter(r=>allTerms?words.every(w=>hasTerm(ingredientText(r),w)):words.some(w=>hasTerm(ingredientText(r),w))).length:0;
+const query=words.length?words.join(" + "):q;
+let msg=count+" "+(count===1?"gerecht gevonden":"gerechten gevonden")+(query?" met "+query:"")+(selected.size?" · "+[...selected].join(", "):"");
+if(words.length&&count===0&&rawIngredientMatches>0)msg+=" · "+rawIngredientMatches+" recepten bevatten dit ingrediënt maar zijn verborgen door je huidige recept-/allergiefilters";
 if(counter.textContent!==msg)counter.textContent=msg;
 }
 function photos(){
