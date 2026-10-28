@@ -116,6 +116,7 @@ export default async function handler(req:any,res:any){
     const method=safeText(extra.method,120);
     const category=safeText(extra.category,200);
     const mainIngredient=safeText(extra.mainIngredient,300);
+    const portions=safeText(extra.portions,100);
     const sourceNotes=safeText(extra.sourceNotes,2000);
     const bookPageRaw=safeText(extra.bookPage,30);
     const bookPage=/^\d+(?:\s*[-–,]\s*\d+)*$/.test(bookPageRaw)?bookPageRaw:'';
@@ -138,6 +139,7 @@ export default async function handler(req:any,res:any){
     if(sourceURL){props['Oorspronkelijke bron']={url:sourceURL};props['Inhoudsbron']={url:sourceURL}}
     if(sourcePlatform)props['Bronplatform']={rich_text:rt(sourcePlatform)};
     if(category)props['Categorie']={rich_text:rt(category)};
+    if(portions)props['Porties']={rich_text:rt(portions)};
     if(bookPage&&/^\d+$/.test(bookPage))props['Pagina']={number:Number(bookPage)};
 
     const page=await notion('/pages',{method:'POST',body:JSON.stringify({parent:{type:'data_source_id',data_source_id:R},properties:props})});
@@ -147,7 +149,7 @@ export default async function handler(req:any,res:any){
       sourceURL,contentURL:sourceURL,notionURL,
       sourceKind,sourceAuthor,platform:sourcePlatform,method,category,cuisine:'',mainIngredient,
       book:(sourceKind==='Kookboek'&&sourceAuthor)?sourceAuthor:book.name,bookNo:sourceKind==='Kookboek'?null:book.number,bookPage,sourceNotes,notionBook:book.name,notionBookNo:book.number,
-      portions:'',time:'',collections,warnings,seeded:false,
+      portions,time:'',collections,warnings,seeded:false,
       contentSynced:!!(ingredients&&steps),hasPhoto:false,createdAt:new Date().toISOString(),
       syncedFrom:'App → Notion → Supabase'
     };
