@@ -29,13 +29,23 @@ const chips=document.createElement("div");chips.hidden=true;chips.style.cssText=
 toggle.onclick=()=>{chips.hidden=!chips.hidden;chips.style.display=chips.hidden?"none":"flex"};
 for(const cat of categories){const b=document.createElement("button");b.type="button";b.textContent=cat;b.setAttribute("aria-pressed","false");b.style.cssText="padding:7px 10px;border:1px solid #e8dfd8;border-radius:20px;background:white;font-size:12px";b.onclick=()=>{selected.has(cat)?selected.delete(cat):selected.add(cat);b.setAttribute("aria-pressed",String(selected.has(cat)));b.style.background=selected.has(cat)?"#f4e5df":"white";update()};chips.append(b)}
 bar.append(counter,label,input,hint,mode,toggle,chips);list.before(bar);
-input.addEventListener("input",()=>{if(search.value){search.value="";renderRecipes()}update()});
+input.addEventListener("input",()=>{
+ if(search.value){
+  search.value="";
+  search.dispatchEvent(new Event("input",{bubbles:true}));
+ }
+ clearTimeout(window.__mbdPantryRenderTimer);
+ window.__mbdPantryRenderTimer=setTimeout(()=>{
+  try{renderRecipes()}catch(_){}
+  requestAnimationFrame(update);
+ },35);
+});
 search.addEventListener("input",()=>setTimeout(update,0));
 }
 function update(){
 const list=$("#recipeList"),counter=$("#mbd-result-count");if(!list||!counter)return;
 const all=recipes(),byId=new Map(all.map(r=>[String(r.mdb||"").toUpperCase(),r])),byLocalId=new Map(all.map(r=>[String(r.id||""),r])),words=terms();
-const q=norm($("#recipeSearch")?.value||""),queryWords=q.split(/\s+/).filter(Boolean);
+const q=words.length?"":norm($("#recipeSearch")?.value||""),queryWords=q.split(/\s+/).filter(Boolean);
 const cards=[...list.querySelectorAll(".recipe-card")];
 for(const card of cards){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=byLocalId.get(String(localId))||byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(r?.collections||[]),r?.category||""].map(norm);const categoryOk=!selected.size||[...selected].some(c=>cats.includes(norm(c)));
 const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?words.every(w=>hasTerm(hay,w)):words.some(w=>hasTerm(hay,w)));
