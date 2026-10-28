@@ -40,16 +40,17 @@ async function loadWeekImage(img,placeholder,r){
  if(r?.mdb)show("/api/notion/photo?mdb="+encodeURIComponent(r.mdb));
 }
 function updateWeekVisual(row,value,select){
- const img=row.querySelector("[data-week-img]"),placeholder=row.querySelector("[data-week-emoji]"),title=row.querySelector("[data-week-title]");
+ const img=row.querySelector("[data-week-img]"),placeholder=row.querySelector("[data-week-emoji]"),title=row.querySelector("[data-week-title]"),meta=row.querySelector("[data-week-mdb]");
  if(!img||!placeholder||!title)return;
  img.hidden=true;img.removeAttribute("src");placeholder.hidden=false;
  if(String(value||"").startsWith("p:")){
-  placeholder.textContent="📦";title.textContent=select?.selectedOptions?.[0]?.textContent||"Maaltijdpakket";return;
+  placeholder.textContent="📦";title.textContent=select?.selectedOptions?.[0]?.textContent||"Maaltijdpakket";if(meta)meta.textContent="Maaltijdpakket";return;
  }
  const id=String(value||"").replace(/^r:/,"");
  const r=state.recipes.find(x=>String(x.id)===id||String(x.mdb||"")===id);
  placeholder.textContent=r?visualEmoji(r):"🍽️";
- title.textContent=r?(r.title||r.originalTitle||"Recept"):(select?.selectedOptions?.[0]?.textContent||"Nog geen recept gekozen");
+ title.textContent=r?(r.title||r.originalTitle||"Recept"):"Kies een recept";
+ if(meta)meta.textContent=r?.mdb||"";
  if(r)loadWeekImage(img,placeholder,r);
 }
 function decorateWeek(){
@@ -72,7 +73,8 @@ function decorateWeek(){
    thumb.append(emoji,img);
    const fields=document.createElement("div");fields.className="mbd-week-fields";
    const selectedTitle=document.createElement("div");selectedTitle.className="mbd-week-title";selectedTitle.setAttribute("data-week-title","");
-   fields.append(select,selectedTitle);choice.append(thumb,fields);label.insertAdjacentElement("afterend",choice);
+   const selectedMdb=document.createElement("div");selectedMdb.className="mbd-week-mdb";selectedMdb.setAttribute("data-week-mdb","");
+   fields.append(selectedTitle,selectedMdb,select);choice.append(thumb,fields);label.insertAdjacentElement("afterend",choice);
   }
   updateWeekVisual(row,select.value,select);
   if(select.dataset.mbdWeekVisualBound!=="1"){
@@ -189,12 +191,12 @@ function installSmartSearch(){
 function sourceKind(url){
  try{const h=new URL(url).hostname.toLowerCase();if(h.includes("instagram"))return"Instagram";if(h.includes("tiktok"))return"TikTok";if(h.includes("facebook"))return"Facebook";if(h.includes("pinterest")||h==="pin.it")return"Pinterest";return"Website"}catch{return"Website"}
 }
-function showPhotoFallback(url,message){
+function showPhotoFallback(url,message,author=""){
  const msg=q("#importMessage");if(msg){msg.textContent=message;msg.className="message warn"}
  q("#mbd-link-photo-fallback")?.remove();
  const box=document.createElement("div");box.id="mbd-link-photo-fallback";box.style.cssText="display:grid;gap:8px;margin-top:10px";
  const photo=document.createElement("a");photo.className="secondary";photo.style.cssText="display:block;text-align:center;text-decoration:none";photo.textContent="📷 Screenshot of foto toevoegen";
- photo.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url));
+ photo.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url))+(author?"&sourceAuthor="+encodeURIComponent(author):"");
  const paste=document.createElement("button");paste.type="button";paste.className="secondary";paste.textContent="📋 Recepttekst/caption plakken";paste.onclick=()=>q("#sourceText")?.focus();
  const manual=document.createElement("a");manual.className="secondary";manual.style.cssText="display:block;text-align:center;text-decoration:none";manual.textContent="✍️ Handmatig vanaf foto invoeren";
  manual.href="/scan.html?sourceURL="+encodeURIComponent(url)+"&sourceKind="+encodeURIComponent(sourceKind(url))+"&manual=1";
@@ -216,8 +218,12 @@ function installAutoLinkImport(){
    const found=String(d.sharedText||d.text||"").trim();if(found.length<10)throw Error("Geen bruikbare recepttekst gevonden");
    q("#sourceText").value=found;
    if(typeof window.analyze==="function")await window.analyze();else if(typeof analyze==="function")await analyze();
+   const draft=(typeof currentDraft!=="undefined")?currentDraft:null;
+   if(draft&&(draft.completeness==="onvoldoende"||!draft.ingredients?.length||!draft.steps?.length)){
+    showPhotoFallback(url,"De link bevatte niet genoeg receptinformatie. De bronlink blijft bewaard; voeg een screenshot of foto toe zodat de app die kan uitlezen.",String(d.author||d.sourceAuthor||""));
+   }
   }catch(err){
-   showPhotoFallback(url,(err?.message||"Link kon niet worden uitgelezen")+". De bronlink blijft bewaard als je via een screenshot of foto toevoegt.");
+   showPhotoFallback(url,"Deze link kon niet volledig worden uitgelezen. De bronlink blijft bewaard; voeg een screenshot of foto toe zodat de app die kan uitlezen.");
   }finally{btn.disabled=false}
  },true);
 }
@@ -227,15 +233,17 @@ function css(){
  const s=document.createElement("style");s.id="mbd-ux-finishing-css";s.textContent=`
  .mbd-week-row{grid-template-columns:1fr!important;gap:7px!important;margin:0 0 15px}
  .mbd-week-day{font-size:15px!important}.mbd-week-row>b{font-size:15px!important}
- .mbd-week-choice{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:center}
- .mbd-week-thumb{width:62px;height:62px;border-radius:14px;background:#f4ece7;border:1px solid var(--line,#e8dfd8);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:30px}
+ .mbd-week-choice{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:12px;align-items:center;padding:10px;border:1px solid var(--line,#e8dfd8);border-radius:16px;background:#fff;min-height:82px;cursor:pointer}
+ .mbd-week-thumb{width:82px;height:82px;border-radius:14px;background:#f4ece7;border:1px solid var(--line,#e8dfd8);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px}
  .mbd-week-thumb img{width:100%;height:100%;object-fit:cover}
- .mbd-week-fields{min-width:0}.mbd-week-fields select{width:100%;margin:0!important;font-size:15px}
- .mbd-week-title{margin-top:5px;font-size:13px;font-weight:700;color:#564e49;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .mbd-week-fields{min-width:0}
+ .mbd-week-fields select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:3;margin:0!important}
+ .mbd-week-title{font-size:16px;line-height:1.3;font-weight:750;color:#3f3935;white-space:normal;overflow:visible;text-overflow:clip}
+ .mbd-week-mdb{margin-top:6px;font-size:11px;color:#8a817b;font-weight:650;letter-spacing:.02em}
  #mbd-save-another{width:100%}
  `;document.head.appendChild(s);
 }
-function boot(){css();installSmartSearch();installWeekPlanner();installSaveAnother();installAutoLinkImport()}
+function boot(){css();installWeekPlanner();installSaveAnother();installAutoLinkImport()}
 document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,0));
 if(document.readyState!=="loading")setTimeout(boot,0);
 setTimeout(boot,900);
