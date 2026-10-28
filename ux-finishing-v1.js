@@ -127,6 +127,7 @@ function renderWeekSearchResults(){
     const value="r:"+r.id;if(![...select.options].some(o=>o.value===value))return;
     select.value=value;select.dispatchEvent(new Event("change",{bubbles:true}));
     input.value="";host.replaceChildren();
+    if(typeof renderWeek==="function")setTimeout(()=>renderWeek(),20);
    };
    actions.append(b);
   }
