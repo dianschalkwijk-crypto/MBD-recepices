@@ -36,3 +36,10 @@ De Vercel-connector kapt de broninhoud van serverbestanden af. Daarom geldt niet
 - `api/recipes/source.ts`: externe toegestane bron-fetch in preview succesvol getest (HTTP 200).
 - `api/admin/normalize-recipes.ts`: echte OpenAI-normalisatie in preview succesvol getest (HTTP 200) na verwijderen van niet-ondersteunde `temperature: 0` voor GPT-5.6 Luna.
 - Tijdelijke selftest-logica is weer verwijderd; schone preview bouwt READY en beide routes hebben weer hun normale methodebeveiliging.
+
+
+## Afbakening na herstel — 28 oktober 2026
+- Broncodeherstel zelf niet opnieuw uitvoeren: de huidige werkzaamheden zijn functionele UX-/veiligheidsafbouw op dezelfde recovery-branch.
+- Laatste functionele afbouwcode is nieuwer dan de eerder gedocumenteerde herstelstatus; zie `PROJECT_STATUS.md` onder “LAATSTE FUNCTIONELE AFBOUWRONDE — 28-10-2026 · v33”.
+- Nieuwe deployment is momenteel uitsluitend geblokkeerd door de Vercel Hobby-daglimiet (>100 deployments/24 uur), niet door een bekende buildfout.
+- Geen oude productie- of previewdeployment promoveren als vervanging voor de huidige branch-head; eerst de actuele head bouwen en testen zodra het quotum vrij is.
