@@ -204,9 +204,9 @@ function installSaveAnother(){
 }
 
 const searchSynonyms=[
- ["rijst","rice"],["kip","chicken"],["aardappel","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","onion"],["knoflook","garlic"],
- ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","zucchini"],["aubergine","eggplant"],
- ["paprika","bell pepper"],["wortel","carrot"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],["bonen","beans"],
+ ["rijst","rice"],["kip","chicken"],["aardappel","aardappels","aardappelen","potato","potatoes"],["kaas","cheese"],["ui","uien","onion","onions"],["knoflook","garlic"],
+ ["zalm","salmon"],["tonijn","tuna"],["gehakt","minced","ground beef","ground meat"],["courgette","courgettes","zucchini","zucchinis"],["aubergine","aubergines","eggplant","eggplants"],
+ ["paprika","bell pepper"],["wortel","wortels","carrot","carrots"],["bloemkool","cauliflower"],["kikkererwt","kikkererwten","chickpea","chickpeas"],["boon","bonen","bean","beans"],
  ["melk","milk"],["room","cream"],["boter","butter"],["ei","eieren","egg","eggs"],["bloem","flour"],["suiker","sugar"]
 ].map(g=>g.map(x=>String(x).toLocaleLowerCase("nl")));
 const searchNorm=s=>String(s||"").toLocaleLowerCase("nl").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
