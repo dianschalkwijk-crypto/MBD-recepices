@@ -349,3 +349,15 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Bewust NIET gewijzigd: `has_app_access`, `is_admin`, `redeem_access_code`, `mbd_save_scanned_recipe` en `mbd_catalog_server_write`; deze zijn onderdeel van bestaande auth/save-flows of bevatten eigen autorisatie/secretcontrole en worden niet zonder gerichte end-to-endtest aangescherpt.
 - RLS-zonder-policy meldingen op backup/config/video-tabellen zijn INFO-waarschuwingen; geen publieke toegang toegevoegd. Leaked-password protection blijft een apart Supabase Auth-instellingspunt en is niet automatisch aangezet.
 - Geen receptdata, MDB-nummers of gebruikersdata gewijzigd.
+
+
+## SUPABASE PERFORMANCE + SHARE-RLS HERSTEL — 28-10-2026
+- Supabase performance-advisor gecontroleerd en laag-risico database-optimalisaties uitgevoerd.
+- Vijf ontbrekende foreign-key-indexes toegevoegd: `access_codes(created_by)`, `access_redemptions(user_id)`, `contacts(contact_id)`, `recipe_shares(recipient_id)` en `recipe_shares(shared_by)`. De lint `unindexed_foreign_keys` is daarna verdwenen.
+- Alle 12 gemelde RLS initplan-waarschuwingen zijn opgelost door `auth.uid()` binnen policies als `(select auth.uid())` te evalueren; dezelfde toegangsvoorwaarden zijn behouden.
+- Tijdens deze controle is een echte fout gevonden in `recipes_read`: de share-check vergeleek `s.recipe_id = s.id`. Dit is gecorrigeerd naar `s.recipe_id = recipes.id` met dezelfde recipient-check. Er waren op het moment van herstel 0 bestaande `recipe_shares`-records, dus geen bestaande gedeelde data hoefde te worden gemigreerd.
+- Dubbele unieke index op `tips(owner_id, mbdt_number)` onderzocht. `tips_owner_id_mbdt_number_key` is de echte UNIQUE constraint; alleen de redundante losse index `tips_owner_mbdt_unique` is verwijderd.
+- `rights_records` had twee overlappende permissive SELECT-policies met identieke adminvoorwaarde. `rights_write` (ALL) dekte SELECT al volledig; de redundante `rights_read` policy is verwijderd zonder rechten te verruimen of te beperken.
+- Hercontrole performance-advisor: `auth_rls_initplan`, `unindexed_foreign_keys`, `duplicate_index` en `multiple_permissive_policies` zijn verdwenen.
+- Resterende performance INFO: historische backuptabellen zonder primary key en nieuw aangemaakte indexes die nog geen gebruiksstatistiek hebben. Dit vereist nu geen actie.
+- Geen receptinhoud, MDB-nummers of bestaande gebruikers-/sharedata gewijzigd.
