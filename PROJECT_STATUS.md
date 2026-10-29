@@ -1,4 +1,17 @@
 # MadeByDian — centraal herstelregister
+## Lokale releasevoorbereiding — 29 oktober 2026
+
+- Basis: recovery/vercel-2026-10-22 op 80df13a85e9d93e31ed58facd3e48e48dacb6df7; remote-tip opnieuw bevestigd.
+- Correcties: lokale MDB-toekenning uit de bibliotheekcontrole verwijderd; server controleert bestaande canonieke bronlinks en volledige receptinhoud vóór reserveren; ontbrekende credentials of mislukte boekcontrole verbruiken geen MDB-reservering.
+- Een onzekere Supabase-write verwijdert niet langer de Notion-pagina. Alleen een expliciet afgewezen insert kan worden gecompenseerd; een mislukte compensatie wordt niet meer als geslaagde rollback gemeld. De hoofd-savehelper blokkeert opnieuw opslaan zolang handmatige reconciliatie nodig is.
+- Geen bestaande recepten, foto's, MDB-nummers of databases gewijzigd. Geen databasefunctie of constraint gewijzigd.
+- Validatie: npm run typecheck geslaagd; node --test --test-isolation=none tests/*.test.mjs: 15 geslaagd, 0 gefaald, 2 TODO. De TODO's betreffen echte PostgreSQL-concurrency en duurzame idempotency; tests met gesimuleerde database-reserveringen bewijzen die live garanties niet.
+- Lokale Chromium-controle: instellingen, collecties, recepten en weekmenu openen; 23 collectieknoppen, eerste collectie opent; geen pageerrors. Gebruikt de lokale seedcatalogus van 621 recepten met externe requests geblokkeerd; dit is geen actuele databasetelling of live integratietest.
+- scripts/audit-catalog.mjs biedt een paginerende alleen-lezen cataloguscontrole. Live audit niet uitgevoerd: Supabase-netwerktoegang nog niet geactiveerd.
+- Publicatie door gebruiker opgedragen. Productie-healthcontrole geblokkeerd door CONNECT 403; Vercel-token/beheerkoppeling ontbreekt. Daarom nog geen gecontroleerde Vercel-build, deployment of livegang vastgesteld. GitHub-push apart controleren; een push bewijst geen deployment.
+- Herstelbare lokale bronbackup: /workspace/cloud-setup/mbd-before-release-80df13a.bundle, git bundle verify geslaagd. Dit is geen databasebackup of bevestiging van de actuele Vercel-rollbackdeployment.
+- Benodigde netwerkdomeinen en VERCEL_TOKEN-vereiste opgeslagen in het omgevingsconcept. Concept opslaan past de actieve omgeving niet automatisch aan. Geen tokenwaarden in code, logs of chat opnemen.
+
 Bijgewerkt: 2026-10-27. Dit document is de startplaats voor vervolgwerk. Verifieer veranderlijke gegevens opnieuw, maar herhaal geen reeds bewezen diagnose zonder aanleiding.
 
 ## Werkregels
