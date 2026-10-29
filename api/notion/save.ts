@@ -52,6 +52,18 @@ async function highestSupabase(){
   if(!r.ok)throw new Error('Supabase max-ID HTTP '+r.status);
   const a:any[]=await r.json();return a.length?mdbNo(a[0]?.mdb):0;
 }
+async function reserveMDB(){
+  const secret=process.env.MBD_SUPABASE_WRITE_SECRET?.trim();
+  if(!secret)throw new Error('MBD_SUPABASE_WRITE_SECRET ontbreekt');
+  const r=await fetch(DB+'/rest/v1/rpc/mbd_reserve_number',{
+    method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},
+    body:JSON.stringify({p_secret:secret}),cache:'no-store'
+  });
+  if(!r.ok)throw new Error('MDB-reservering mislukt: HTTP '+r.status);
+  const mdb=await r.json();
+  if(typeof mdb!=='string'||!/^MDB-\d{4}$/.test(mdb))throw new Error('Ongeldige MDB-reservering');
+  return mdb;
+}
 async function createBook(number:number){
   const name='Boek '+number+' · Nieuwe recepten';
   const p=await notion('/pages',{method:'POST',body:JSON.stringify({
@@ -125,8 +137,7 @@ export default async function handler(req:any,res:any){
     if(title.length>1000||ingredients.length>60000||steps.length>60000)return res.status(400).json({ok:false,error:'Recept is te groot'});
     if(sourceURL){try{const u=new URL(sourceURL);if(u.protocol!=='https:'&&u.protocol!=='http:')throw 0}catch{return res.status(400).json({ok:false,error:'Bronlink is ongeldig'})}}
 
-    const [nMax,sMax,book]=await Promise.all([highestNotion(),highestSupabase(),activeBook()]);
-    const mdb=fmt(Math.max(nMax,sMax)+1);
+    const [mdb,book]=await Promise.all([reserveMDB(),activeBook()]);
     const props:any={
       'Recept':{title:tt(title)},
       'Publiekstitel':{rich_text:rt(title)},
