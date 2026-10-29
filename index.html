@@ -680,7 +680,7 @@ async function syncCatalogRecipes(){
   if(added||updated){try{persist()}catch(storageError){console.warn('Lokale opslag vol; online recepten blijven in Supabase:',storageError.message)}renderRecipes();renderCollections();}
  }catch(e){console.warn('Catalogus synchronisatie niet beschikbaar:',e.message)}
 }
-/* catalog handled by safe sync */
+// Load missing cloud recipes without overwriting local records.\nsetTimeout(()=>syncCatalogRecipes(),3500);\n/* catalog handled by safe sync */
 let cloudUser=null;
 let weekSyncInProgress=false;
 function currentWeekPortions(){try{return JSON.parse(localStorage.getItem('mbd_week_portions_v1')||'{}')||{}}catch{return{}}}
