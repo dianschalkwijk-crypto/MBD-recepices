@@ -22,7 +22,7 @@
       body:JSON.stringify(body)
     });
     const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(d.message||d.error||("HTTP "+r.status));
+    if(!r.ok||d.ok===false)throw Object.assign(new Error(d.message||d.error||("HTTP "+r.status)),{reconciliationRequired:!!d.reconciliationRequired,mdb:d.mdb});
     return d;
   }
 
@@ -167,12 +167,17 @@
     }
     const duplicate=localDuplicate(title,ingredients,sourceURL);
 
-    if(duplicate&&!confirm('Dit lijkt al op “'+duplicate.title+'”. Toch als apart recept opslaan?'))return;
+    if(duplicate){
+      const message='Dit recept bestaat al'+(duplicate.mdb?' als '+duplicate.mdb:'')+'. Open het bestaande recept om het aan te passen.';
+      if(typeof showMessage==='function')showMessage($('#importMessage'),message,'warn');
+      return;
+    }
 
     const btn=$("#saveRecipeBtn");
     const msg=$("#importMessage");
     const status=$("#mbdPhotoStatus");
     const oldText=btn.textContent;
+    let reconciliationRequired=false;
 
     busy=true;
     btn.disabled=true;
@@ -290,16 +295,17 @@
       }
       if(typeof renderAll==="function")renderAll();
     }catch(e){
-      const message="⚠️ Niet opgeslagen: "+(e?.message||e);
+      reconciliationRequired=!!e?.reconciliationRequired;
+      const message=(reconciliationRequired?"⚠️ Controle nodig: ":"⚠️ Niet opgeslagen: ")+(e?.message||e);
       if(typeof showMessage==="function"&&msg){
         showMessage(msg,message,"warn");
       }else if(msg){
         msg.textContent=message;
       }
-      if(status)status.textContent="Niet opgeslagen. Probeer opnieuw.";
+      if(status)status.textContent=reconciliationRequired?"Controleer eerst de opslagstatus van "+e.mdb+". Niet opnieuw uploaden.":"Niet opgeslagen. Je concept is behouden.";
     }finally{
-      btn.disabled=false;
-      btn.textContent=oldText;
+      btn.disabled=reconciliationRequired;
+      btn.textContent=reconciliationRequired?"Controleer opslagstatus":oldText;
       busy=false;
     }
   }
