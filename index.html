@@ -328,7 +328,7 @@ async function analyze(){
   const sourceText = document.querySelector('#sourceText').value.trim();
   const msg = document.querySelector('#importMessage');
   if(!sourceURL && !sourceText){ showMessage(msg,'Plak minimaal een bronlink of recepttekst.'); return; }
-  if(!sourceText){ showMessage(msg,'Alleen een link is nog niet genoeg om ingrediënten betrouwbaar uit te lezen. Plak ook de caption/recepttekst.'); return; }
+  // De server probeert bij alleen een bronlink eerst publieke receptmetadata op te halen.
 
   const author=extractAuthor(sourceText);
   showMessage(msg,'⏳ Recept wordt gecontroleerd en naar Nederlands genormaliseerd…','ok');
