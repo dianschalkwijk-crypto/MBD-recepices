@@ -651,9 +651,18 @@ async function syncCatalogRecipes(){
   if(error)throw error;
   if(!Array.isArray(data)||!data.length)return;
   const known=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));let added=0,updated=0;
+  const sameRecipe=(a,b)=>{
+   const urls=[a.sourceURL,a.contentURL].filter(Boolean);
+   const other=[b.sourceURL,b.contentURL].filter(Boolean);
+   if(urls.length&&other.length)return urls.some(u=>other.includes(u));
+   return String(a.title||'').trim().toLowerCase()===String(b.title||'').trim().toLowerCase()
+     && String(a.ingredients||'').trim()===String(b.ingredients||'').trim()
+     && String(a.steps||'').trim()===String(b.steps||'').trim();
+  };
   for(const row of data){const p=row.recipe||{};if(!row.mdb)continue;
    if(known.has(row.mdb)){
     const local=state.recipes.find(r=>r.mdb===row.mdb);
+    if(local&&!sameRecipe(local,p)){console.warn('MDB-conflict veilig overgeslagen:',row.mdb);continue;}
     if(local){for(const key of ['sourcePhotoPaths','sourcePhotoPrivate','sourcePhotoCredit','ownPhotoPath']){
      if(p[key]&&JSON.stringify(local[key])!==JSON.stringify(p[key])){local[key]=p[key];updated++;}
     }
