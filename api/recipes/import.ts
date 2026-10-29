@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const Request = z.object({
   sourceURL: z.string().url().nullable().optional(),
-  sharedText: z.string().min(10).max(60000),
+  sharedText: z.string().max(60000).optional().default(""),
   sourceAuthor: z.string().max(500).nullable().optional()
 });
 const Ingredient = z.object({
@@ -63,7 +63,24 @@ export default async function handler(req: any, res: any) {
   const parsed = Request.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Ongeldige of ontbrekende recepttekst." });
   if (!process.env.OPENAI_API_KEY) return res.status(503).json({ error: "Receptimport is niet geconfigureerd." });
-  const {sourceURL,sharedText,sourceAuthor} = parsed.data;
+  const {sourceURL,sourceAuthor} = parsed.data;
+  let sharedText=parsed.data.sharedText.trim();
+  if(!sharedText && sourceURL){
+    try{
+      const u=new URL(sourceURL);
+      const allowed=["instagram.com","www.instagram.com","tiktok.com","www.tiktok.com","facebook.com","www.facebook.com"];
+      if(!allowed.includes(u.hostname.toLowerCase()))return res.status(422).json({error:"Deze bron wordt nog niet automatisch ondersteund."});
+      const response=await fetch(u.toString(),{headers:{"User-Agent":"Mozilla/5.0","Accept":"text/html"},signal:AbortSignal.timeout(12000),redirect:"error"});
+      if(response.ok){
+        const html=(await response.text()).slice(0,400000);
+        const meta=html.match(/<meta[^>]+(?:og:description|twitter:description|name="description")[^>]*>/gi)||[];
+        const descriptions=meta.map(tag=>(tag.match(/content=["']([^"']+)["']/i)||[])[1]||"");
+        sharedText=descriptions.sort((a,b)=>b.length-a.length)[0]||"";
+        sharedText=sharedText.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&");
+      }
+    }catch(e){console.warn("Social source metadata unavailable",e);}
+  }
+  if(sharedText.length<10)return res.status(422).json({error:"Instagram geeft geen recepttekst vrij voor deze reel. Deel de caption of voeg een video toe; de bronlink blijft bewaard."});
   try {
     const ai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
     const completion = await ai.chat.completions.create({
