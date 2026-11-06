@@ -350,7 +350,7 @@ async function readVideoFrames(){
       ctx.drawImage(video,0,0,canvas.width,canvas.height);
       images.push(canvas.toDataURL('image/jpeg',.68));
     }
-    const response=await fetch('/api/recipes/video-frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images})});
+    const response=await fetch('/api/recipes/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'video-frames',images})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(data.error||'Videoherkenning mislukt.');
     if(!data.text?.trim())throw Error('Geen leesbare recepttekst in de gekozen videobeelden. Gebruik de caption.');
