@@ -370,11 +370,12 @@ async function analyze(){
     const normalized=normalizeSourceText(sourceText);
     const parsed=splitRecipe(normalized);
     const warnings=detectWarnings(normalized);
-    warnings.unshift('Online AI-import was niet bereikbaar; lokale parser gebruikt. Controleer het recept extra goed.');
+    const failureReason=String(error?.message||'Onbekende fout');
+    warnings.unshift('Online vertaling niet gelukt: '+failureReason+'. Originele tekst behouden; probeer Maak Nederlands recept opnieuw.');
     const collections=classify(`${parsed.title}\n${normalized}`);
     const completeness=parsed.ingredients.length&&parsed.steps.length?'redelijk compleet':'gedeeltelijk';
     currentDraft={sourceURL,sourceText:normalized,title:parsed.title,author,portions:'',ingredients:parsed.ingredients,steps:parsed.steps,collections,warnings,completeness};
-    showMessage(msg,'⚠️ Online verwerking niet bereikbaar. Lokale veilige parser gebruikt.');
+    showMessage(msg,'⚠️ Vertaling niet voltooid: '+failureReason+'. De originele caption is behouden. Probeer Maak Nederlands recept opnieuw; sla een Engelstalig concept nog niet op.');
     fillReview();
   }finally{ clearTimeout(timer); }
 }
