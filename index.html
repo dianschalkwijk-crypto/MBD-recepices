@@ -78,6 +78,11 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <label>Caption / recepttekst
             <textarea id="sourceText" rows="9" placeholder="Plak ingrediënten en bereidingsstappen..."></textarea>
           </label>
+          <label>Opgeslagen video (test: tekst in beeld)
+            <input id="recipeVideo" type="file" accept="video/*" />
+          </label>
+          <button id="readVideoBtn" class="secondary" type="button">🎬 Lees tekst uit video</button>
+          <p class="muted">De test leest enkele videobeelden. Gesproken uitleg wordt nog niet herkend. Controleer hoeveelheden vóór opslaan.</p>
           <button id="analyzeBtn" class="primary">✨ Maak Nederlands recept</button>
           <p id="importMessage" class="message hidden"></p>
         </div>
@@ -323,6 +328,39 @@ function formatAIIngredient(x){
   if(x.note) line += `${line?' · ':''}${x.note}`;
   return line || x.original_line || '';
 }
+async function readVideoFrames(){
+  const input=document.querySelector('#recipeVideo'),file=input.files?.[0],msg=document.querySelector('#importMessage');
+  if(!file){showMessage(msg,'Kies eerst een opgeslagen video.','warn');return;}
+  if(file.size>100*1024*1024){showMessage(msg,'Video te groot (maximaal 100 MB).','warn');return;}
+  const button=document.querySelector('#readVideoBtn');button.disabled=true;
+  const url=URL.createObjectURL(file),video=document.createElement('video');
+  video.muted=true;video.playsInline=true;video.preload='auto';video.src=url;
+  const wait=(event)=>new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Video kon niet worden geladen.')),12000);video.addEventListener(event,()=>{clearTimeout(timer);resolve();},{once:true});video.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('Videoformaat niet ondersteund.'));},{once:true});});
+  try{
+    showMessage(msg,'⏳ Videobeelden lezen…','ok');
+    await wait('loadedmetadata');
+    const duration=Math.min(video.duration||0,180);
+    if(!duration)throw Error('Videoduur niet beschikbaar.');
+    const images=[],canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+    const scale=Math.min(1,960/Math.max(video.videoWidth,video.videoHeight));
+    canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+    for(const ratio of [.12,.35,.60,.85]){
+      const at=Math.min(Math.max(.05,duration*ratio),Math.max(.05,duration-.05));
+      const seek=wait('seeked');video.currentTime=at;await seek;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      images.push(canvas.toDataURL('image/jpeg',.68));
+    }
+    const response=await fetch('/api/recipes/video-frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error||'Videoherkenning mislukt.');
+    if(!data.text?.trim())throw Error('Geen leesbare recepttekst in de gekozen videobeelden. Gebruik de caption.');
+    const textarea=document.querySelector('#sourceText');
+    textarea.value=[textarea.value.trim(),data.text.trim()].filter(Boolean).join('\n\n');
+    showMessage(msg,'Videotekst toegevoegd. Controleer de tekst en tik op Maak Nederlands recept.','ok');
+  }catch(e){showMessage(msg,'⚠️ '+e.message,'warn');}
+  finally{URL.revokeObjectURL(url);button.disabled=false;}
+}
+document.querySelector('#readVideoBtn')?.addEventListener('click',readVideoFrames);
 async function analyze(){
   const sourceURL = document.querySelector('#sourceUrl').value.trim();
   const sourceText = document.querySelector('#sourceText').value.trim();
