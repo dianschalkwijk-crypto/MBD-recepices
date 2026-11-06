@@ -70,7 +70,13 @@ export default async function handler(req: any, res: any) {
       const u=new URL(sourceURL);
       const allowed=["instagram.com","www.instagram.com","tiktok.com","www.tiktok.com","facebook.com","www.facebook.com"];
       if(!allowed.includes(u.hostname.toLowerCase()))return res.status(422).json({error:"Deze bron wordt nog niet automatisch ondersteund."});
-      const response=await fetch(u.toString(),{headers:{"User-Agent":"Mozilla/5.0","Accept":"text/html"},signal:AbortSignal.timeout(12000),redirect:"error"});
+      // Facebook share links often redirect to the canonical Reel URL. Follow redirects,
+      // but only allow HTTPS destinations on known social-media hosts.
+      const response=await fetch(u.toString(),{headers:{"User-Agent":"Mozilla/5.0","Accept":"text/html"},signal:AbortSignal.timeout(12000),redirect:"follow"});
+      const finalURL=new URL(response.url);
+      if(finalURL.protocol!=="https:"||!allowed.includes(finalURL.hostname.toLowerCase())){
+        return res.status(422).json({error:"De gedeelde link verwijst naar een niet-ondersteunde website. Plak de recepttekst of caption bij de bronlink."});
+      }
       if(response.ok){
         const html=(await response.text()).slice(0,400000);
         const meta=html.match(/<meta[^>]+(?:og:description|twitter:description|name="description")[^>]*>/gi)||[];
@@ -80,7 +86,7 @@ export default async function handler(req: any, res: any) {
       }
     }catch(e){console.warn("Social source metadata unavailable",e);}
   }
-  if(sharedText.length<10)return res.status(422).json({error:"Instagram geeft geen recepttekst vrij voor deze reel. Deel de caption of voeg een video toe; de bronlink blijft bewaard."});
+  if(sharedText.length<10)return res.status(422).json({error:"Deze socialmediavideo geeft geen leesbare recepttekst vrij. Plak de caption of ingrediënten en bereidingswijze bij de bronlink; alleen de link is niet altijd voldoende."});
   try {
     const ai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
     const completion = await ai.chat.completions.create({
