@@ -359,6 +359,14 @@ async function analyze(){
     fillReview();
     return;
   }catch(error){
+    // A URL alone is not recipe content. Never open an empty recipe draft
+    // when the social platform did not expose a caption or ingredients.
+    if(!sourceText.trim() || sourceText.trim()===sourceURL){
+      currentDraft=null;
+      document.querySelector('#reviewCard').classList.add('hidden');
+      showMessage(msg,'⚠️ '+(error?.message||'Geen recepttekst beschikbaar.')+' Open de Reel, kopieer de beschrijving met ingrediënten en bereidingswijze en plak die bij Caption / recepttekst. De bronlink blijft staan.');
+      return;
+    }
     const normalized=normalizeSourceText(sourceText);
     const parsed=splitRecipe(normalized);
     const warnings=detectWarnings(normalized);
