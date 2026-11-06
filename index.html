@@ -87,6 +87,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <p id="importMessage" class="message hidden"></p>
         </div>
 
+        <div id="savedDraftsCard" class="card"><h2>Mijn concepten</h2><p class="muted">Bewaard op dit apparaat en in deze browser. Exporteer een kopie voor de zekerheid.</p><div id="savedDraftsList"></div><button type="button" class="secondary" id="exportDraftsBtn">Exporteer concepten</button></div>
         <div id="reviewCard" class="card hidden">
           <div class="section-heading">
             <div>
@@ -119,6 +120,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           </label>
 
           <div id="warningsBox" class="warning-box hidden"></div>
+          <button id="saveDraftBtn" class="secondary" type="button">Concept bewaren</button>
           <button id="saveRecipeBtn" class="primary">Opslaan in recepten</button>
           <button id="cancelReviewBtn" class="ghost">Concept sluiten</button>
         </div>
@@ -362,6 +364,7 @@ async function readVideoFrames(){
 }
 document.querySelector('#readVideoBtn')?.addEventListener('click',readVideoFrames);
 async function analyze(){
+  editingDraftId=null;
   const sourceURL = document.querySelector('#sourceUrl').value.trim();
   const sourceText = document.querySelector('#sourceText').value.trim();
   const msg = document.querySelector('#importMessage');
@@ -417,6 +420,36 @@ async function analyze(){
     fillReview();
   }finally{ clearTimeout(timer); }
 }
+const DRAFT_KEY='mbd-recipe-import-drafts-v1';
+let editingDraftId=null;
+function readSavedDrafts(){try{const v=JSON.parse(localStorage.getItem(DRAFT_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return []}}
+function collectDraft(){
+ if(!currentDraft)return null;
+ return {...currentDraft,title:document.querySelector('#reviewTitle').value.trim(),author:document.querySelector('#reviewAuthor').value.trim(),portions:document.querySelector('#reviewPortions').value.trim(),ingredients:document.querySelector('#reviewIngredients').value.split('\n').filter(Boolean),steps:document.querySelector('#reviewSteps').value.split('\n').map(x=>x.replace(/^\\d+[.)]\\s*/,'')).filter(Boolean),collections:[...selectedCollections]};
+}
+function saveLocalDraft(silent=false){
+ const d=collectDraft();if(!d)return false;
+ try{
+  const all=readSavedDrafts();const id=editingDraftId||uid();editingDraftId=id;
+  const item={id,updatedAt:new Date().toISOString(),draft:d};const i=all.findIndex(x=>x.id===id);
+  if(i>=0)all[i]=item;else all.unshift(item);
+  localStorage.setItem(DRAFT_KEY,JSON.stringify(all));renderSavedDrafts();
+  if(!silent)showMessage(document.querySelector('#importMessage'),'✓ Concept op dit apparaat bewaard. Je kunt het later onder Mijn concepten openen.','ok');
+  return true;
+ }catch(e){if(!silent)showMessage(document.querySelector('#importMessage'),'Concept kon niet worden bewaard. Controleer de browseropslag.','warn');return false}
+}
+function renderSavedDrafts(){
+ const box=document.querySelector('#savedDraftsList');if(!box)return;
+ const all=readSavedDrafts();
+ box.innerHTML=all.length?all.map(x=>'<div class="row gap8" style="align-items:center;justify-content:space-between;margin:8px 0"><button type="button" class="secondary" data-open-draft="'+esc(x.id)+'">'+esc(x.draft.title||'Naamloos recept')+'</button><button type="button" class="ghost" data-delete-draft="'+esc(x.id)+'" aria-label="Concept verwijderen">✕</button></div>').join(''):'<p class="muted">Nog geen bewaarde concepten.</p>';
+ box.querySelectorAll('[data-open-draft]').forEach(b=>b.onclick=()=>{const x=readSavedDrafts().find(d=>d.id===b.dataset.openDraft);if(!x)return;editingDraftId=x.id;currentDraft=x.draft;document.querySelector('#sourceUrl').value=currentDraft.sourceURL||'';fillReview();});
+ box.querySelectorAll('[data-delete-draft]').forEach(b=>b.onclick=()=>{if(!confirm('Dit concept definitief van dit apparaat verwijderen?'))return;const id=b.dataset.deleteDraft;localStorage.setItem(DRAFT_KEY,JSON.stringify(readSavedDrafts().filter(x=>x.id!==id)));if(editingDraftId===id)editingDraftId=null;renderSavedDrafts();});
+}
+document.querySelector('#saveDraftBtn')?.addEventListener('click',()=>saveLocalDraft());
+document.querySelector('#exportDraftsBtn')?.addEventListener('click',()=>{
+ const data=JSON.stringify(readSavedDrafts(),null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MadeByDian-concepten.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+});
+renderSavedDrafts();
 function fillReview(){
   const d=currentDraft; if(!d) return;
   document.querySelector('#reviewTitle').value=d.title;
@@ -481,7 +514,7 @@ async function saveRecipe(){
     payload.notionURL=data.notionURL||'';
   }catch(e){showMessage(document.querySelector('#importMessage'),'Niet opgeslagen: '+e.message,'warn');button.disabled=false;return;}
   state.recipes.unshift({...payload,id:savedId,mdb:savedId});
-  persist(); currentDraft=null;button.disabled=false;
+  persist(); if(editingDraftId){localStorage.setItem(DRAFT_KEY,JSON.stringify(readSavedDrafts().filter(x=>x.id!==editingDraftId)));editingDraftId=null;renderSavedDrafts();} currentDraft=null;button.disabled=false;
   document.querySelector('#reviewCard').classList.add('hidden');
   document.querySelector('#sourceUrl').value='';document.querySelector('#sourceText').value='';
   showMessage(document.querySelector('#importMessage'),'✓ Recept veilig online opgeslagen als '+savedId+'. Bronlink, tekst en collecties zijn bewaard.','ok');
