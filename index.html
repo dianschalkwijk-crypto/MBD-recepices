@@ -428,7 +428,7 @@ function fillReview(){
   selectedCollections=new Set(d.collections);
   renderCollectionPicker();
   const warningsBox=document.querySelector('#warningsBox');
-  if(d.warnings.length){warningsBox.innerHTML=d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');}
+  if(d.warnings.length){warningsBox.innerHTML='<button type="button" id="dismissWarningsBtn" aria-label="Waarschuwingen sluiten" style="float:right;width:auto;padding:4px 10px;border:1px solid #c9b78b;border-radius:10px;background:white">✕</button>'+d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');warningsBox.querySelector('#dismissWarningsBtn').onclick=()=>warningsBox.classList.add('hidden');}
   else warningsBox.classList.add('hidden');
   document.querySelector('#reviewCard').classList.remove('hidden');
   document.querySelector('#reviewCard').scrollIntoView({behavior:'smooth',block:'start'});
@@ -465,7 +465,9 @@ async function saveRecipe(){
   if(exact||fuzzy){
     if(!confirm(`Dit lijkt al op “${(exact||fuzzy).title}”. Toch als apart recept opslaan?`)) return;
   }
-  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions,time:'',collections:[...selectedCollections],warnings:currentDraft.warnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:sourceKindFromURL(sourceURL)};
+  const needsCompletion=currentDraft.completeness!=='compleet'||currentDraft.warnings.some(w=>/hoeveelhe|porties|ontbreek/i.test(w));
+  const savedWarnings=needsCompletion?[...new Set([...currentDraft.warnings,'Nog aanvullen: controleer ontbrekende hoeveelheden of porties'])]:currentDraft.warnings;
+  const payload={title,originalTitle:title,author,ingredients,steps,sourceURL,contentURL:'',notionURL:'',category:'',cuisine:'',portions,time:'',collections:[...selectedCollections],warnings:savedWarnings,seeded:false,contentSynced:true,createdAt:new Date().toISOString(),sourceKind:sourceKindFromURL(sourceURL)};
   const button=document.querySelector('#saveRecipeBtn');button.disabled=true;
   let savedId='';
   try{
