@@ -83,7 +83,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <p id="importMessage" class="message hidden"></p>
         </div>
 
-        <div id="savedDraftsCard" class="card"><h2>Mijn concepten</h2><p class="muted">Bewaard op dit apparaat en in deze browser. Exporteer een kopie voor de zekerheid.</p><div id="savedDraftsList"></div><button type="button" class="secondary" id="exportDraftsBtn">Exporteer concepten</button></div>
+        <div id="savedDraftsCard" class="card"><h2>Mijn concepten</h2><p class="muted">Lokaal bewaard; bij ingelogd account ook gesynchroniseerd met je andere apparaten. Exporteer voor de zekerheid een kopie.</p><div id="savedDraftsList"></div><button type="button" class="secondary" id="exportDraftsBtn">Exporteer concepten</button></div>
         <div id="reviewCard" class="card hidden">
           <div class="section-heading">
             <div>
@@ -386,16 +386,42 @@ function saveLocalDraft(silent=false){
   const item={id,updatedAt:new Date().toISOString(),draft:d};const i=all.findIndex(x=>x.id===id);
   if(i>=0)all[i]=item;else all.unshift(item);
   localStorage.setItem(DRAFT_KEY,JSON.stringify(all));renderSavedDrafts();
+  syncDraftToCloud(item).catch(e=>console.warn('Concept blijft lokaal: '+e.message));
   if(!silent)showMessage(document.querySelector('#importMessage'),'✓ Concept op dit apparaat bewaard. Je kunt het later onder Mijn concepten openen.','ok');
   return true;
  }catch(e){if(!silent)showMessage(document.querySelector('#importMessage'),'Concept kon niet worden bewaard. Controleer de browseropslag.','warn');return false}
 }
+async function draftCloudIdentity(){
+ if(!weekCloud) return null;
+ const {data,error}=await weekCloud.auth.getUser();
+ if(error||!data?.user) return null;
+ return data.user.id;
+}
+async function syncDraftToCloud(item){
+ const user_id=await draftCloudIdentity();
+ if(!user_id)return;
+ const {error}=await weekCloud.from('mbd_import_drafts').upsert({id:item.id,user_id,draft:item.draft,updated_at:item.updatedAt},{onConflict:'id'});
+ if(error)throw error;
+}
+async function loadCloudDrafts(){
+ const user_id=await draftCloudIdentity();if(!user_id)return;
+ const {data,error}=await weekCloud.from('mbd_import_drafts').select('id,draft,updated_at').eq('user_id',user_id);
+ if(error)throw error;
+ const local=readSavedDrafts(),byId=new Map(local.map(x=>[x.id,x]));
+ for(const remote of data||[]){const current=byId.get(remote.id);if(!current||new Date(remote.updated_at)>new Date(current.updatedAt))byId.set(remote.id,{id:remote.id,draft:remote.draft,updatedAt:remote.updated_at});}
+ const merged=[...byId.values()].sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
+ localStorage.setItem(DRAFT_KEY,JSON.stringify(merged));
+ renderSavedDrafts();
+ for(const item of local){if(!(data||[]).some(x=>x.id===item.id)||new Date(item.updatedAt)>new Date((data||[]).find(x=>x.id===item.id)?.updated_at||0))await syncDraftToCloud(item);}
+}
+setTimeout(()=>loadCloudDrafts().catch(e=>console.warn('Conceptsynchronisatie:',e.message)),2000);
+window.addEventListener('focus',()=>loadCloudDrafts().catch(()=>{}));
 function renderSavedDrafts(){
  const box=document.querySelector('#savedDraftsList');if(!box)return;
  const all=readSavedDrafts();
  box.innerHTML=all.length?all.map(x=>'<div class="row gap8" style="align-items:center;justify-content:space-between;margin:8px 0"><button type="button" class="secondary" data-open-draft="'+esc(x.id)+'">'+esc(x.draft.title||'Naamloos recept')+'</button><button type="button" class="ghost" data-delete-draft="'+esc(x.id)+'" aria-label="Concept verwijderen">✕</button></div>').join(''):'<p class="muted">Nog geen bewaarde concepten.</p>';
  box.querySelectorAll('[data-open-draft]').forEach(b=>b.onclick=()=>{const x=readSavedDrafts().find(d=>d.id===b.dataset.openDraft);if(!x)return;editingDraftId=x.id;currentDraft=x.draft;document.querySelector('#sourceUrl').value=currentDraft.sourceURL||'';fillReview();});
- box.querySelectorAll('[data-delete-draft]').forEach(b=>b.onclick=()=>{if(!confirm('Dit concept definitief van dit apparaat verwijderen?'))return;const id=b.dataset.deleteDraft;localStorage.setItem(DRAFT_KEY,JSON.stringify(readSavedDrafts().filter(x=>x.id!==id)));if(editingDraftId===id)editingDraftId=null;renderSavedDrafts();});
+ box.querySelectorAll('[data-delete-draft]').forEach(b=>b.onclick=()=>{if(!confirm('Dit concept definitief van dit apparaat verwijderen?'))return;const id=b.dataset.deleteDraft;localStorage.setItem(DRAFT_KEY,JSON.stringify(readSavedDrafts().filter(x=>x.id!==id)));draftCloudIdentity().then(user_id=>user_id&&weekCloud.from('mbd_import_drafts').delete().eq('id',id).eq('user_id',user_id)).catch(console.warn);if(editingDraftId===id)editingDraftId=null;renderSavedDrafts();});
 }
 document.querySelector('#saveDraftBtn')?.addEventListener('click',()=>saveLocalDraft());
 document.querySelector('#exportDraftsBtn')?.addEventListener('click',()=>{
