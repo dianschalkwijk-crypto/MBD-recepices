@@ -263,8 +263,6 @@ function normalizeSourceText(text){
 function detectWarnings(text){
   const warnings=[];
   if (/\bcups?\b|\boz\b|\blb\b/i.test(text)) warnings.push('Er staan Amerikaanse maten in de bron. De definitieve AI-versie zet alleen betrouwbare conversies om naar metrisch.');
-  if (text.length < 80) warnings.push('De gedeelde recepttekst is kort. Controleer of ingrediënten én bereidingsstappen compleet zijn.');
-  if (!/\d/.test(text)) warnings.push('Er zijn nauwelijks hoeveelheden gevonden. Ontbrekende hoeveelheden worden niet verzonnen.');
   return warnings;
 }
 function extractAuthor(text){
@@ -373,6 +371,7 @@ async function analyze(){
 }
 function fillReview(){
   const d=currentDraft; if(!d) return;
+  d.warnings=(d.warnings||[]).filter(w=>!/^De gedeelde recepttekst is kort\.|^Er zijn nauwelijks hoeveelheden gevonden\./.test(w));
   document.querySelector('#reviewTitle').value=d.title;
   document.querySelector('#reviewAuthor').value=d.author;
   document.querySelector('#reviewPortions').value=d.portions||'';
@@ -382,7 +381,7 @@ function fillReview(){
   selectedCollections=new Set(d.collections);
   renderCollectionPicker();
   const warningsBox=document.querySelector('#warningsBox');
-  if(d.warnings.length){warningsBox.innerHTML=d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');}
+  if(d.warnings.length&&!d.warningsDismissed){warningsBox.innerHTML='<button type="button" id="dismissWarningsBtn" aria-label="Waarschuwingen sluiten" style="float:right;width:auto;padding:8px 14px;margin:0 0 8px 12px">✕</button>'+d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');warningsBox.querySelector('#dismissWarningsBtn').onclick=()=>{d.warningsDismissed=true;warningsBox.classList.add('hidden');};}
   else warningsBox.classList.add('hidden');
   document.querySelector('#reviewCard').classList.remove('hidden');
   document.querySelector('#reviewCard').scrollIntoView({behavior:'smooth',block:'start'});
@@ -439,7 +438,11 @@ async function saveRecipe(){
   showMessage(document.querySelector('#importMessage'),'✓ Recept veilig online opgeslagen als '+savedId+'. Bronlink, tekst en collecties zijn bewaard.','ok');
   renderAll();
 }
-function showMessage(el,text,type='warn'){el.textContent=text;el.className=`message ${type==='ok'?'ok':''}`;}
+function showMessage(el,text,type='warn'){
+  el.textContent=text;el.className=`message ${type==='ok'?'ok':''}`;
+  const close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Melding sluiten');close.style.cssText='float:right;width:auto;padding:8px 14px;margin-left:12px';
+  close.onclick=()=>el.classList.add('hidden');el.prepend(close);
+}
 let activeCollectionFilter = null;
 function renderRecipes(){
   const q=document.querySelector('#recipeSearch').value.trim().toLowerCase();
@@ -860,5 +863,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=36'></script><script src='/save-sync-v10.js?v=36'></script><script src='/catalog-sync-v2.js?v=36'></script><script src='/allergy-integration-v2.js?v=36'></script><script src='/push-notifications-v1.js?v=36'></script><script src='/ux-finishing-v1.js?v=36'></script><script src='/scan-enhance-v1.js?v=36'></script></body>
+<script src='/photo-fix-v10.js?v=37'></script><script src='/save-sync-v10.js?v=37'></script><script src='/catalog-sync-v2.js?v=37'></script><script src='/allergy-integration-v2.js?v=37'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=37'></script><script src='/scan-enhance-v1.js?v=37'></script></body>
 </html>

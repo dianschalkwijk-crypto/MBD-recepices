@@ -374,3 +374,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Hercontrole performance-advisor: `auth_rls_initplan`, `unindexed_foreign_keys`, `duplicate_index` en `multiple_permissive_policies` zijn verdwenen.
 - Resterende performance INFO: historische backuptabellen zonder primary key en nieuw aangemaakte indexes die nog geen gebruiksstatistiek hebben. Dit vereist nu geen actie.
 - Geen receptinhoud, MDB-nummers of bestaande gebruikers-/sharedata gewijzigd.
+
+## Receptopslag en meldingen — 2026-11-10
+- Bevestigd live: productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u, bron 80df13a; ontbrekende sluitknop in live index.html. Logs: MDB-reservering HTTP 401, OpenAI AuthenticationError (modelnaam als sleutel).
+- Gerichte releasebranch fix/recipe-save-production vanaf productiebron; bestaande veilige save-correctie e902ff5 meegenomen. Geen nieuwe draft/video-features meegenomen.
+- Sluitknoppen voor waarschuwingen en import/opslagmeldingen; korte tekst en ontbrekende getallen geen automatische waarschuwing meer. Werkelijke opslagfout zichtbaar bij foto, invoer behouden. Cacheversie 37.
+- Typecheck geslaagd. 15 servertests geslaagd, 2 TODO voor echte databaseconcurrency/idempotency. Mobiele Chromium-test geslaagd met gemockte falende API: korte tekst, waarschuwing sluiten, opnieuw renderen, foutdetails, invoer behouden en opslagmelding sluiten.
+- Rollback: oude productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u; lokale bronbundle /tmp/mbd-before-manual-recipe-fix.bundle.
+- Databasewijziging voor aanvullende serversleutel door automatische goedkeuringscontrole afgewezen; expliciete toestemming gevraagd. Databasefuncties dus nog ongewijzigd. Nieuwe Vercel productiesleutel is voorbereid maar nog niet door database geaccepteerd; niet als herstelde opslag presenteren.
+- Geldige OPENAI_API_KEY moet door eigenaar rechtstreeks in Vercel worden ingevuld; sensitive waarden zijn niet terugleesbaar.
