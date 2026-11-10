@@ -302,7 +302,7 @@
       }else if(msg){
         msg.textContent=message;
       }
-      if(status)status.textContent=reconciliationRequired?"Controleer eerst de opslagstatus van "+e.mdb+". Niet opnieuw uploaden.":"Niet opgeslagen. Je concept is behouden.";
+      if(status)status.textContent=reconciliationRequired?"Controleer eerst de opslagstatus van "+e.mdb+". Niet opnieuw uploaden.":"Recept niet opgeslagen: "+(e?.message||e)+". Je invoer en gekozen foto zijn behouden.";
     }finally{
       btn.disabled=reconciliationRequired;
       btn.textContent=reconciliationRequired?"Controleer opslagstatus":oldText;

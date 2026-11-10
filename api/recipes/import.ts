@@ -87,7 +87,7 @@ export default async function handler(req: any, res: any) {
       model:process.env.OPENAI_MODEL || "gpt-4.1-mini",
       response_format:{type:"json_object"},
       messages:[
-        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een natuurlijk Nederlands recept. Vertaal de titel, alle ingrediëntnamen, eenheden, opmerkingen en alle bereidingsstappen naar natuurlijk Nederlands, ook wanneer de bron Engels is. Het woord mealprep mag blijven staan. Behoud merknamen, hoeveelheden en betekenis exact. Zet tablespoon/tbsp naar el en teaspoon/tsp naar tl; zet andere buitenlandse maten alleen metrisch om als dat betrouwbaar kan. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, servings_text (string of null; alleen als de bron expliciet het aantal personen/porties/servings noemt, nooit gokken), ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur/accountnaam uit de input exact. Als informatie ontbreekt: geef een waarschuwing."},
+        {role:"system",content:"Zet uitsluitend de aangeleverde recepttekst om naar een natuurlijk Nederlands recept. Vertaal de titel, alle ingrediëntnamen, eenheden, opmerkingen en alle bereidingsstappen naar natuurlijk Nederlands, ook wanneer de bron Engels is. Het woord mealprep mag blijven staan. Behoud merknamen, hoeveelheden en betekenis exact. Zet tablespoon/tbsp naar el en teaspoon/tsp naar tl; zet andere buitenlandse maten alleen metrisch om als dat betrouwbaar kan. Vul nooit ontbrekende ingrediënten, hoeveelheden of stappen zelf in. Antwoord uitsluitend met een JSON object met title_nl, source_url, source_author, servings_text (string of null; alleen als de bron expliciet het aantal personen/porties/servings noemt, nooit gokken), ingredients (array objecten met original_line, amount (getal of null), unit (string of null), ingredient, note (string of null)), steps (array strings), collections (array strings), warnings (array strings), source_completeness ('complete', 'partial' of 'insufficient'). Behoud de bronlink en auteur/accountnaam uit de input exact. Een kort recept, ontbrekende porties of ingrediënten zonder exacte hoeveelheden zijn op zichzelf geen fout en krijgen geen waarschuwing. Laat ontbrekende hoeveelheden leeg; verzin ze niet. Waarschuw alleen voor concrete problemen met het lezen of interpreteren van de bron."},
         {role:"user",content:JSON.stringify({sourceURL,sourceAuthor,sharedText})}
       ]
     });
@@ -102,7 +102,7 @@ export default async function handler(req: any, res: any) {
     result.source_author=sourceAuthor||result.source_author||null;
     return res.status(200).json(result);
   } catch(e) {
-    console.error("Recipe import failed",e);
+    console.error("Recipe import failed",{status:(e as any)?.status,code:(e as any)?.code});
     return res.status(502).json({error:"Recept kon niet betrouwbaar worden verwerkt."});
   }
 }
