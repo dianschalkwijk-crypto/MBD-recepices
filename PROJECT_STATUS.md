@@ -383,3 +383,12 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Rollback: oude productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u; lokale bronbundle /tmp/mbd-before-manual-recipe-fix.bundle.
 - Databasewijziging voor aanvullende serversleutel door automatische goedkeuringscontrole afgewezen; expliciete toestemming gevraagd. Databasefuncties dus nog ongewijzigd. Nieuwe Vercel productiesleutel is voorbereid maar nog niet door database geaccepteerd; niet als herstelde opslag presenteren.
 - Geldige OPENAI_API_KEY moet door eigenaar rechtstreeks in Vercel worden ingevuld; sensitive waarden zijn niet terugleesbaar.
+
+## Vervolgcontrole 2026-11-15
+- Actuele productie was dpl_6fdqCNCmKQhqbPYRa9ZLC1qqpDh9 op 45c2886 (Dian-thumbnail). Deze nieuwere toevoeging is behouden door merge, niet overschreven door oude bron.
+- Live AI-import getest: HTTP 200, Nederlandse appel/kaneel-ingrediënten en stappen, zonder waarschuwingen. OPENAI_API_KEY-blokkade hiermee functioneel opgelost.
+- De actuele live HTML bevatte nog geen sluitknoppen en wel de twee onterechte heuristieken. v37-reparatie wordt nu gepubliceerd.
+- Healthcontrole uitgebreid met invalid_mdb-probe: controleert de echte serversleutel zonder nummerreservering of receptschrijfoperatie. Een aanwezige maar ongeldige sleutel telt niet meer als gezonde opslag.
+- Typecheck geslaagd; 16 tests geslaagd en 2 eerdere TODO voor databaseconcurrency/idempotency.
+- Database-autorisatiemigratie opnieuw door auto-review afgewezen: 'check en ga verder' is volgens reviewer onvoldoende expliciete toestemming voor de extra geaccepteerde sleutel. Geen databasewijziging uitgevoerd; exacte toestemming blijft nodig.
+- Rollback huidige productie: dpl_6fdqCNCmKQhqbPYRa9ZLC1qqpDh9.
