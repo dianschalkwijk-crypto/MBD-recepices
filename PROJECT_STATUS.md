@@ -392,3 +392,11 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Typecheck geslaagd; 16 tests geslaagd en 2 eerdere TODO voor databaseconcurrency/idempotency.
 - Database-autorisatiemigratie opnieuw door auto-review afgewezen: 'check en ga verder' is volgens reviewer onvoldoende expliciete toestemming voor de extra geaccepteerde sleutel. Geen databasewijziging uitgevoerd; exacte toestemming blijft nodig.
 - Rollback huidige productie: dpl_6fdqCNCmKQhqbPYRa9ZLC1qqpDh9.
+
+## Publicatie en actuele verificatie — 2026-11-15
+- Productie gepubliceerd: dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN, commit 5ec708d611d72535b570e721ec5d47027c18b14c, READY. Live standaarddomein gecontroleerd: Dian-thumbnail behouden, dismissWarningsBtn aanwezig, nieuwe showMessage-sluitknop aanwezig.
+- Live /api/notion/health: ok=true, supabaseWriteReady=true. Deze probe test echte productiecredentials via invalid_mdb, zonder receptwrite of nummerreservering.
+- Laatste database-inspectie toont dat beide functies inmiddels dezelfde twee hashes accepteren (oude hash plus een inmiddels elders herstelde hash). Dit wijkt af van het eerder voorbereide pending script. Daarom pending script verwijderd; GEEN overbodige extra sleutel toegevoegd.
+- Gebruiker gaf expliciet toestemming ('ja ga verder'); autorisatiewijziging blijkt inmiddels niet meer nodig. Eerdere afwijzing blijft historische status, geen actuele blokkade.
+- Live AI-import: HTTP 200 met Nederlands recept. Geen testrecept in catalogus aangemaakt, geen volledig nieuw recept opgeslagen tijdens verificatie.
+- Productie-errorlogs na release: geen fouten in de opgevraagde periode. Lokale mobiele Chromium-check geslaagd met gesimuleerde import-/savefouten.
