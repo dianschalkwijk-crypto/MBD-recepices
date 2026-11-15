@@ -22,7 +22,7 @@
       body:JSON.stringify(body)
     });
     const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(d.message||d.error||("HTTP "+r.status));
+    if(!r.ok||d.ok===false)throw Object.assign(new Error(d.message||d.error||("HTTP "+r.status)),{reconciliationRequired:!!d.reconciliationRequired,mdb:d.mdb});
     return d;
   }
 
@@ -42,13 +42,21 @@
 
     btn.before(box);
 
-    $("#mbdPhotoInput").addEventListener("change",function(){
-      const file=this.files&&this.files[0];
+    $("#mbdPhotoInput").addEventListener("change",async function(){
+      const photoDraftId=editingDraftId;
+      const photoIsCurrent=()=>editingDraftId===photoDraftId;
+      let file=this.files&&this.files[0];
       const status=$("#mbdPhotoStatus");
       const preview=$("#mbdPhotoPreview");
-      pendingPhoto=null;
+      if(file&&file.type.startsWith('image/')&&globalThis.MBDPhotoCrop){
+        try{file=await MBDPhotoCrop.choose(file);if(!file)return;}
+        catch{if(photoIsCurrent())status.textContent='Foto kon niet worden bijgesneden. Bestaande invoer blijft bewaard.';return;}
+      }
+      if(photoIsCurrent())pendingPhoto=null;
 
       if(!file){
+        updateSavedDraft(photoDraftId,{photo:null});
+        if(!photoIsCurrent())return;
         preview.removeAttribute("src");
         preview.style.display="none";
         status.textContent="Optioneel · wordt opgeslagen in Notion → Foto.";
@@ -63,10 +71,10 @@
       }
 
       const reader=new FileReader();
-      reader.onerror=()=>status.textContent="Foto kon niet worden gelezen.";
+      reader.onerror=()=>{if(photoIsCurrent())status.textContent="Foto kon niet worden gelezen.";};
       reader.onload=()=>{
         const image=new Image();
-        image.onerror=()=>status.textContent="Foto kon niet worden verwerkt.";
+        image.onerror=()=>{if(photoIsCurrent())status.textContent="Foto kon niet worden verwerkt.";};
         image.onload=()=>{
           const scale=Math.min(1,1600/Math.max(image.width,image.height));
           const canvas=document.createElement("canvas");
@@ -75,12 +83,15 @@
           canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);
           const data=canvas.toDataURL("image/jpeg",0.82);
 
-          pendingPhoto={
+          const photo={
             filename:"receptfoto-"+Date.now()+".jpg",
             contentType:"image/jpeg",
             base64:data.split(",")[1]
           };
 
+          updateSavedDraft(photoDraftId,{photo});
+          if(!photoIsCurrent())return;
+          pendingPhoto=photo;
           preview.src=data;
           preview.style.display="block";
           status.textContent="Foto klaar om mee op te slaan.";
@@ -148,7 +159,7 @@
   }
 
   async function saveNow(event){
-    if(busy)return;
+    if(busy){event.preventDefault();event.stopImmediatePropagation();return;}
     if(typeof currentDraft==="undefined"||!currentDraft)return;
 
     event.preventDefault();
@@ -165,34 +176,48 @@
       if(typeof showMessage==="function"&&msg)showMessage(msg,"Nog niet opgeslagen: de recepttekst lijkt nog grotendeels Engels. Laat de vertaling opnieuw uitvoeren of corrigeer de tekst eerst.","warn");
       return;
     }
-    const duplicate=localDuplicate(title,ingredients,sourceURL);
+    const duplicate=currentDraft.savedMdb?null:localDuplicate(title,ingredients,sourceURL);
 
-    if(duplicate&&!confirm('Dit lijkt al op “'+duplicate.title+'”. Toch als apart recept opslaan?'))return;
+    if(duplicate){
+      const message='Dit recept bestaat al'+(duplicate.mdb?' als '+duplicate.mdb:'')+'. Open het bestaande recept om het aan te passen.';
+      if(typeof showMessage==='function')showMessage($('#importMessage'),message,'warn');
+      return;
+    }
 
+    if(!title||!ingredients||!steps){showMessage($('#importMessage'),'Vul titel, ingrediënten en bereidingsstappen in. Je concept blijft bewaard.','warn');return;}
+    if(currentDraft.reconciliationRequired){showMessage($('#importMessage'),'Controleer eerst de opslagstatus van '+currentDraft.savedMdb+'. Je concept blijft bewaard.','warn');return;}
+    if(typeof saveLocalDraft==='function'&&!saveLocalDraft(true))return;
+    const submittedId=editingDraftId;
+    const submitted=structuredClone(currentDraft);
+    const submittedPhoto=submitted.photo||null;
+    const submittedCollections=[...selectedCollections];
+    const isCurrent=()=>editingDraftId===submittedId;
+    const patchSubmission=patch=>{Object.assign(submitted,patch);updateSavedDraft(submittedId,patch);};
     const btn=$("#saveRecipeBtn");
     const msg=$("#importMessage");
     const status=$("#mbdPhotoStatus");
-    const oldText=btn.textContent;
+    let reconciliationRequired=false;
 
-    busy=true;
+    busy=true;window.mbdSavingDraftId=submittedId;
+    updateReviewLocks();
     btn.disabled=true;
     btn.textContent="Opslaan in Notion…";
 
     try{
-      const data=await post("/api/notion/save",{
+      const data=submitted.savedMdb?{mdb:submitted.savedMdb,notionURL:submitted.savedNotionURL}:await post("/api/notion/save",{
         title,
         author,
         ingredients,
         steps,
         sourceURL:sourceURL||null,
-        collections:typeof selectedCollections!=="undefined"?[...selectedCollections]:[],
-        warnings:currentDraft.warnings||[],
+        collections:submittedCollections,
+        warnings:submitted.warnings||[],
         extra:{
-          sourceKind:currentDraft.sourceKind||sourceKindFromUrl(sourceURL),
+          sourceKind:submitted.sourceKind||sourceKindFromUrl(sourceURL),
           sourceAuthor:author,
-          method:currentDraft.method||"",
-          category:currentDraft.category||"",
-          portions
+          method:submitted.method||"",
+          category:submitted.category||"",
+          portions,sourceText:submitted.sourceText||"",sourceMetadata:submitted.sourceMetadata||{}
         }
       });
 
@@ -204,13 +229,14 @@
         throw new Error("Notion gaf geen MDB-nummer terug.");
       }
 
+      patchSubmission({savedMdb:mdb,savedNotionURL:data.notionURL||submitted.savedNotionURL||''});
       let photoOK=false;
       let photoError="";
 
-      if(pendingPhoto){
-        if(status)status.textContent="Foto uploaden naar Notion…";
+      if(submittedPhoto){
+        if(isCurrent()&&status)status.textContent="Foto uploaden naar Notion…";
         try{
-          await post("/api/notion/photo",{mdb,...pendingPhoto});
+          await post("/api/notion/photo",{mdb,...submittedPhoto});
           photoOK=true;
         }catch(e){
           photoError=e?.message||"foto upload mislukt";
@@ -223,7 +249,7 @@
 
       try{
         if(state&&Array.isArray(state.recipes)){
-          state.recipes.unshift({
+          if(!state.recipes.some(r=>r.mdb===mdb))state.recipes.unshift({
             id:typeof uid==="function"?uid():("local-"+Date.now()),
             mdb,
             title,
@@ -234,16 +260,16 @@
             sourceURL,
             contentURL:sourceURL,
             notionURL,
-            category:currentDraft?.category||"",
+            category:submitted.category||"",
             cuisine:"",
             portions,
             time:"",
             book:bookName,
             bookNo,
-            sourceKind:currentDraft?.sourceKind||sourceKindFromUrl(sourceURL),
+            sourceKind:submitted.sourceKind||sourceKindFromUrl(sourceURL),
             sourceAuthor:author,
-            collections:typeof selectedCollections!=="undefined"?[...selectedCollections]:[],
-            warnings:currentDraft.warnings||[],
+            collections:submittedCollections,
+            warnings:submitted.warnings||[],
             seeded:false,
             contentSynced:true,
             hasPhoto:photoOK,
@@ -253,18 +279,25 @@
         }
       }catch(_){}
 
-      currentDraft=null;
-      pendingPhoto=null;
-
-      $("#reviewCard")?.classList.add("hidden");
-      if($("#sourceUrl"))$("#sourceUrl").value="";
-      if($("#sourceText"))$("#sourceText").value="";
-      if($("#mbdPhotoInput"))$("#mbdPhotoInput").value="";
-      if($("#mbdPhotoPreview")){
-        $("#mbdPhotoPreview").removeAttribute("src");
-        $("#mbdPhotoPreview").style.display="none";
+      if(photoError){
+        showMessage(msg,'Recept opgeslagen als '+mdb+'. Foto niet opgeslagen: '+photoError+'. Je concept en foto blijven bewaard; probeer de foto opnieuw.','warn');
+        if(isCurrent())fillReview();
+        btn.textContent='Foto opnieuw opslaan';return;
       }
-
+      const viewUnchanged=isCurrent();
+      await retireDraft(submittedId);
+      if(viewUnchanged){
+        currentDraft=null;
+        pendingPhoto=null;
+        $("#reviewCard")?.classList.add("hidden");
+        if($("#sourceUrl"))$("#sourceUrl").value="";
+        if($("#sourceText"))$("#sourceText").value="";
+        if($("#mbdPhotoInput"))$("#mbdPhotoInput").value="";
+        if($("#mbdPhotoPreview")){
+          $("#mbdPhotoPreview").removeAttribute("src");
+          $("#mbdPhotoPreview").style.display="none";
+        }
+      }
       const message=photoError
         ?"✅ Recept opgeslagen · "+mdb+". Foto niet opgeslagen: "+photoError
         :"✅ Recept opgeslagen · "+mdb+(bookName?" · "+bookName:"")+(photoOK?" · foto opgeslagen":"");
@@ -290,17 +323,18 @@
       }
       if(typeof renderAll==="function")renderAll();
     }catch(e){
-      const message="⚠️ Niet opgeslagen: "+(e?.message||e);
+      reconciliationRequired=!!e?.reconciliationRequired;
+      if(reconciliationRequired)patchSubmission({reconciliationRequired:true,savedMdb:e.mdb});
+      const message=(reconciliationRequired?"⚠️ Controle nodig: ":"⚠️ Niet opgeslagen: ")+(e?.message||e);
       if(typeof showMessage==="function"&&msg){
         showMessage(msg,message,"warn");
       }else if(msg){
         msg.textContent=message;
       }
-      if(status)status.textContent="Niet opgeslagen. Probeer opnieuw.";
+      if(isCurrent()&&status)status.textContent=reconciliationRequired?"Controleer eerst de opslagstatus van "+e.mdb+". Niet opnieuw uploaden.":"Recept niet opgeslagen: "+(e?.message||e)+". Je invoer en gekozen foto zijn behouden.";
     }finally{
-      btn.disabled=false;
-      btn.textContent=oldText;
-      busy=false;
+      busy=false;window.mbdSavingDraftId=null;
+      updateReviewLocks();
     }
   }
 
@@ -312,6 +346,14 @@
     btn.dataset.mbdNotionSync="1";
     btn.addEventListener("click",saveNow,true);
   }
+
+  document.addEventListener('mbd:draft-opened',()=>{
+    pendingPhoto=currentDraft?.photo||null;
+    const input=$('#mbdPhotoInput'),preview=$('#mbdPhotoPreview'),status=$('#mbdPhotoStatus');
+    if(input)input.value='';
+    if(preview){if(pendingPhoto){preview.src='data:'+pendingPhoto.contentType+';base64,'+pendingPhoto.base64;preview.style.display='block';}else{preview.removeAttribute('src');preview.style.display='none';}}
+    if(status)status.textContent=pendingPhoto?'Foto klaar om mee op te slaan.':'Optioneel · wordt opgeslagen in Notion → Foto.';
+  });
 
   let timer;
   new MutationObserver(()=>{

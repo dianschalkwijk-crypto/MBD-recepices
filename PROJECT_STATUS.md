@@ -1,4 +1,17 @@
 # MadeByDian — centraal herstelregister
+## Lokale releasevoorbereiding — 29 oktober 2026
+
+- Basis: recovery/vercel-2026-10-22 op 80df13a85e9d93e31ed58facd3e48e48dacb6df7; remote-tip opnieuw bevestigd.
+- Correcties: lokale MDB-toekenning uit de bibliotheekcontrole verwijderd; server controleert bestaande canonieke bronlinks en volledige receptinhoud vóór reserveren; ontbrekende credentials of mislukte boekcontrole verbruiken geen MDB-reservering.
+- Een onzekere Supabase-write verwijdert niet langer de Notion-pagina. Alleen een expliciet afgewezen insert kan worden gecompenseerd; een mislukte compensatie wordt niet meer als geslaagde rollback gemeld. De hoofd-savehelper blokkeert opnieuw opslaan zolang handmatige reconciliatie nodig is.
+- Geen bestaande recepten, foto's, MDB-nummers of databases gewijzigd. Geen databasefunctie of constraint gewijzigd.
+- Validatie: npm run typecheck geslaagd; node --test --test-isolation=none tests/*.test.mjs: 15 geslaagd, 0 gefaald, 2 TODO. De TODO's betreffen echte PostgreSQL-concurrency en duurzame idempotency; tests met gesimuleerde database-reserveringen bewijzen die live garanties niet.
+- Lokale Chromium-controle: instellingen, collecties, recepten en weekmenu openen; 23 collectieknoppen, eerste collectie opent; geen pageerrors. Gebruikt de lokale seedcatalogus van 621 recepten met externe requests geblokkeerd; dit is geen actuele databasetelling of live integratietest.
+- scripts/audit-catalog.mjs biedt een paginerende alleen-lezen cataloguscontrole. Live audit niet uitgevoerd: Supabase-netwerktoegang nog niet geactiveerd.
+- Publicatie door gebruiker opgedragen. Productie-healthcontrole geblokkeerd door CONNECT 403; Vercel-token/beheerkoppeling ontbreekt. Daarom nog geen gecontroleerde Vercel-build, deployment of livegang vastgesteld. GitHub-push apart controleren; een push bewijst geen deployment.
+- Herstelbare lokale bronbackup: /workspace/cloud-setup/mbd-before-release-80df13a.bundle, git bundle verify geslaagd. Dit is geen databasebackup of bevestiging van de actuele Vercel-rollbackdeployment.
+- Benodigde netwerkdomeinen en VERCEL_TOKEN-vereiste opgeslagen in het omgevingsconcept. Concept opslaan past de actieve omgeving niet automatisch aan. Geen tokenwaarden in code, logs of chat opnemen.
+
 Bijgewerkt: 2026-10-27. Dit document is de startplaats voor vervolgwerk. Verifieer veranderlijke gegevens opnieuw, maar herhaal geen reeds bewezen diagnose zonder aanleiding.
 
 ## Werkregels
@@ -361,3 +374,25 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Hercontrole performance-advisor: `auth_rls_initplan`, `unindexed_foreign_keys`, `duplicate_index` en `multiple_permissive_policies` zijn verdwenen.
 - Resterende performance INFO: historische backuptabellen zonder primary key en nieuw aangemaakte indexes die nog geen gebruiksstatistiek hebben. Dit vereist nu geen actie.
 - Geen receptinhoud, MDB-nummers of bestaande gebruikers-/sharedata gewijzigd.
+
+## Receptopslag en meldingen — 2026-11-10
+- Bevestigd live: productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u, bron 80df13a; ontbrekende sluitknop in live index.html. Logs: MDB-reservering HTTP 401, OpenAI AuthenticationError (modelnaam als sleutel).
+- Gerichte releasebranch fix/recipe-save-production vanaf productiebron; bestaande veilige save-correctie e902ff5 meegenomen. Geen nieuwe draft/video-features meegenomen.
+- Sluitknoppen voor waarschuwingen en import/opslagmeldingen; korte tekst en ontbrekende getallen geen automatische waarschuwing meer. Werkelijke opslagfout zichtbaar bij foto, invoer behouden. Cacheversie 37.
+- Typecheck geslaagd. 15 servertests geslaagd, 2 TODO voor echte databaseconcurrency/idempotency. Mobiele Chromium-test geslaagd met gemockte falende API: korte tekst, waarschuwing sluiten, opnieuw renderen, foutdetails, invoer behouden en opslagmelding sluiten.
+- Rollback: oude productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u; lokale bronbundle /tmp/mbd-before-manual-recipe-fix.bundle.
+- Databasewijziging voor aanvullende serversleutel door automatische goedkeuringscontrole afgewezen; expliciete toestemming gevraagd. Databasefuncties dus nog ongewijzigd. Nieuwe Vercel productiesleutel is voorbereid maar nog niet door database geaccepteerd; niet als herstelde opslag presenteren.
+- Geldige OPENAI_API_KEY moet door eigenaar rechtstreeks in Vercel worden ingevuld; sensitive waarden zijn niet terugleesbaar.
+
+## Vervolg 15 november 2026
+
+De actuele herstelstatus en testgrenzen staan in `docs/recovery-20261115.md`. Deze ronde bouwt op `45c2886`, behoudt de Dian-thumbnail en gebruikt uitsluitend het Vercel-project `madebydian-recipes-dian`. De 401-herstelactie uit deze chat vervangt oudere vermeldingen dat de sleutelafstemming nog niet was uitgevoerd. Concept-, opslag-, filter- en fotowijzigingen zijn op een afzonderlijke herstelbranch voorbereid en getest; raadpleeg het herstelrapport en de deploymentstatus voor publicatie.
+
+- Laatste domeincontrole 15 november: productie is afzonderlijk doorgerold naar `5ec708d` / `dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN`. De productiehealthcontrole meldt `supabaseWriteReady: true`. De healthcode en bijbehorende test van die commit zijn in de herstelbranch behouden. Deze chat heeft de uitbreiding uitsluitend als preview gepubliceerd.
+
+## PR #1 — vervolgcontrole conceptopslag, 15 november 2026
+
+- De volledige echte productie-opslagtest is inmiddels afgerond op 5ec708d: MDB-0694 met afbeelding en collectie is vanuit een schoon browserprofiel teruggelezen; alle 688 vooraf bestaande recepten bleven ongewijzigd. Rapport op werkbranch fix/recipe-save-production, commit 15cda9f.
+- Daarna is in de nog niet gepubliceerde conceptcode een afzonderlijke fout gereproduceerd: een antwoord op een lopende opslag kon een intussen geopend tweede concept sluiten of markeren. Savehelper nu vastgezet op het oorspronkelijke concept-ID, de foto en collecties; accountwisseling verandert die koppeling niet.
+- 26 unit-/routetests, TypeScriptcontrole en 22 browsertests geslaagd. Cacheversie v39. Alleen de preview van PR #1 bijwerken; geen productiepublicatie, sleutel-/schemawijziging of extra testrecept in deze ronde.
+- Details: docs/pr1-draft-save-followup-20261115.md. Echte ingelogde conceptsync tussen apparaten is nog niet end-to-end bewezen; PR #1 blijft concept.

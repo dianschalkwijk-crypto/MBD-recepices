@@ -76,7 +76,9 @@ function parseLdRecipe(html:string){
    };
    const instructions=Array.isArray(r.recipeInstructions)?r.recipeInstructions.map(stepText).filter(Boolean):stepText(r.recipeInstructions).split('\n').filter(Boolean);
    const author=typeof r.author==='string'?r.author:Array.isArray(r.author)?r.author.map((a:any)=>a?.name||a).filter(Boolean).join(', '):r.author?.name||'';
-   return {title:String(r.name||''),ingredients,instructions,author:String(author||'')};
+   const rawImage=Array.isArray(r.image)?r.image[0]:r.image;
+   const imageURL=typeof rawImage==='string'?rawImage:String(rawImage?.url||'');
+   return {title:String(r.name||''),ingredients,instructions,author:String(author||''),imageURL};
   }catch{}
  }
  return null;
@@ -95,14 +97,14 @@ export default async function handler(req:any,res:any){
   const ld=parseLdRecipe(html);
   if(ld&&(ld.ingredients.length||ld.instructions.length)){
    const text=[ld.title,ld.ingredients.length?'Ingrediënten:\n'+ld.ingredients.join('\n'):'',ld.instructions.length?'Bereiding:\n'+ld.instructions.join('\n'):''].filter(Boolean).join('\n\n');
-   return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:ld.author||null,text,author:ld.author||null,extraction:'recipe-jsonld'});
+   return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:ld.author||null,text,author:ld.author||null,extraction:'recipe-jsonld',metadata:{title:ld.title,description:meta(html,'og:description')||meta(html,'description'),imageURL:ld.imageURL||meta(html,'og:image')}});
   }
   const description=meta(html,'og:description')||meta(html,'description')||meta(html,'twitter:description');
   const title=meta(html,'og:title')||meta(html,'twitter:title')||dec((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||'');
   const text=[title,description].map(x=>String(x||'').replace(/\s+/g,' ').trim()).filter(Boolean).join('\n').trim();
   const author=socialAuthor(description);
   if(text.length<10)return res.status(422).json({message:'Geen bruikbare recepttekst gevonden'});
-  return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:author,text,author,extraction:'page-metadata'});
+  return res.status(200).json({sourceURL:url.toString(),sharedText:text,sourceAuthor:author,text,author,extraction:'page-metadata',metadata:{title,description,imageURL:meta(html,'og:image')}});
  }catch(e:any){
   if(e?.name==='AbortError')return res.status(504).json({message:'Bron ophalen duurde te lang'});
   const m=String(e?.message||'');

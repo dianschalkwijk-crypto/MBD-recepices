@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 const V='2026-03-11';
 const R='9573eb17-06e1-49a7-80a9-aa03755ee3d3';
 const B='7780dc25-2324-4c43-9457-944696411e18';
@@ -39,30 +40,63 @@ const platform=(u:string)=>{
 };
 const safeText=(v:any,max=2000)=>String(v||'').trim().slice(0,max);
 const allowedKinds=new Set(['Kookboek','Screenshot','Eigen recept','Instagram','TikTok','Facebook','Pinterest','Website','YouTube','Anders','Social / link']);
-const mdbNo=(v:string)=>{const m=String(v||'').match(/^MDB-(\d{4})$/i);return m?Number(m[1]):0};
-const fmt=(n:number)=>'MDB-'+String(n).padStart(4,'0');
-
-async function highestNotion(){
-  const d=await query(R,{page_size:20,sorts:[{property:'MDB-ID',direction:'descending'}],filter:{property:'MDB-ID',rich_text:{is_not_empty:true}}});
-  for(const p of d.results||[]){const n=mdbNo(plain(p.properties?.['MDB-ID']));if(n)return n}
-  return 0;
+// These checks are a preflight only. Cross-instance duplicate prevention must
+// also be enforced in the database; a browser check is never an allocation lock.
+export function canonicalSource(raw:any){
+  try{
+    const u=new URL(String(raw||'').trim());
+    if(!['http:','https:'].includes(u.protocol)||u.username||u.password)return '';
+    u.hash='';u.hostname=u.hostname.toLowerCase().replace(/^www\./,'');
+    for(const key of [...u.searchParams.keys()])if(/^(utm_.+|fbclid|igshid|igsh|gclid|si)$/i.test(key))u.searchParams.delete(key);
+    u.searchParams.sort();
+    return u.hostname+(u.port?':'+u.port:'')+u.pathname.replace(/\/+$/,'')+u.search;
+  }catch{return ''}
 }
-async function highestSupabase(){
-  const r=await fetch(DB+'/rest/v1/mbd_catalog?select=mdb&order=mdb.desc&limit=1',{headers:{apikey:PUB},cache:'no-store'});
-  if(!r.ok)throw new Error('Supabase max-ID HTTP '+r.status);
-  const a:any[]=await r.json();return a.length?mdbNo(a[0]?.mdb):0;
+const normalizedText=(v:any)=>String(Array.isArray(v)?v.join('\n'):v||'').normalize('NFKC').toLocaleLowerCase('nl').replace(/\s+/g,' ').trim();
+export function recipeFingerprint(recipe:any){
+  const parts=[recipe?.title,recipe?.ingredients,recipe?.steps].map(normalizedText);
+  return parts.every(Boolean)?JSON.stringify(parts):'';
 }
-async function reserveMDB(){
+export async function readCatalog(){
+  const rows:any[]=[];
+  for(let offset=0;;){
+    const r=await fetch(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&offset='+offset+'&limit=500',{
+      headers:{apikey:PUB,Prefer:'count=exact'},cache:'no-store'
+    });
+    if(!r.ok)throw new Error('Receptcontrole mislukt: Supabase HTTP '+r.status);
+    const page=await r.json();
+    if(!Array.isArray(page))throw new Error('Receptcontrole gaf geen geldige catalogus');
+    rows.push(...page);offset+=page.length;
+    const totalPart=r.headers.get('content-range')?.split('/')[1];
+    const total=totalPart&&/^\d+$/.test(totalPart)?Number(totalPart):null;
+    if(total!==null&&offset>=total)return rows;
+    if(!page.length){if(total!==null&&offset<total)throw new Error('Receptcontrole is onvolledig');return rows}
+    // Continue even for short pages: the server may enforce a smaller row cap.
+    if(offset>100000)throw new Error('Receptcontrole overschrijdt de veilige paginalimiet');
+  }
+}
+export function findDuplicate(rows:any[],draft:any){
+  const url=canonicalSource(draft.sourceURL),fingerprint=recipeFingerprint(draft);
+  return rows.find(row=>{
+    const r=row?.recipe;
+    if(!r||r.syncStatus==='duplicate-quarantined')return false;
+    return (url&&[r.sourceURL,r.contentURL,r.originalSourceURL].some(s=>canonicalSource(s)===url))||
+      (fingerprint&&recipeFingerprint(r)===fingerprint);
+  });
+}
+async function reserveMDB(draft:any){
   const secret=process.env.MBD_SUPABASE_WRITE_SECRET?.trim();
   if(!secret)throw new Error('MBD_SUPABASE_WRITE_SECRET ontbreekt');
-  const r=await fetch(DB+'/rest/v1/rpc/mbd_reserve_number',{
+  const hash=(text:string)=>createHash('sha256').update(text).digest('hex');
+  const source=canonicalSource(draft.sourceURL);
+  const r=await fetch(DB+'/rest/v1/rpc/mbd_claim_recipe_save',{
     method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},
-    body:JSON.stringify({p_secret:secret}),cache:'no-store'
+    body:JSON.stringify({p_secret:secret,p_fingerprint:hash(recipeFingerprint(draft)),p_source_key:source?hash(source):null}),cache:'no-store'
   });
   if(!r.ok)throw new Error('MDB-reservering mislukt: HTTP '+r.status);
-  const mdb=await r.json();
-  if(typeof mdb!=='string'||!/^MDB-\d{4}$/.test(mdb))throw new Error('Ongeldige MDB-reservering');
-  return mdb;
+  const claim=await r.json();
+  if(!/^MDB-\d{4,}$/.test(claim?.mdb)||!['claimed','processing','stored'].includes(claim?.status))throw new Error('Ongeldige MDB-reservering');
+  return claim;
 }
 async function createBook(number:number){
   const name='Boek '+number+' · Nieuwe recepten';
@@ -105,13 +139,35 @@ async function supabaseWrite(mdb:string,recipe:any){
   if(!d?.ok) {const e:any=new Error('Supabase conflict: '+(d?.reason||'onbekend'));e.conflict=true;e.details=d;throw e}
   return d;
 }
+async function confirmStored(mdb:string,recipe:any){
+  const r=await fetch(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&mdb=eq.'+encodeURIComponent(mdb)+'&limit=1',{
+    headers:{apikey:PUB},cache:'no-store'
+  });
+  if(!r.ok)throw new Error('Teruglezen van opgeslagen recept mislukt');
+  const rows=await r.json();
+  if(!Array.isArray(rows)||rows[0]?.mdb!==mdb||recipeFingerprint(rows[0]?.recipe)!==recipeFingerprint(recipe)||rows[0]?.recipe?.notionURL!==recipe.notionURL)
+    throw new Error('Opgeslagen recept nog niet bevestigd');
+}
 async function trash(pageId:string){
-  try{await notion('/pages/'+pageId,{method:'PATCH',body:JSON.stringify({in_trash:true})})}catch(e){console.error('Rollback Notion mislukt',e)}
+  try{await notion('/pages/'+pageId,{method:'PATCH',body:JSON.stringify({in_trash:true})});return true}
+  catch{console.error('Rollback Notion mislukt');return false}
 }
 
 export default async function handler(req:any,res:any){
   res.setHeader('Cache-Control','no-store, no-cache, must-revalidate');
-  if(req.method==='GET')return res.status(200).json({ok:true,notionConfigured:!!process.env.NOTION_TOKEN,supabaseWriteConfigured:!!process.env.MBD_SUPABASE_WRITE_SECRET,firstNewBook:FIRST_NEW_BOOK,maxPerBook:MAX_PER_BOOK});
+  if(req.method==='GET'){
+    if(req.query?.verify==='1'){
+      try{
+        const r=await fetch(DB+'/rest/v1/rpc/mbd_claim_recipe_save',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},
+          body:JSON.stringify({p_secret:process.env.MBD_SUPABASE_WRITE_SECRET?.trim()||'',p_fingerprint:null,p_source_key:null}),cache:'no-store'});
+        const check=await r.json().catch(()=>({}));
+        if(!r.ok||check.status!=='authorized')return res.status(502).json({ok:false,writeAuthorized:false,error:'Schrijftoegang niet bevestigd'});
+        await query(R,{page_size:1});await query(B,{page_size:1});
+        return res.status(200).json({ok:true,writeAuthorized:true,notionReadable:true,mutationPerformed:false});
+      }catch{return res.status(502).json({ok:false,error:'Opslagverbinding niet bevestigd',mutationPerformed:false})}
+    }
+    return res.status(200).json({ok:true,notionConfigured:!!process.env.NOTION_TOKEN,supabaseWriteConfigured:!!process.env.MBD_SUPABASE_WRITE_SECRET,firstNewBook:FIRST_NEW_BOOK,maxPerBook:MAX_PER_BOOK});
+  }
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
   try{
     const b=req.body||{};
@@ -130,14 +186,30 @@ export default async function handler(req:any,res:any){
     const mainIngredient=safeText(extra.mainIngredient,300);
     const portions=safeText(extra.portions,100);
     const sourceNotes=safeText(extra.sourceNotes,2000);
+    const sourceText=safeText(extra.sourceText,60000);
+    const found=extra.sourceMetadata&&typeof extra.sourceMetadata==='object'?extra.sourceMetadata:{};
+    const sourceMetadata=Object.fromEntries(['title','description','imageURL','resolvedURL','extraction','sourceAuthor'].map(key=>[key,safeText(found[key],key==='description'?12000:4000)]));
+    const origin=extra.origin==='ai-proposal'?'ai-proposal':'source';
     const bookPageRaw=safeText(extra.bookPage,30);
     const bookPage=/^\d+(?:\s*[-–,]\s*\d+)*$/.test(bookPageRaw)?bookPageRaw:'';
     const sourcePlatform=sourceURL?platform(sourceURL):(sourceKind==='Social / link'?'':sourceKind);
     if(!title)return res.status(400).json({ok:false,error:'Titel ontbreekt'});
+    if(!ingredients||!steps)return res.status(400).json({ok:false,error:'Ingrediënten en bereidingsstappen zijn verplicht. Bewaar dit recept eerst als concept.'});
     if(title.length>1000||ingredients.length>60000||steps.length>60000)return res.status(400).json({ok:false,error:'Recept is te groot'});
     if(sourceURL){try{const u=new URL(sourceURL);if(u.protocol!=='https:'&&u.protocol!=='http:')throw 0}catch{return res.status(400).json({ok:false,error:'Bronlink is ongeldig'})}}
 
-    const [mdb,book]=await Promise.all([reserveMDB(),activeBook()]);
+    // Fail before any number allocation or Notion mutation if prerequisites or
+    // the read-only duplicate check are unavailable.
+    token();
+    if(!process.env.MBD_SUPABASE_WRITE_SECRET?.trim())throw new Error('MBD_SUPABASE_WRITE_SECRET ontbreekt');
+    const duplicate=findDuplicate(await readCatalog(),{title,ingredients,steps,sourceURL});
+    if(duplicate)return res.status(409).json({ok:false,code:'duplicate_recipe',mdb:duplicate.mdb,
+      notionURL:duplicate.recipe.notionURL||'',error:'Dit recept bestaat al als '+duplicate.mdb+'. Er is geen nieuw nummer aangemaakt.'});
+    const book=await activeBook();
+    const claim=await reserveMDB({title,ingredients,steps,sourceURL});
+    const mdb=claim.mdb;
+    if(claim.status!=='claimed')return res.status(409).json({ok:false,code:claim.status==='stored'?'duplicate_recipe':'save_in_progress',mdb,
+      reconciliationRequired:claim.status==='processing',error:'Dit recept heeft al nummer '+mdb+'. Controleer de bestaande opslag; er is geen nieuw nummer aangemaakt.'});
     const props:any={
       'Recept':{title:tt(title)},
       'Publiekstitel':{rich_text:rt(title)},
@@ -158,7 +230,7 @@ export default async function handler(req:any,res:any){
     const recipe={
       id:mdb,mdb,title,originalTitle:title,author:sourceAuthor||author,ingredients,steps,
       sourceURL,contentURL:sourceURL,notionURL,
-      sourceKind,sourceAuthor,platform:sourcePlatform,method,category,cuisine:'',mainIngredient,
+      sourceKind,sourceAuthor,platform:sourcePlatform,method,category,cuisine:'',mainIngredient,sourceText,sourceMetadata,origin,
       book:(sourceKind==='Kookboek'&&sourceAuthor)?sourceAuthor:book.name,bookNo:sourceKind==='Kookboek'?null:book.number,bookPage,sourceNotes,notionBook:book.name,notionBookNo:book.number,
       portions,time:'',collections,warnings,seeded:false,
       contentSynced:!!(ingredients&&steps),hasPhoto:false,createdAt:new Date().toISOString(),
@@ -166,8 +238,19 @@ export default async function handler(req:any,res:any){
     };
 
     let sw:any;
-    try{sw=await supabaseWrite(mdb,recipe)}
-    catch(e:any){await trash(page.id);return res.status(e?.conflict?409:502).json({ok:false,error:e?.message||String(e),rolledBackNotion:true,mdb})}
+    try{sw=await supabaseWrite(mdb,recipe);await confirmStored(mdb,recipe)}
+    catch(e:any){
+      // Only an explicit database rejection proves this write did not commit.
+      // A timeout/invalid response can occur AFTER commit. Never trash its
+      // Notion page or report a verified rollback in that ambiguous case.
+      if(e?.conflict){
+        const rolledBackNotion=await trash(page.id);
+        return res.status(409).json({ok:false,error:e.message,rolledBackNotion,reconciliationRequired:!rolledBackNotion,mdb,notionURL});
+      }
+      return res.status(502).json({ok:false,code:'save_outcome_unknown',
+        error:'Opslagstatus van '+mdb+' is nog onzeker. Niet opnieuw uploaden: controleer dit nummer eerst in Notion en de receptenapp.',
+        rolledBackNotion:false,reconciliationRequired:true,mdb,notionURL});
+    }
 
     try{await notion('/pages/'+book.id,{method:'PATCH',body:JSON.stringify({properties:{'Aantal recepten':{number:book.count+1}}})})}
     catch(e){console.warn('Boekteller kon niet worden bijgewerkt',e)}

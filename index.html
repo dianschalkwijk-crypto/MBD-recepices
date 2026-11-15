@@ -49,6 +49,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
     .detail-pills{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
     .detail-pill{font-size:12px;background:#f7f3f5;border-radius:999px;padding:5px 8px}
 </style>
+<script src="/recipe-filters.js?v=39"></script><script src="/photo-crop.js?v=39"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -83,6 +84,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           <p id="importMessage" class="message hidden"></p>
         </div>
 
+        <div id="savedDraftsCard" class="card"><h2>Mijn concepten</h2><p class="muted">Lokaal bewaard; bij ingelogd account ook gesynchroniseerd met je andere apparaten. Exporteer voor de zekerheid een kopie.</p><p id="draftSyncStatus" role="status" aria-live="polite"></p><div id="savedDraftsList"></div><button type="button" class="secondary" id="exportDraftsBtn">Exporteer concepten</button></div>
         <div id="reviewCard" class="card hidden">
           <div class="section-heading">
             <div>
@@ -115,12 +117,13 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
           </label>
 
           <div id="warningsBox" class="warning-box hidden"></div>
+          <button id="saveDraftBtn" class="secondary" type="button">Concept bewaren</button>
           <button id="saveRecipeBtn" class="primary">Opslaan in recepten</button>
           <button id="cancelReviewBtn" class="ghost">Concept sluiten</button>
         </div>
       </section>
 
-      <section class="screen" data-screen="recipes">
+      <section class="screen" data-screen="recipes"><h2 id="recipeListHeading">Recepten</h2><details id="recipeFilterMenu" class="card"><summary>Filtermenu</summary><div id="recipeFilterControls"></div></details><p id="recipeFilterSummary" role="status"></p>
         <div class="search-wrap">
           <input id="recipeSearch" type="search" placeholder="Zoek MDB-code, recept, categorie, keuken of ingrediënt" />
         </div>
@@ -263,8 +266,6 @@ function normalizeSourceText(text){
 function detectWarnings(text){
   const warnings=[];
   if (/\bcups?\b|\boz\b|\blb\b/i.test(text)) warnings.push('Er staan Amerikaanse maten in de bron. De definitieve AI-versie zet alleen betrouwbare conversies om naar metrisch.');
-  if (text.length < 80) warnings.push('De gedeelde recepttekst is kort. Controleer of ingrediënten én bereidingsstappen compleet zijn.');
-  if (!/\d/.test(text)) warnings.push('Er zijn nauwelijks hoeveelheden gevonden. Ontbrekende hoeveelheden worden niet verzonnen.');
   return warnings;
 }
 function extractAuthor(text){
@@ -325,13 +326,15 @@ function formatAIIngredient(x){
   return line || x.original_line || '';
 }
 async function analyze(){
+  if(currentDraft&&!saveLocalDraft(true))return;
   const sourceURL = document.querySelector('#sourceUrl').value.trim();
   const sourceText = document.querySelector('#sourceText').value.trim();
   const msg = document.querySelector('#importMessage');
   if(!sourceURL && !sourceText){ showMessage(msg,'Plak minimaal een bronlink of recepttekst.'); return; }
   // De server probeert bij alleen een bronlink eerst publieke receptmetadata op te halen.
 
-  const author=extractAuthor(sourceText);
+  const previousDraft=collectDraft();
+  const author=currentDraft?.sourceMetadata?.sourceAuthor||extractAuthor(sourceText);
   showMessage(msg,'⏳ Recept wordt gecontroleerd en naar Nederlands genormaliseerd…','ok');
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),45000);
@@ -347,9 +350,9 @@ async function analyze(){
     const ingredients=(data.ingredients||[]).map(formatAIIngredient).filter(Boolean);
     const steps=(data.steps||[]).filter(Boolean);
     currentDraft={
-      sourceURL, sourceText,
+      sourceURL, sourceText, sourceMetadata:previousDraft?.sourceMetadata||{},
       title:data.title_nl||inferTitle(sourceText),
-      author:data.source_author||author,
+      author,
       portions:data.servings_text||'',
       ingredients, steps,
       collections:(data.collections&&data.collections.length)?data.collections:classify(`${data.title_nl||''}\n${sourceText}`),
@@ -357,7 +360,7 @@ async function analyze(){
       completeness:data.source_completeness==='complete'?'compleet':data.source_completeness==='partial'?'gedeeltelijk':'onvoldoende'
     };
     msg.classList.add('hidden');
-    fillReview();
+    fillReview();saveLocalDraft(true);
     return;
   }catch(error){
     const normalized=normalizeSourceText(sourceText);
@@ -366,13 +369,132 @@ async function analyze(){
     warnings.unshift('Online AI-import was niet bereikbaar; lokale parser gebruikt. Controleer het recept extra goed.');
     const collections=classify(`${parsed.title}\n${normalized}`);
     const completeness=parsed.ingredients.length&&parsed.steps.length?'redelijk compleet':'gedeeltelijk';
-    currentDraft={sourceURL,sourceText:normalized,title:parsed.title,author,portions:'',ingredients:parsed.ingredients,steps:parsed.steps,collections,warnings,completeness};
+    currentDraft={...previousDraft,sourceURL,sourceText:normalized,title:previousDraft?.title||parsed.title,author:previousDraft?.author||author,portions:previousDraft?.portions||'',ingredients:previousDraft?.ingredients?.length?previousDraft.ingredients:parsed.ingredients,steps:previousDraft?.steps?.length?previousDraft.steps:parsed.steps,collections:previousDraft?.collections?.length?previousDraft.collections:collections,warnings,completeness};
     showMessage(msg,'⚠️ Online verwerking niet bereikbaar. Lokale veilige parser gebruikt.');
-    fillReview();
+    fillReview();saveLocalDraft(true);
   }finally{ clearTimeout(timer); }
+}
+const DRAFT_KEY='mbd-recipe-import-drafts-v1';
+let editingDraftId=null, draftUserId=null, draftSyncPromise=null, draftSyncAgain=false;
+const draftStatus=new Map();
+function allSavedDrafts(){const v=JSON.parse(localStorage.getItem(DRAFT_KEY)||'[]');if(!Array.isArray(v))throw Error('Conceptopslag is beschadigd');return v;}
+function readSavedDrafts(){try{return allSavedDrafts().filter(x=>!x.ownerId||x.ownerId===draftUserId)}catch(e){draftMessage(e.message);return []}}
+function draftMessage(text){const el=document.querySelector('#draftSyncStatus');if(el)el.textContent=text;}
+function putDraft(item){const all=allSavedDrafts(),i=all.findIndex(x=>x.id===item.id);if(i>=0)all[i]=item;else all.unshift(item);localStorage.setItem(DRAFT_KEY,JSON.stringify(all));}
+function collectDraft(){
+ if(!currentDraft)return null;
+ return {...currentDraft,title:document.querySelector('#reviewTitle').value.trim(),author:document.querySelector('#reviewAuthor').value.trim(),portions:document.querySelector('#reviewPortions').value.trim(),ingredients:document.querySelector('#reviewIngredients').value.split('\n').filter(Boolean),steps:document.querySelector('#reviewSteps').value.split('\n').map(x=>x.replace(/^\d+[.)]\s*/,'' )).filter(Boolean),collections:[...selectedCollections]};
+}
+function saveLocalDraft(silent=false){
+ const d=collectDraft();if(!d)return false;
+ try{
+  const id=editingDraftId||uid();
+  const item={id,ownerId:draftUserId,updatedAt:new Date().toISOString(),draft:d};
+  putDraft(item);currentDraft=d;editingDraftId=id;draftStatus.set(id,'Lokaal bewaard');renderSavedDrafts();
+  loadCloudDrafts();
+  if(!silent)draftMessage('Concept lokaal bewaard. Synchronisatie volgt zodra je bent aangemeld en verbinding hebt.');
+  return true;
+ }catch(e){draftMessage('Synchronisatie mislukt: concept niet lokaal bewaard. '+e.message);return false}
+}
+function updateSavedDraft(id,patch){
+ const item=allSavedDrafts().find(x=>x.id===id);if(!item||item.draft._deleted)return;
+ const next={...item,updatedAt:new Date().toISOString(),draft:{...item.draft,...patch}};
+ putDraft(next);
+ if(editingDraftId===id)currentDraft=next.draft;
+ renderSavedDrafts();loadCloudDrafts();
+}
+async function retireDraft(id){
+ if(!id)return;
+ const item=allSavedDrafts().find(x=>x.id===id);if(!item)return;
+ // Tombstones also synchronize after an offline deletion or final save.
+ putDraft({...item,updatedAt:new Date().toISOString(),draft:{...item.draft,_deleted:true}});
+ if(editingDraftId===id){editingDraftId=null;currentDraft=null;document.querySelector('#reviewCard').classList.add('hidden');}
+ renderSavedDrafts();loadCloudDrafts();
+}
+async function draftCloudIdentity(){
+ if(!weekCloud)return null;
+ const {data,error}=await weekCloud.auth.getUser();if(error)throw error;
+ return data?.user?.id||null;
+}
+async function syncDraftsOnce(){
+ const user_id=await draftCloudIdentity();
+ if(user_id!==draftUserId){
+  if(draftUserId&&currentDraft){
+   saveLocalDraft(true);currentDraft=null;editingDraftId=null;
+   document.querySelector('#reviewCard').classList.add('hidden');
+   document.querySelector('#sourceUrl').value='';document.querySelector('#sourceText').value='';
+  }
+  draftUserId=user_id;renderSavedDrafts();
+ }
+ if(!user_id)return;
+ const {data,error}=await weekCloud.from('mbd_import_drafts').select('id,draft,updated_at').eq('user_id',user_id);
+ if(error)throw error;
+ // Authentication may change while a request is in flight.
+ if(await draftCloudIdentity()!==user_id)return;
+ const remote=new Map((data||[]).map(x=>[x.id,x]));
+ for(const r of data||[]){
+  const local=allSavedDrafts().find(x=>x.id===r.id);
+  if(local?.ownerId&&local.ownerId!==user_id)continue;
+  if(!local||r.updated_at&&Date.parse(r.updated_at)>Date.parse(local.updatedAt)){
+   putDraft({id:r.id,ownerId:user_id,draft:r.draft,updatedAt:r.updated_at});draftStatus.set(r.id,'Online opgeslagen');
+  }
+ }
+ for(const item of readSavedDrafts()){
+  const r=remote.get(item.id);
+  if(r&&Date.parse(r.updated_at)>=Date.parse(item.updatedAt)) {draftStatus.set(item.id,'Online opgeslagen');continue;}
+  if(await draftCloudIdentity()!==user_id)return;
+  draftStatus.set(item.id,'Synchronisatie bezig');renderSavedDrafts();
+  const {error}=await weekCloud.from('mbd_import_drafts').upsert({id:item.id,user_id,draft:item.draft,updated_at:item.updatedAt},{onConflict:'id'});
+  if(error){draftStatus.set(item.id,'Synchronisatie mislukt');throw error;}
+  const latest=allSavedDrafts().find(x=>x.id===item.id);
+  if(latest?.updatedAt===item.updatedAt){putDraft({...latest,ownerId:user_id});draftStatus.set(item.id,'Online opgeslagen');}
+  else draftSyncAgain=true;
+ }
+ renderSavedDrafts();
+}
+function loadCloudDrafts(){
+ if(draftSyncPromise){draftSyncAgain=true;return draftSyncPromise;}
+ draftSyncPromise=(async()=>{do{draftSyncAgain=false;await syncDraftsOnce();}while(draftSyncAgain)})()
+ .catch(()=>{for(const item of readSavedDrafts())if(draftStatus.get(item.id)!=='Online opgeslagen')draftStatus.set(item.id,'Synchronisatie mislukt');draftMessage('Synchronisatie mislukt. Je lokale concepten blijven bewaard.');renderSavedDrafts();})
+ .finally(()=>{draftSyncPromise=null;});
+ return draftSyncPromise;
+}
+setTimeout(loadCloudDrafts,2000);
+window.addEventListener('focus',loadCloudDrafts);
+window.addEventListener('online',loadCloudDrafts);
+window.addEventListener('storage',event=>{if(event.key===DRAFT_KEY)renderSavedDrafts()});
+function renderSavedDrafts(){
+ const box=document.querySelector('#savedDraftsList');if(!box)return;
+ const all=readSavedDrafts().filter(x=>!x.draft._deleted);
+ box.innerHTML=all.length?all.map(x=>'<div class="row gap8" style="align-items:center;justify-content:space-between;margin:8px 0"><div><button type="button" class="secondary" data-open-draft="'+esc(x.id)+'">'+esc(x.draft.title||'Naamloos recept')+'</button><small>'+esc(draftStatus.get(x.id)||'Lokaal bewaard')+'</small></div><button type="button" class="ghost" data-delete-draft="'+esc(x.id)+'" aria-label="Concept verwijderen">✕</button></div>').join(''):'<p class="muted">Nog geen bewaarde concepten.</p>';
+ box.querySelectorAll('[data-open-draft]').forEach(b=>b.onclick=()=>{if(currentDraft&&!saveLocalDraft(true))return;const x=readSavedDrafts().find(d=>d.id===b.dataset.openDraft);if(!x)return;editingDraftId=x.id;currentDraft=x.draft;document.querySelector('#sourceUrl').value=currentDraft.sourceURL||'';document.querySelector('#sourceText').value=currentDraft.sourceText||'';fillReview();});
+ box.querySelectorAll('[data-delete-draft]').forEach(b=>b.onclick=()=>{if(confirm('Dit concept verwijderen van je apparaten?'))retireDraft(b.dataset.deleteDraft).catch(e=>draftMessage(e.message));});
+}
+document.querySelector('#saveDraftBtn')?.addEventListener('click',()=>saveLocalDraft());
+document.querySelector('#reviewCard').addEventListener('input',()=>saveLocalDraft(true));
+document.querySelector('#collectionPicker').addEventListener('click',()=>saveLocalDraft(true));
+for(const id of ['sourceUrl','sourceText'])document.querySelector('#'+id).addEventListener('input',()=>{
+ if(currentDraft?.savedMdb){currentDraft=null;editingDraftId=null;}
+ if(!currentDraft){editingDraftId=null;currentDraft={title:'',author:'',portions:'',ingredients:[],steps:[],collections:[],warnings:[],completeness:'gedeeltelijk'};fillReview();}
+ currentDraft.sourceURL=document.querySelector('#sourceUrl').value;currentDraft.sourceText=document.querySelector('#sourceText').value;saveLocalDraft(true);
+});
+window.addEventListener('pagehide',()=>{if(currentDraft)saveLocalDraft(true)});
+document.querySelector('#exportDraftsBtn')?.addEventListener('click',()=>{
+ const data=JSON.stringify(readSavedDrafts().filter(x=>!x.draft._deleted),null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MadeByDian-concepten.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+});
+renderSavedDrafts();
+function updateReviewLocks(){
+ const d=currentDraft,saving=!!window.mbdSavingDraftId,savingThis=saving&&window.mbdSavingDraftId===editingDraftId;
+ for(const id of ['reviewTitle','reviewAuthor','reviewPortions','reviewIngredients','reviewSteps'])document.querySelector('#'+id).readOnly=savingThis||!!d?.savedMdb;
+ for(const id of ['sourceUrl','sourceText'])document.querySelector('#'+id).readOnly=savingThis;
+ document.querySelectorAll('#collectionPicker button').forEach(button=>button.disabled=savingThis||!!d?.savedMdb);
+ const photo=document.querySelector('#mbdPhotoInput');if(photo)photo.disabled=savingThis;
+ const button=document.querySelector('#saveRecipeBtn');button.disabled=saving||!!d?.reconciliationRequired;
+ button.textContent=savingThis?'Opslaan in Notion…':d?.reconciliationRequired?'Controleer opslagstatus':d?.savedMdb?'Foto opnieuw opslaan':'Opslaan in recepten';
 }
 function fillReview(){
   const d=currentDraft; if(!d) return;
+  d.warnings=(d.warnings||[]).filter(w=>!/^De gedeelde recepttekst is kort\.|^Er zijn nauwelijks hoeveelheden gevonden\./.test(w));
   document.querySelector('#reviewTitle').value=d.title;
   document.querySelector('#reviewAuthor').value=d.author;
   document.querySelector('#reviewPortions').value=d.portions||'';
@@ -381,8 +503,10 @@ function fillReview(){
   document.querySelector('#completenessBadge').textContent=d.completeness;
   selectedCollections=new Set(d.collections);
   renderCollectionPicker();
+  updateReviewLocks();
+  document.dispatchEvent(new CustomEvent('mbd:draft-opened'));
   const warningsBox=document.querySelector('#warningsBox');
-  if(d.warnings.length){warningsBox.innerHTML=d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');}
+  if(d.warnings.length&&!d.warningsDismissed){warningsBox.innerHTML='<button type="button" id="dismissWarningsBtn" aria-label="Waarschuwingen sluiten" style="float:right;width:auto;padding:8px 14px;margin:0 0 8px 12px">✕</button>'+d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');warningsBox.querySelector('#dismissWarningsBtn').onclick=()=>{d.warningsDismissed=true;warningsBox.classList.add('hidden');};}
   else warningsBox.classList.add('hidden');
   document.querySelector('#reviewCard').classList.remove('hidden');
   document.querySelector('#reviewCard').scrollIntoView({behavior:'smooth',block:'start'});
@@ -425,7 +549,7 @@ async function saveRecipe(){
   try{
     const response=await fetch('/api/notion/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       title,author,ingredients,steps,sourceURL:sourceURL||null,collections:payload.collections,warnings:payload.warnings,
-      extra:{sourceKind:sourceKindFromURL(sourceURL),sourceAuthor:author,portions}
+      extra:{sourceKind:sourceKindFromURL(sourceURL),sourceAuthor:author,portions,sourceText:currentDraft.sourceText,sourceMetadata:currentDraft.sourceMetadata}
     })});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data?.ok)throw Error(data.error||data.message||'Online bewaren mislukt');
@@ -433,17 +557,39 @@ async function saveRecipe(){
     payload.notionURL=data.notionURL||'';
   }catch(e){showMessage(document.querySelector('#importMessage'),'Niet opgeslagen: '+e.message,'warn');button.disabled=false;return;}
   state.recipes.unshift({...payload,id:savedId,mdb:savedId});
-  persist(); currentDraft=null;button.disabled=false;
+  persist(); await retireDraft(editingDraftId); currentDraft=null;button.disabled=false;
   document.querySelector('#reviewCard').classList.add('hidden');
   document.querySelector('#sourceUrl').value='';document.querySelector('#sourceText').value='';
   showMessage(document.querySelector('#importMessage'),'✓ Recept veilig online opgeslagen als '+savedId+'. Bronlink, tekst en collecties zijn bewaard.','ok');
   renderAll();
 }
-function showMessage(el,text,type='warn'){el.textContent=text;el.className=`message ${type==='ok'?'ok':''}`;}
+function showMessage(el,text,type='warn'){
+  el.textContent=text;el.className=`message ${type==='ok'?'ok':''}`;
+  const close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Melding sluiten');close.style.cssText='float:right;width:auto;padding:8px 14px;margin-left:12px';
+  close.onclick=()=>el.classList.add('hidden');el.prepend(close);
+}
 let activeCollectionFilter = null;
+const recipeFilters={category:'',people:[],mode:'minimum',stars:4};
+function renderRecipeFilterControls(){
+ const categories=[...new Set(state.recipes.flatMap(r=>[r.category,...(r.collections||[])])).values()].filter(Boolean).sort((a,b)=>a.localeCompare(b,'nl'));
+ const guests=[...new Set(Object.values(mbdRatingsRead()).map(r=>r.Gast?.name).filter(Boolean))];
+ const people=['Dian','Jake','Mace',...guests.map(n=>'Gast:'+n)];
+ const box=document.querySelector('#recipeFilterControls');
+ box.innerHTML='<label>Categorie<select id="filterCategory"><option value="">Alle categorieën</option>'+categories.map(c=>'<option '+(recipeFilters.category===c?'selected ':'')+'value="'+esc(c)+'">'+esc(c)+'</option>').join('')+'</select></label><fieldset><legend>Eters: ieder moet voldoen</legend>'+people.map(p=>'<label style="display:block"><input type="checkbox" name="filterPerson" value="'+esc(p)+'" '+(recipeFilters.people.includes(p)?'checked':'')+'> '+esc(p.replace(/^Gast:/,''))+'</label>').join('')+'</fieldset><label>Sterren vergelijken<select id="filterRatingMode"><option value="minimum" '+(recipeFilters.mode==='minimum'?'selected':'')+'>Minimaal</option><option value="exact" '+(recipeFilters.mode==='exact'?'selected':'')+'>Precies</option></select></label><label>Aantal sterren<select id="filterStars">'+[1,2,3,4,5].map(n=>'<option '+(recipeFilters.stars===n?'selected ':'')+'value="'+n+'">'+n+'</option>').join('')+'</select></label>';
+ box.querySelector('#filterCategory').onchange=e=>{recipeFilters.category=e.target.value;renderRecipes()};
+ box.querySelector('#filterRatingMode').onchange=e=>{recipeFilters.mode=e.target.value;renderRecipes()};
+ box.querySelector('#filterStars').onchange=e=>{recipeFilters.stars=Number(e.target.value);renderRecipes()};
+ box.querySelectorAll('[name="filterPerson"]').forEach(b=>b.onchange=()=>{recipeFilters.people=[...box.querySelectorAll('[name="filterPerson"]:checked')].map(x=>x.value);renderRecipes()});
+}
 function renderRecipes(){
   const q=document.querySelector('#recipeSearch').value.trim().toLowerCase();
   const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter)||(activeCollectionFilter==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
+  const filtered=list.filter(r=>MBDRecipeFilters.matches(r,recipeFilters,mbdRatingsRead()));
+  list.splice(0,list.length,...filtered);
+  renderRecipeFilterControls();
+  document.querySelector('#recipeListHeading').textContent=activeCollectionFilter||recipeFilters.category||'Recepten';
+  document.querySelector('#recipeFilterSummary').dataset.filterLabel=(recipeFilters.category?' · '+recipeFilters.category:'')+(recipeFilters.people.length?' · '+recipeFilters.people.map(p=>p.replace(/^Gast:/,'')).join(' en ')+' '+(recipeFilters.mode==='exact'?'precies':'minimaal')+' '+recipeFilters.stars+' sterren':'');
+  document.querySelector('#recipeFilterSummary').textContent=list.length+(list.length===1?' resultaat':' resultaten')+document.querySelector('#recipeFilterSummary').dataset.filterLabel;
   const box=document.querySelector('#recipeList');
   if(!list.length){box.innerHTML='<div class="empty">Geen passend recept gevonden. 🍲</div>';return;}
   box.innerHTML=list.map(r=>{
@@ -492,7 +638,7 @@ async function mbdSyncRatings(){
  const local=mbdRatingsRead();let changed=false;
  for(const row of data||[]){if(!local[row.mdb]){local[row.mdb]=row.ratings;changed=true}}
  if(changed)mbdRatingsSave(local,false);
- const rows=Object.entries(local).filter(([mdb])=>/^MDB-\\d+/i.test(mdb)).map(([mdb,ratings])=>({owner_id:user.id,mdb,ratings,updated_at:new Date().toISOString()}));
+ const rows=Object.entries(local).filter(([mdb])=>/^MDB-\d+/i.test(mdb)).map(([mdb,ratings])=>({owner_id:user.id,mdb,ratings,updated_at:new Date().toISOString()}));
  if(rows.length){const {error:saveError}=await weekCloud.from('mbd_person_ratings').upsert(rows,{onConflict:'owner_id,mdb'});if(saveError)throw saveError;}
  }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}
 }
@@ -504,7 +650,7 @@ function mbdRatingPanel(recipe,body){
  const panel=document.createElement('section');panel.className='detail-section';
  const heading=document.createElement('h3');heading.textContent='⭐ Beoordelingen per persoon';panel.append(heading);
  people.forEach((person,index)=>{const row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:1px solid #eee';
- const saved=data[person]||{};const label=document.createElement('label');label.style.cssText='display:block;font-weight:600;margin-bottom:5px';label.textContent=index===3?'Vierde persoon (naam per gerecht)':'Beoordeling '+person;row.append(label);
+ const saved=data[person]||{};const label=document.createElement('label');label.style.cssText='display:block;font-weight:600;margin-bottom:5px';label.textContent=index===3?'Vierde persoon (naam per gerecht)':'Beoordeling '+(person==='Mama'?'Dian':person);row.append(label);
  if(index===3){const name=document.createElement('input');name.placeholder='Naam invullen';name.value=saved.name||'';name.setAttribute('aria-label','Naam vierde persoon');row.append(name);name.addEventListener('change',()=>update('name',name.value.trim()));}
  const stars=document.createElement('div');stars.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
  const update=(field,value)=>{const next=mbdRatingsRead();next[key]||={};next[key][person]||={};next[key][person][field]=value;mbdRatingsSave(next);if(field==='stars')renderStars(value)};
@@ -644,6 +790,7 @@ function renderCollections(){
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
+weekCloud?.auth.onAuthStateChange(()=>setTimeout(loadCloudDrafts,0));
 setTimeout(()=>mbdSyncRatings(),2500);
 async function syncCatalogRecipes(){
  if(!weekCloud)return;
@@ -821,7 +968,7 @@ function renderAll(){renderRecipes();renderCollections();renderWeek();renderSett
 
 document.querySelector('#analyzeBtn').onclick=analyze;
 document.querySelector('#saveRecipeBtn').onclick=saveRecipe;
-document.querySelector('#cancelReviewBtn').onclick=()=>document.querySelector('#reviewCard').classList.add('hidden');
+document.querySelector('#cancelReviewBtn').onclick=()=>{if(saveLocalDraft())document.querySelector('#reviewCard').classList.add('hidden');};
 document.querySelector('#pasteUrlBtn').onclick=()=>pasteInto('#sourceUrl');
 document.querySelector('#pasteTextBtn').onclick=()=>pasteInto('#sourceText');
 document.querySelector('#recipeSearch').oninput=renderRecipes;
@@ -860,5 +1007,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=36'></script><script src='/save-sync-v10.js?v=36'></script><script src='/catalog-sync-v2.js?v=36'></script><script src='/allergy-integration-v2.js?v=36'></script><script src='/push-notifications-v1.js?v=36'></script><script src='/ux-finishing-v1.js?v=36'></script><script src='/scan-enhance-v1.js?v=36'></script></body>
+<script src='/photo-fix-v10.js?v=39'></script><script src='/save-sync-v10.js?v=39'></script><script src='/catalog-sync-v2.js?v=39'></script><script src='/allergy-integration-v2.js?v=39'></script><script src='/push-notifications-v1.js?v=39'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=39'></script></body>
 </html>

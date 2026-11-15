@@ -7,14 +7,17 @@
     "node": "24.x"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "openai": "^7.10.0",
     "zod": "^4.6.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "@types/node": "^24.0.0"
+    "@playwright/test": "1.65.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
   }
 }
