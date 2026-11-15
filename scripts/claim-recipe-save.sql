@@ -15,7 +15,7 @@ set search_path to public, extensions, pg_temp
 as $function$
 declare v_mdb text;
 begin
- if encode(extensions.digest(coalesce(p_secret,''),'sha256'),'hex') not in ('e122349c6cf9cbfe7cd3e881c6d6e35bae8ece379cb201e42a2d881dfb741bec', '62ba2054e5345db20ca06624559b04e1b55032ec676c010ddf4cd2f201fe5ccd') then raise exception 'unauthorized' using errcode='42501'; end if;
+ if encode(extensions.digest(coalesce(p_secret,''),'sha256'),'hex') not in ('e122349c6cf9cbfe7cd3e881c6d6e35bae8ece379cb201e42a2d881dfb741bec', '62ba2054e5345db20ca06624559b04e1b55032ec676c010ddf4cd2f201fe5ccd', 'f9429f53075a169ac9d8936fe38ddd8f2530f3d0e5c071eebff97f3272afe85f') then raise exception 'unauthorized' using errcode='42501'; end if;
  if p_fingerprint is null and p_source_key is null then return jsonb_build_object('status','authorized'); end if;
  if p_fingerprint is null or p_fingerprint !~ '^[a-f0-9]{64}$' or
     (p_source_key is not null and p_source_key !~ '^[a-f0-9]{64}$') then
