@@ -387,3 +387,5 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 ## Vervolg 15 november 2026
 
 De actuele herstelstatus en testgrenzen staan in `docs/recovery-20261115.md`. Deze ronde bouwt op `45c2886`, behoudt de Dian-thumbnail en gebruikt uitsluitend het Vercel-project `madebydian-recipes-dian`. De 401-herstelactie uit deze chat vervangt oudere vermeldingen dat de sleutelafstemming nog niet was uitgevoerd. Concept-, opslag-, filter- en fotowijzigingen zijn op een afzonderlijke herstelbranch voorbereid en getest; raadpleeg het herstelrapport en de deploymentstatus voor publicatie.
+
+- Laatste domeincontrole 15 november: productie is afzonderlijk doorgerold naar `5ec708d` / `dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN`. De productiehealthcontrole meldt `supabaseWriteReady: true`. De healthcode en bijbehorende test van die commit zijn in de herstelbranch behouden. Deze chat heeft de uitbreiding uitsluitend als preview gepubliceerd.
