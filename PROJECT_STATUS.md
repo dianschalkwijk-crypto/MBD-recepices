@@ -400,3 +400,13 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Gebruiker gaf expliciet toestemming ('ja ga verder'); autorisatiewijziging blijkt inmiddels niet meer nodig. Eerdere afwijzing blijft historische status, geen actuele blokkade.
 - Live AI-import: HTTP 200 met Nederlands recept. Geen testrecept in catalogus aangemaakt, geen volledig nieuw recept opgeslagen tijdens verificatie.
 - Productie-errorlogs na release: geen fouten in de opgevraagde periode. Lokale mobiele Chromium-check geslaagd met gesimuleerde import-/savefouten.
+
+## Volledige live opslagtest — 15 november 2026
+
+- Nieuwe hoofdchat gebruikt uitsluitend de recepten-app. De kledingkast-app blijft een afzonderlijk project.
+- Eerst PROJECT_STATUS.md en RECOVERY_STATUS.md gelezen; remote-werkbranch bevestigd op e63f97a en werkelijk productiedomein bevestigd op 5ec708d / dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN.
+- Met expliciete opdracht voor een volledige test is één gelabeld testrecept werkelijk ingevoerd via de productie-UI, via AI geïmporteerd, met afbeelding opgeslagen en vanuit een schoon tweede browserprofiel teruggelezen: MDB-0694, “Controletest 15-11-2026 — appel met kaneel”, collectie Ontbijt. Notion-upload en fototeruglezing HTTP 200; teruggelezen afbeelding bytegelijk aan upload.
+- Fout- en succesmeldingen via de gepubliceerde sluitknoppen gesloten. Geen runtimecodefix of nieuwe productiepublicatie nodig.
+- Alle 688 eerdere catalogusrecords zijn volledig vergeleken en ongewijzigd. Eén toegevoegd testrecord en één reservering; totaal nu 689. Geen hernummering of hergebruik.
+- GitHub-plugin: één open concept-PR (#1), nul open issues, Vercel-controles groen en nul GitHub Actions-runs. Geen falende CI-run vastgesteld.
+- Dit bewijst de huidige productie-opslagketen, niet de nog niet gepubliceerde concept-/filter-/saveclaim-uitbreidingen van PR #1. Details en beperkingen: docs/live-save-verification-20261115.md.
