@@ -3,14 +3,14 @@
  const load=(src,onload)=>{
   const s=document.createElement('script');s.async=false;s.src=src;if(onload)s.onload=onload;document.body.append(s);
  };
- load('/save-sync-original-v10.js?v=37',()=>{
+ load('/save-sync-original-v10.js?v=38',()=>{
   const files=[
-   '/allergy-integration-v2.js?v=37',
-   '/main-preferences-v1.js?v=37',
-   '/week-select-fix-v1.js?v=37',
-   '/friend-watch-v2.js?v=37',
-   '/library-phase1-v1.js?v=37',
-   '/account-library-backup-v1.js?v=37'
+   '/allergy-integration-v2.js?v=38',
+   '/main-preferences-v1.js?v=38',
+   '/week-select-fix-v1.js?v=38',
+   '/friend-watch-v2.js?v=38',
+   '/library-phase1-v1.js?v=38',
+   '/account-library-backup-v1.js?v=38'
   ];
   let i=0;const next=()=>{if(i>=files.length)return;load(files[i++],next)};next();
  });

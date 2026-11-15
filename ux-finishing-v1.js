@@ -271,6 +271,7 @@ function installAutoLinkImport(){
    if(!r.ok)throw Error(d.message||"Link kon niet worden uitgelezen");
    const found=String(d.sharedText||d.text||"").trim();if(found.length<10)throw Error("Geen bruikbare recepttekst gevonden");
    q("#sourceText").value=found;
+   if(typeof currentDraft!=="undefined"&&currentDraft){currentDraft.sourceMetadata={...d.metadata,resolvedURL:d.sourceURL,extraction:d.extraction,sourceAuthor:d.sourceAuthor||d.author||''};if(typeof saveLocalDraft==='function')saveLocalDraft(true);}
    if(typeof window.analyze==="function")await window.analyze();else if(typeof analyze==="function")await analyze();
    const draft=(typeof currentDraft!=="undefined")?currentDraft:null;
    if(draft&&(draft.completeness!=="compleet"||!draft.ingredients?.length||!draft.steps?.length)){

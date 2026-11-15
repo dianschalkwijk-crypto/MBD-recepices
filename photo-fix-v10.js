@@ -71,6 +71,7 @@ const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?w
 const fullHay=norm(searchableText(r));const queryOk=!queryWords.length||queryWords.every(w=>hasTerm(fullHay,w));
 const ok=categoryOk&&ingredientsOk&&queryOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
 const count=cards.filter(c=>!c.hidden).length;
+const filterSummary=document.querySelector('#recipeFilterSummary');if(filterSummary){const text=count+(count===1?' resultaat':' resultaten')+(filterSummary.dataset.filterLabel||'');if(filterSummary.textContent!==text)filterSummary.textContent=text;}
 const rawIngredientMatches=words.length?all.filter(r=>allTerms?words.every(w=>hasTerm(ingredientText(r),w)):words.some(w=>hasTerm(ingredientText(r),w))).length:0;
 const query=words.length?words.join(" + "):q;
 let msg=count+" "+(count===1?"gerecht gevonden":"gerechten gevonden")+(query?" met "+query:"")+(selected.size?" · "+[...selected].join(", "):"");

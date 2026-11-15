@@ -383,3 +383,7 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Rollback: oude productie dpl_ADUT65BjB1Jg6Evud2nSUcx6284u; lokale bronbundle /tmp/mbd-before-manual-recipe-fix.bundle.
 - Databasewijziging voor aanvullende serversleutel door automatische goedkeuringscontrole afgewezen; expliciete toestemming gevraagd. Databasefuncties dus nog ongewijzigd. Nieuwe Vercel productiesleutel is voorbereid maar nog niet door database geaccepteerd; niet als herstelde opslag presenteren.
 - Geldige OPENAI_API_KEY moet door eigenaar rechtstreeks in Vercel worden ingevuld; sensitive waarden zijn niet terugleesbaar.
+
+## Vervolg 15 november 2026
+
+De actuele herstelstatus en testgrenzen staan in `docs/recovery-20261115.md`. Deze ronde bouwt op `45c2886`, behoudt de Dian-thumbnail en gebruikt uitsluitend het Vercel-project `madebydian-recipes-dian`. De 401-herstelactie uit deze chat vervangt oudere vermeldingen dat de sleutelafstemming nog niet was uitgevoerd. Concept-, opslag-, filter- en fotowijzigingen zijn op een afzonderlijke herstelbranch voorbereid en getest; raadpleeg het herstelrapport en de deploymentstatus voor publicatie.

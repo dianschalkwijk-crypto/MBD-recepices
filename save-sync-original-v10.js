@@ -42,10 +42,14 @@
 
     btn.before(box);
 
-    $("#mbdPhotoInput").addEventListener("change",function(){
-      const file=this.files&&this.files[0];
+    $("#mbdPhotoInput").addEventListener("change",async function(){
+      let file=this.files&&this.files[0];
       const status=$("#mbdPhotoStatus");
       const preview=$("#mbdPhotoPreview");
+      if(file&&file.type.startsWith('image/')&&globalThis.MBDPhotoCrop){
+        try{file=await MBDPhotoCrop.choose(file);if(!file)return;}
+        catch{status.textContent='Foto kon niet worden bijgesneden. Bestaande invoer blijft bewaard.';return;}
+      }
       pendingPhoto=null;
 
       if(!file){
@@ -81,6 +85,7 @@
             base64:data.split(",")[1]
           };
 
+          if(typeof currentDraft!=="undefined"&&currentDraft){currentDraft.photo=pendingPhoto;if(typeof saveLocalDraft==='function')saveLocalDraft(true);}
           preview.src=data;
           preview.style.display="block";
           status.textContent="Foto klaar om mee op te slaan.";
@@ -148,7 +153,7 @@
   }
 
   async function saveNow(event){
-    if(busy)return;
+    if(busy){event.preventDefault();event.stopImmediatePropagation();return;}
     if(typeof currentDraft==="undefined"||!currentDraft)return;
 
     event.preventDefault();
@@ -165,7 +170,7 @@
       if(typeof showMessage==="function"&&msg)showMessage(msg,"Nog niet opgeslagen: de recepttekst lijkt nog grotendeels Engels. Laat de vertaling opnieuw uitvoeren of corrigeer de tekst eerst.","warn");
       return;
     }
-    const duplicate=localDuplicate(title,ingredients,sourceURL);
+    const duplicate=currentDraft.savedMdb?null:localDuplicate(title,ingredients,sourceURL);
 
     if(duplicate){
       const message='Dit recept bestaat al'+(duplicate.mdb?' als '+duplicate.mdb:'')+'. Open het bestaande recept om het aan te passen.';
@@ -173,6 +178,10 @@
       return;
     }
 
+    if(!title||!ingredients||!steps){showMessage($('#importMessage'),'Vul titel, ingrediënten en bereidingsstappen in. Je concept blijft bewaard.','warn');return;}
+    if(currentDraft.reconciliationRequired){showMessage($('#importMessage'),'Controleer eerst de opslagstatus van '+currentDraft.savedMdb+'. Je concept blijft bewaard.','warn');return;}
+    if(typeof saveLocalDraft==='function'&&!saveLocalDraft(true))return;
+    pendingPhoto=currentDraft.photo||null;
     const btn=$("#saveRecipeBtn");
     const msg=$("#importMessage");
     const status=$("#mbdPhotoStatus");
@@ -184,7 +193,7 @@
     btn.textContent="Opslaan in Notion…";
 
     try{
-      const data=await post("/api/notion/save",{
+      const data=currentDraft.savedMdb?{mdb:currentDraft.savedMdb,notionURL:currentDraft.savedNotionURL}:await post("/api/notion/save",{
         title,
         author,
         ingredients,
@@ -197,7 +206,7 @@
           sourceAuthor:author,
           method:currentDraft.method||"",
           category:currentDraft.category||"",
-          portions
+          portions,sourceText:currentDraft.sourceText||"",sourceMetadata:currentDraft.sourceMetadata||{}
         }
       });
 
@@ -209,6 +218,8 @@
         throw new Error("Notion gaf geen MDB-nummer terug.");
       }
 
+      currentDraft.savedMdb=mdb;currentDraft.savedNotionURL=data.notionURL||currentDraft.savedNotionURL||'';
+      if(typeof saveLocalDraft==='function')saveLocalDraft(true);
       let photoOK=false;
       let photoError="";
 
@@ -228,7 +239,7 @@
 
       try{
         if(state&&Array.isArray(state.recipes)){
-          state.recipes.unshift({
+          if(!state.recipes.some(r=>r.mdb===mdb))state.recipes.unshift({
             id:typeof uid==="function"?uid():("local-"+Date.now()),
             mdb,
             title,
@@ -258,6 +269,13 @@
         }
       }catch(_){}
 
+      if(photoError){
+        if(typeof saveLocalDraft==='function')saveLocalDraft(true);
+        showMessage(msg,'Recept opgeslagen als '+mdb+'. Foto niet opgeslagen: '+photoError+'. Je concept en foto blijven bewaard; probeer de foto opnieuw.','warn');
+        if(typeof fillReview==='function')fillReview();
+        btn.textContent='Foto opnieuw opslaan';return;
+      }
+      if(typeof retireDraft==='function')await retireDraft(editingDraftId);
       currentDraft=null;
       pendingPhoto=null;
 
@@ -296,6 +314,8 @@
       if(typeof renderAll==="function")renderAll();
     }catch(e){
       reconciliationRequired=!!e?.reconciliationRequired;
+      if(reconciliationRequired){currentDraft.reconciliationRequired=true;currentDraft.savedMdb=e.mdb;}
+      if(typeof saveLocalDraft==='function')saveLocalDraft(true);
       const message=(reconciliationRequired?"⚠️ Controle nodig: ":"⚠️ Niet opgeslagen: ")+(e?.message||e);
       if(typeof showMessage==="function"&&msg){
         showMessage(msg,message,"warn");
@@ -305,7 +325,7 @@
       if(status)status.textContent=reconciliationRequired?"Controleer eerst de opslagstatus van "+e.mdb+". Niet opnieuw uploaden.":"Recept niet opgeslagen: "+(e?.message||e)+". Je invoer en gekozen foto zijn behouden.";
     }finally{
       btn.disabled=reconciliationRequired;
-      btn.textContent=reconciliationRequired?"Controleer opslagstatus":oldText;
+      btn.textContent=reconciliationRequired?"Controleer opslagstatus":(currentDraft?.savedMdb?"Foto opnieuw opslaan":oldText);
       busy=false;
     }
   }

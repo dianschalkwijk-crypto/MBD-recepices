@@ -77,6 +77,10 @@ async function recognize(file,hint="auto"){
  return d;
 }
 function fill(d){
+ window.mbdRecognitionOrigin=d.imageType==='food_photo'?'ai-proposal':'source';
+ let label=el('recognitionOrigin');if(!label){label=document.createElement('p');label.id='recognitionOrigin';label.setAttribute('role','status');el('title').parentNode.before(label);}
+ label.textContent=window.mbdRecognitionOrigin==='ai-proposal'?'AI-voorstel: dit is geen uitgelezen origineel recept. Hoeveelheden en bereiding moeten worden gecontroleerd.':'Uit zichtbare recepttekst gelezen. Controleer de herkenning.';
+
  if(d.bookPage)el("source").value=d.bookPage;
  const linked=el("mbdSourceUrl")?.value.trim();
  if(!linked&&d.sourceURL&&el("mbdSourceUrl"))el("mbdSourceUrl").value=d.sourceURL;
