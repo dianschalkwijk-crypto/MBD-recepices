@@ -101,9 +101,43 @@ test.describe('actual offline launch',()=>{
  test('cached application reopens a local draft without a network connection',async({page,context})=>{
   await edit(page);await page.locator('#cancelReviewBtn').click();
   await page.evaluate(async()=>{const registration=await navigator.serviceWorker.ready;await new Promise(resolve=>{if(navigator.serviceWorker.controller)return resolve();navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true})});});
-  await page.waitForFunction(async()=>{const names=await caches.keys();const c=await caches.open(names.find(n=>n.includes('0.10.38')));return !!await c.match('/recipe-filters.js?v=38')});
+  await page.waitForFunction(async()=>{const names=await caches.keys();const c=await caches.open(names.find(n=>n.includes('0.10.39')));return !!await c.match('/recipe-filters.js?v=39')});
   await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});
   await page.evaluate(()=>setScreen('inbox'));await page.locator('[data-open-draft]').click();
   await expect(page.locator('#reviewIngredients')).toHaveValue('200 g wortel');
  });
+});
+for(const outcome of ['success','uncertain'])test('in-flight '+outcome+' affects only the submitted draft when another draft is opened',async({page})=>{
+ let release;const gate=new Promise(resolve=>release=resolve);let requestStarted;const started=new Promise(resolve=>requestStarted=resolve);
+ const photos=[];await page.route('**/api/notion/photo',route=>{photos.push(route.request().postDataJSON());return route.fulfill({json:{ok:true}})});
+ await page.route('**/api/notion/save',async route=>{requestStarted();await gate;await route.fulfill(outcome==='success'?{json:{ok:true,mdb:'MDB-0901',notionURL:'https://notion.so/a'}}:{status:502,json:{ok:false,mdb:'MDB-0901',reconciliationRequired:true,error:'Opslagstatus onzeker'}})});
+ await edit(page);await page.waitForFunction(()=>document.querySelector('#saveRecipeBtn').dataset.mbdNotionSync==='1');
+ const ids=await page.evaluate(()=>{
+  const a=editingDraftId,b=crypto.randomUUID();
+  const photo=color=>{const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,2,2);return {filename:color+'.png',contentType:'image/png',base64:canvas.toDataURL().split(',')[1]};};
+  const aPhoto=photo('red');currentDraft.photo=aPhoto;selectedCollections=new Set(['Ontbijt']);saveLocalDraft(true);
+  putDraft({id:b,ownerId:null,updatedAt:new Date().toISOString(),draft:{title:'Tweede concept',photo:photo('blue'),author:'',portions:'',sourceURL:'https://example.com/b',ingredients:['300 g ui'],steps:['Bak de ui.'],collections:['Lunch'],warnings:[],completeness:'compleet'}});renderSavedDrafts();return {a,b,aPhoto};
+ });
+ await page.locator('#saveRecipeBtn').click();await started;
+ await expect(page.locator('#reviewTitle')).not.toBeEditable();
+ await page.locator('[data-open-draft="'+ids.b+'"]').click();
+ release();
+ await expect(page.locator('#importMessage')).toContainText(outcome==='success'?'opgeslagen':'onzeker');
+ await expect(page.locator('#reviewCard')).toBeVisible();
+ await expect(page.locator('#reviewTitle')).toHaveValue('Tweede concept');
+ const state=await page.evaluate(ids=>({active:editingDraftId,a:allSavedDrafts().find(x=>x.id===ids.a).draft,b:allSavedDrafts().find(x=>x.id===ids.b).draft}),ids);
+ expect(state.active).toBe(ids.b);expect(state.b.savedMdb).toBeUndefined();expect(state.b._deleted).toBeUndefined();expect(state.b.reconciliationRequired).toBeUndefined();
+ if(outcome==='success'){expect(state.a._deleted).toBe(true);expect(photos).toHaveLength(1);expect(photos[0].base64).toBe(ids.aPhoto.base64);expect(await page.evaluate(()=>state.recipes.find(r=>r.mdb==='MDB-0901').collections)).toEqual(['Ontbijt']);}else{expect(state.a.reconciliationRequired).toBe(true);expect(photos).toHaveLength(0);}
+});
+
+test('finishing a save after an account change keeps its result with the original owner',async({page})=>{
+ let release;const gate=new Promise(resolve=>release=resolve);let started;const began=new Promise(resolve=>started=resolve);
+ await page.route('**/api/notion/save',async route=>{started();await gate;await route.fulfill({json:{ok:true,mdb:'MDB-0902',notionURL:'https://notion.so/a'}})});
+ await edit(page);await page.waitForFunction(()=>document.querySelector('#saveRecipeBtn').dataset.mbdNotionSync==='1');
+ const id=await page.evaluate(async()=>{window.__draftUser='user-a';await loadCloudDrafts();return editingDraftId;});
+ await page.locator('#saveRecipeBtn').click();await began;
+ await page.evaluate(async()=>{window.__draftUser='user-b';window.__draftCloudRows=[];await loadCloudDrafts();});
+ release();await expect(page.locator('#importMessage')).toContainText('opgeslagen');
+ const result=await page.evaluate(id=>({item:allSavedDrafts().find(x=>x.id===id),visible:readSavedDrafts(),cloud:window.__draftCloudRows}),id);
+ expect(result.item.ownerId).toBe('user-a');expect(result.item.draft._deleted).toBe(true);expect(result.visible).toHaveLength(0);expect(result.cloud).toHaveLength(0);
 });

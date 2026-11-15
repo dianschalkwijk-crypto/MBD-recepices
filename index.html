@@ -49,7 +49,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
     .detail-pills{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
     .detail-pill{font-size:12px;background:#f7f3f5;border-radius:999px;padding:5px 8px}
 </style>
-<script src="/recipe-filters.js?v=38"></script><script src="/photo-crop.js?v=38"></script>
+<script src="/recipe-filters.js?v=39"></script><script src="/photo-crop.js?v=39"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -396,9 +396,16 @@ function saveLocalDraft(silent=false){
   return true;
  }catch(e){draftMessage('Synchronisatie mislukt: concept niet lokaal bewaard. '+e.message);return false}
 }
+function updateSavedDraft(id,patch){
+ const item=allSavedDrafts().find(x=>x.id===id);if(!item||item.draft._deleted)return;
+ const next={...item,updatedAt:new Date().toISOString(),draft:{...item.draft,...patch}};
+ putDraft(next);
+ if(editingDraftId===id)currentDraft=next.draft;
+ renderSavedDrafts();loadCloudDrafts();
+}
 async function retireDraft(id){
  if(!id)return;
- const item=readSavedDrafts().find(x=>x.id===id);if(!item)return;
+ const item=allSavedDrafts().find(x=>x.id===id);if(!item)return;
  // Tombstones also synchronize after an offline deletion or final save.
  putDraft({...item,updatedAt:new Date().toISOString(),draft:{...item.draft,_deleted:true}});
  if(editingDraftId===id){editingDraftId=null;currentDraft=null;document.querySelector('#reviewCard').classList.add('hidden');}
@@ -476,10 +483,17 @@ document.querySelector('#exportDraftsBtn')?.addEventListener('click',()=>{
  const data=JSON.stringify(readSavedDrafts().filter(x=>!x.draft._deleted),null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MadeByDian-concepten.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
 });
 renderSavedDrafts();
+function updateReviewLocks(){
+ const d=currentDraft,saving=!!window.mbdSavingDraftId,savingThis=saving&&window.mbdSavingDraftId===editingDraftId;
+ for(const id of ['reviewTitle','reviewAuthor','reviewPortions','reviewIngredients','reviewSteps'])document.querySelector('#'+id).readOnly=savingThis||!!d?.savedMdb;
+ for(const id of ['sourceUrl','sourceText'])document.querySelector('#'+id).readOnly=savingThis;
+ document.querySelectorAll('#collectionPicker button').forEach(button=>button.disabled=savingThis||!!d?.savedMdb);
+ const photo=document.querySelector('#mbdPhotoInput');if(photo)photo.disabled=savingThis;
+ const button=document.querySelector('#saveRecipeBtn');button.disabled=saving||!!d?.reconciliationRequired;
+ button.textContent=savingThis?'Opslaan in Notion…':d?.reconciliationRequired?'Controleer opslagstatus':d?.savedMdb?'Foto opnieuw opslaan':'Opslaan in recepten';
+}
 function fillReview(){
   const d=currentDraft; if(!d) return;
-  for(const id of ['reviewTitle','reviewAuthor','reviewPortions','reviewIngredients','reviewSteps'])document.querySelector('#'+id).readOnly=!!d.savedMdb;
-  const saveButton=document.querySelector('#saveRecipeBtn');saveButton.disabled=!!d.reconciliationRequired;saveButton.textContent=d.reconciliationRequired?'Controleer opslagstatus':d.savedMdb?'Foto opnieuw opslaan':'Opslaan in recepten';
   d.warnings=(d.warnings||[]).filter(w=>!/^De gedeelde recepttekst is kort\.|^Er zijn nauwelijks hoeveelheden gevonden\./.test(w));
   document.querySelector('#reviewTitle').value=d.title;
   document.querySelector('#reviewAuthor').value=d.author;
@@ -489,6 +503,8 @@ function fillReview(){
   document.querySelector('#completenessBadge').textContent=d.completeness;
   selectedCollections=new Set(d.collections);
   renderCollectionPicker();
+  updateReviewLocks();
+  document.dispatchEvent(new CustomEvent('mbd:draft-opened'));
   const warningsBox=document.querySelector('#warningsBox');
   if(d.warnings.length&&!d.warningsDismissed){warningsBox.innerHTML='<button type="button" id="dismissWarningsBtn" aria-label="Waarschuwingen sluiten" style="float:right;width:auto;padding:8px 14px;margin:0 0 8px 12px">✕</button>'+d.warnings.map(w=>`⚠️ ${esc(w)}`).join('<br>');warningsBox.classList.remove('hidden');warningsBox.querySelector('#dismissWarningsBtn').onclick=()=>{d.warningsDismissed=true;warningsBox.classList.add('hidden');};}
   else warningsBox.classList.add('hidden');
@@ -991,5 +1007,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=38'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=38'></script><script src='/allergy-integration-v2.js?v=38'></script><script src='/push-notifications-v1.js?v=38'></script><script src='/ux-finishing-v1.js?v=38'></script><script src='/scan-enhance-v1.js?v=38'></script></body>
+<script src='/photo-fix-v10.js?v=39'></script><script src='/save-sync-v10.js?v=39'></script><script src='/catalog-sync-v2.js?v=39'></script><script src='/allergy-integration-v2.js?v=39'></script><script src='/push-notifications-v1.js?v=39'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=39'></script></body>
 </html>
