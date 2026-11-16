@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## Nieuwe actuele uitbreiding — 16 november 2026
+
+Bronnen & QR-controle is gepubliceerd in de bestaande receptenapp, productiecommit `d37e75f`, deployment `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`. Volledige gegevensinventarisatie, lokale controleopslag, back-up/rollback en onderscheid tussen geslaagde lokale integratietests en geblokkeerde rechtstreekse productie-browsertest staan in `docs/source-qr-workspace-20261116.md`. Alle 689 catalogusrecords en bestaande MDB-nummers zijn ongewijzigd. Oudere bronherstelvermeldingen hieronder zijn historisch.
+
 Brondeployment: dpl_FCb3R9KJiaRnDFYdstAc1f2TmSoK.
 
 ## Actuele status — 27 oktober 2026

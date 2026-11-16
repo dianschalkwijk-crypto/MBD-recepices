@@ -1,4 +1,13 @@
 # MadeByDian — centraal herstelregister
+## Actueel — Bronnen & QR-controle, 16 november 2026
+
+- Gepubliceerd in dezelfde app: `/bronnen-qr.html`, met hoofdnavigatie en koppelingen vanuit recepten. Productie `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`, commit `d37e75fd63f632a7df3d7f67a8fb8dd5658a0666`, Vercel-project uitsluitend `madebydian-recipes-dian`. De oude projectvariant met extra s is niet gebruikt.
+- Brononderzoek, alle back-ups en testgrenzen: `docs/source-qr-workspace-20261116.md`. Actuele bron is `public.mbd_catalog`: 689 records, inclusief 18 quarantaine. Het gelezen Excel-register met 352 MDB-concept-QR’s is aanvullend en is niet automatisch overgenomen. Geen datasets samengevoegd.
+- Controlebeslissingen staan apart in IndexedDB op dit apparaat, met expliciete opslag per recept, historie, revisiecontrole en herstelbare export. Geen cloud-/accountsynchronisatie van deze controleadministratie; dit staat zichtbaar in de pagina. Bronnen, foto's, recepten en MDB-nummers worden niet gewijzigd.
+- 23 unit-/routetests en 14 desktop-/mobiele Chromium-controles geslaagd; twee hiervan lezen de echte catalogus via de lokale geteste code. Twee oudere saveconcurrency-TODO's blijven open. Gepubliceerde bestanden zijn byte-identiek aan de geteste bestanden. Live catalogus-API en bestaande productiehealth geven HTTP 200; alle 689 records en RLS-policies zijn exact ongewijzigd.
+- De rechtstreekse UI-test op productie blijft concreet geblokkeerd door certificaatvertrouwen in de testbrowser en de CUA-toolstoring. Niet presenteren als een geslaagde productie-browsertest. Geen bestaande individuele bron of QR in deze ronde inhoudelijk goedgekeurd of geregenereerd.
+- Werkbranch `feat/sources-qr-workspace-20261116`, PR #2. Concept-PR #1 is niet mee gepubliceerd.
+
 ## Lokale releasevoorbereiding — 29 oktober 2026
 
 - Basis: recovery/vercel-2026-10-22 op 80df13a85e9d93e31ed58facd3e48e48dacb6df7; remote-tip opnieuw bevestigd.
