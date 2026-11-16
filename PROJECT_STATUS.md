@@ -392,3 +392,21 @@ Deze sectie vervangt oudere regels die zeggen dat de browser-/Supabase-praktijkt
 - Typecheck geslaagd; 16 tests geslaagd en 2 eerdere TODO voor databaseconcurrency/idempotency.
 - Database-autorisatiemigratie opnieuw door auto-review afgewezen: 'check en ga verder' is volgens reviewer onvoldoende expliciete toestemming voor de extra geaccepteerde sleutel. Geen databasewijziging uitgevoerd; exacte toestemming blijft nodig.
 - Rollback huidige productie: dpl_6fdqCNCmKQhqbPYRa9ZLC1qqpDh9.
+
+## Publicatie en actuele verificatie — 2026-11-15
+- Productie gepubliceerd: dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN, commit 5ec708d611d72535b570e721ec5d47027c18b14c, READY. Live standaarddomein gecontroleerd: Dian-thumbnail behouden, dismissWarningsBtn aanwezig, nieuwe showMessage-sluitknop aanwezig.
+- Live /api/notion/health: ok=true, supabaseWriteReady=true. Deze probe test echte productiecredentials via invalid_mdb, zonder receptwrite of nummerreservering.
+- Laatste database-inspectie toont dat beide functies inmiddels dezelfde twee hashes accepteren (oude hash plus een inmiddels elders herstelde hash). Dit wijkt af van het eerder voorbereide pending script. Daarom pending script verwijderd; GEEN overbodige extra sleutel toegevoegd.
+- Gebruiker gaf expliciet toestemming ('ja ga verder'); autorisatiewijziging blijkt inmiddels niet meer nodig. Eerdere afwijzing blijft historische status, geen actuele blokkade.
+- Live AI-import: HTTP 200 met Nederlands recept. Geen testrecept in catalogus aangemaakt, geen volledig nieuw recept opgeslagen tijdens verificatie.
+- Productie-errorlogs na release: geen fouten in de opgevraagde periode. Lokale mobiele Chromium-check geslaagd met gesimuleerde import-/savefouten.
+
+## Volledige live opslagtest — 15 november 2026
+
+- Nieuwe hoofdchat gebruikt uitsluitend de recepten-app. De kledingkast-app blijft een afzonderlijk project.
+- Eerst PROJECT_STATUS.md en RECOVERY_STATUS.md gelezen; remote-werkbranch bevestigd op e63f97a en werkelijk productiedomein bevestigd op 5ec708d / dpl_4kaCh1ySaSRksRNjhj1ixQicdkgN.
+- Met expliciete opdracht voor een volledige test is één gelabeld testrecept werkelijk ingevoerd via de productie-UI, via AI geïmporteerd, met afbeelding opgeslagen en vanuit een schoon tweede browserprofiel teruggelezen: MDB-0694, “Controletest 15-11-2026 — appel met kaneel”, collectie Ontbijt. Notion-upload en fototeruglezing HTTP 200; teruggelezen afbeelding bytegelijk aan upload.
+- Fout- en succesmeldingen via de gepubliceerde sluitknoppen gesloten. Geen runtimecodefix of nieuwe productiepublicatie nodig.
+- Alle 688 eerdere catalogusrecords zijn volledig vergeleken en ongewijzigd. Eén toegevoegd testrecord en één reservering; totaal nu 689. Geen hernummering of hergebruik.
+- GitHub-plugin: één open concept-PR (#1), nul open issues, Vercel-controles groen en nul GitHub Actions-runs. Geen falende CI-run vastgesteld.
+- Dit bewijst de huidige productie-opslagketen, niet de nog niet gepubliceerde concept-/filter-/saveclaim-uitbreidingen van PR #1. Details en beperkingen: docs/live-save-verification-20261115.md.
