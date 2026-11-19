@@ -1,4 +1,11 @@
 # MadeByDian — centraal herstelregister
+## Productiebrowsertests hersteld — 19 november 2026
+
+- Beide automatische productiebrowsertests slagen nu met HTTPS-validatie aan: desktop en iPhone-schermformaat, 2 passed. De testuitvoering heeft gericht schrijfrecht nodig op `/home/agent/.pki/nssdb`; zonder dat recht kon NSS zijn certificaatopslag niet correct gebruiken.
+- De aanvankelijke diagnose 'ontbrekend certificaat' is gecorrigeerd: hetzelfde proxycertificaat stond al onder een andere naam in NSS. Geen extra CA toegevoegd en geen TLS-controle uitgezet. De gebruiker gaf expliciet toestemming voor certificaatherstel; de uiteindelijke werkende correctie betreft de beperkte testomgevingstoegang.
+- Productiepagina, actuele catalogus/dashboard, lokale controleopslag na herladen, behoud van oorspronkelijke velden en print/mobile-controles zijn rechtstreeks op het productiedomein geverifieerd. Geen servergegevens of MDB-nummers gewijzigd; geen nieuwe productierelease.
+- Herhaalbare uitvoering en bewijs: `docs/browser-tls-recovery-20261119.md`. Oudere vermeldingen hieronder van geblokkeerde automatische productiebrowsertests zijn historisch. De twee opslagconcurrency-TODO's blijven afzonderlijk open.
+
 ## Vervolgcontrole — 19 november 2026
 
 - Productie d37e75f en preview 51d9f68 opnieuw READY bevonden; verschil uitsluitend documentatie. PR #2 open en mergebaar, geen reviewopmerkingen; geen nieuwe runtime-release nodig.

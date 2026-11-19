@@ -1,5 +1,7 @@
 # Vervolgcontrole MadeByDian — 19 november 2026
 
+**Latere herstelactie op 19 november:** de twee automatische productiebrowsertests slagen inmiddels. De beperkte testuitvoering heeft schrijfrecht op de bestaande NSS-certificaatopslag nodig. Zie `browser-tls-recovery-20261119.md` voor de gecorrigeerde diagnose, expliciete toestemming en herhaalbare uitvoering. De hieronder beschreven eerdere certificaatblokkade is geen actuele blokkade meer wanneer dat bestandsrecht aanwezig is. De opslagconcurrency-risico's blijven wel open.
+
 ## Actuele versie, zonder onnodige release
 
 Productie is nog `d37e75f` / `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`, READY. Preview `51d9f68` / `dpl_9HwTHEqZJgG52rGgzEZoZPBgTPGa` is eveneens READY. Het verschil betreft uitsluitend PROJECT_STATUS.md, RECOVERY_STATUS.md en het verificatieverslag. Geen nieuwere runtimecorrectie gemist; geen reden om dezelfde app opnieuw te publiceren.
