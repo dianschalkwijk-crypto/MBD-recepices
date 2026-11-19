@@ -1,0 +1,11 @@
+// Actual live catalog sync into an isolated old browser library. No recipe writes.
+import {test,expect} from '@playwright/test';
+test.skip(!process.env.MBD_LIVE_SOCIAL_RECOVERY_TEST,'Explicit live source recovery check required');
+test('existing browser library receives recovered social link without losing its source reference',async({page})=>{
+ const writes=[];page.on('request',r=>{if(r.method()!=='GET'&&/\/api\//.test(r.url())&&new URL(r.url()).hostname==='madebydian-recipes-dian.vercel.app')writes.push(r.url())});
+ await page.goto('/api/notion/catalog?sourceReview=1');const catalog=JSON.parse(await page.locator('body').innerText());expect(catalog.items.length).toBe(700);const recovered=catalog.items.filter(x=>/^MDB-063[0-3]$|^MDB-062[7-9]$/.test(x.mdb));expect(recovered.length).toBe(7);for(const r of recovered)expect(r.recipe.contentURL).toMatch(/^https:\/\/www.instagram.com\/reel\//);
+ const old=recovered.map(x=>{const r={...x.recipe,mdb:x.mdb};delete r.contentURL;return r});
+ await page.addInitScript(({old})=>{if(localStorage.getItem('social-recovery-test-seeded'))return;localStorage.setItem('madebydian-recipes-filled-copy-v0.5',JSON.stringify({recipes:old,week:{}}));localStorage.setItem('social-recovery-test-seeded','1')},{old});
+ await page.goto('/');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('madebydian-recipes-filled-copy-v0.5')||'{}').recipes?.filter(r=>/^MDB-063[0-3]$|^MDB-062[7-9]$/.test(r.mdb)&&r.contentURL?.startsWith('https://www.instagram.com/reel/')).length===7,{},{timeout:20000});
+ await page.locator('[data-target="recipes"]').click();await page.locator('#recipeSearch').fill('MDB-0627');await expect(page.locator('#recipeList a.mbd-week-source-link').first()).toHaveAttribute('href','https://www.instagram.com/reel/C-PKfjjo36E/');await expect(page.locator('#recipeList a.mbd-week-source-link').first()).toHaveText('Social bekijken ↗');await page.reload();await page.waitForFunction(()=>!!window.__mbdAllergyIntegrated);expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('madebydian-recipes-filled-copy-v0.5')).recipes.find(r=>r.mdb==='MDB-0627').originalSourceRef)).toBe(old.find(r=>r.mdb==='MDB-0627').originalSourceRef);expect(writes).toEqual([]);
+});
