@@ -1,4 +1,8 @@
 # MadeByDian — centraal herstelregister
+## Overdracht overige chats — 19 november 2026
+
+Zie [centrale chatoverdracht](docs/cross-chat-requirements-20261119.md) voor teruggevonden eisen rond 0120/0592/0623/0625, Notion als back-up, HelloFresh/weekmenu, kindervoorkeuren en kookboeken. Dit is een vastgelegde werkvoorraad, geen claim dat die uitbreidingen al gebouwd zijn. Archiefadvies en beperkingen van de chatinventaris staan erbij; kledingkastwerk blijft apart.
+
 ## Opslagrisico's gerepareerd en gepubliceerd — 19 november 2026
 
 - Actuele productie: `a35abee4b03fe09c38638a62947d0d9a7ea3fd23`, READY-deployment `dpl_HgL5U26wuu4Rka2yTCYfEoCBAhdJ`, uitsluitend project `madebydian-recipes-dian`. PR #3, branch `fix/atomic-recipe-save-20261119`.
