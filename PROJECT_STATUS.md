@@ -1,4 +1,29 @@
 # MadeByDian — centraal herstelregister
+## Productiebrowsertests hersteld — 19 november 2026
+
+- Beide automatische productiebrowsertests slagen nu met HTTPS-validatie aan: desktop en iPhone-schermformaat, 2 passed. De testuitvoering heeft gericht schrijfrecht nodig op `/home/agent/.pki/nssdb`; zonder dat recht kon NSS zijn certificaatopslag niet correct gebruiken.
+- De aanvankelijke diagnose 'ontbrekend certificaat' is gecorrigeerd: hetzelfde proxycertificaat stond al onder een andere naam in NSS. Geen extra CA toegevoegd en geen TLS-controle uitgezet. De gebruiker gaf expliciet toestemming voor certificaatherstel; de uiteindelijke werkende correctie betreft de beperkte testomgevingstoegang.
+- Productiepagina, actuele catalogus/dashboard, lokale controleopslag na herladen, behoud van oorspronkelijke velden en print/mobile-controles zijn rechtstreeks op het productiedomein geverifieerd. Geen servergegevens of MDB-nummers gewijzigd; geen nieuwe productierelease.
+- Herhaalbare uitvoering en bewijs: `docs/browser-tls-recovery-20261119.md`. Oudere vermeldingen hieronder van geblokkeerde automatische productiebrowsertests zijn historisch. De twee opslagconcurrency-TODO's blijven afzonderlijk open.
+
+## Vervolgcontrole — 19 november 2026
+
+- Productie d37e75f en preview 51d9f68 opnieuw READY bevonden; verschil uitsluitend documentatie. PR #2 open en mergebaar, geen reviewopmerkingen; geen nieuwe runtime-release nodig.
+- Actuele catalogus is 700, exact gelijk tussen live API en Supabase. Alle oorspronkelijke 689 records zijn geheel ongewijzigd; 11 Fit Piggy-recepten zijn op 17 november toegevoegd en behouden. Geen nieuwe recepten/nummers aangemaakt tijdens deze controle.
+- Zes gerichte opslag-/QR-regressies en twee integratietests met de echte catalogus slagen. Verouderde vaste browsertesttelling 689 vervangen door vergelijking met de actuele API. Twee automatische productie-browsertests blijven door ERR_CERT_AUTHORITY_INVALID geblokkeerd.
+- Nieuw bewezen: de gedeelde browser kon de echte productiepagina openen. Lokale controlenotitie, herstelronde en beslissing bij bestaand technisch recept MDB-0694 opgeslagen en na herladen zichtbaar teruggelezen. Geen bron- of QR-goedkeuring toegevoegd. Controleopslag blijft op dit apparaat.
+- De twee concurrency-TODO's blijven P1: dubbele gelijktijdige opslag en nieuwe reservering bij herhaling na een fout zijn met gesimuleerde externe diensten gereproduceerd. De bestaande claimoplossing staat al in concept-PR #1; niet dupliceren in PR #2 en niet ongetest publiceren.
+- Details en bewijs: `docs/followup-verification-20261119.md`. Deze sectie vervangt oudere algemene vermeldingen dat geen enkele rechtstreekse productie-browsercontrole mogelijk is.
+
+## Actueel — Bronnen & QR-controle, 16 november 2026
+
+- Gepubliceerd in dezelfde app: `/bronnen-qr.html`, met hoofdnavigatie en koppelingen vanuit recepten. Productie `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`, commit `d37e75fd63f632a7df3d7f67a8fb8dd5658a0666`, Vercel-project uitsluitend `madebydian-recipes-dian`. De oude projectvariant met extra s is niet gebruikt.
+- Brononderzoek, alle back-ups en testgrenzen: `docs/source-qr-workspace-20261116.md`. Actuele bron is `public.mbd_catalog`: 689 records, inclusief 18 quarantaine. Het gelezen Excel-register met 352 MDB-concept-QR’s is aanvullend en is niet automatisch overgenomen. Geen datasets samengevoegd.
+- Controlebeslissingen staan apart in IndexedDB op dit apparaat, met expliciete opslag per recept, historie, revisiecontrole en herstelbare export. Geen cloud-/accountsynchronisatie van deze controleadministratie; dit staat zichtbaar in de pagina. Bronnen, foto's, recepten en MDB-nummers worden niet gewijzigd.
+- 23 unit-/routetests en 14 desktop-/mobiele Chromium-controles geslaagd; twee hiervan lezen de echte catalogus via de lokale geteste code. Twee oudere saveconcurrency-TODO's blijven open. Gepubliceerde bestanden zijn byte-identiek aan de geteste bestanden. Live catalogus-API en bestaande productiehealth geven HTTP 200; alle 689 records en RLS-policies zijn exact ongewijzigd.
+- De rechtstreekse UI-test op productie blijft concreet geblokkeerd door certificaatvertrouwen in de testbrowser en de CUA-toolstoring. Niet presenteren als een geslaagde productie-browsertest. Geen bestaande individuele bron of QR in deze ronde inhoudelijk goedgekeurd of geregenereerd.
+- Werkbranch `feat/sources-qr-workspace-20261116`, PR #2. Concept-PR #1 is niet mee gepubliceerd.
+
 ## Lokale releasevoorbereiding — 29 oktober 2026
 
 - Basis: recovery/vercel-2026-10-22 op 80df13a85e9d93e31ed58facd3e48e48dacb6df7; remote-tip opnieuw bevestigd.

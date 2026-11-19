@@ -61,6 +61,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       </div>
       <button class="icon-btn" id="exportBtn" title="Exporteren" aria-label="Exporteren">↗</button>
     </header>
+    <nav aria-label="Receptenbeheer" style="padding:10px 20px;border-bottom:1px solid #e5dcd2"><a href="/bronnen-qr.html" style="color:#734650;font-size:14px">Bronnen &amp; QR-controle →</a></nav>
 
     <main>
       <section class="screen active" data-screen="inbox">
@@ -552,6 +553,7 @@ function showRecipeDetails(id){
   if(r.contentURL && r.contentURL!==r.sourceURL) links.push(`<button data-modal-content>Inhoudsbron</button>`);
   if(r.notionURL) links.push(`<button data-modal-notion>Notion</button>`);
   links.push(`<button data-modal-copy class="secondary">Kopieer recept</button>`);
+  if(r.mdb) links.push(`<a href="/bronnen-qr.html?mdb=${encodeURIComponent(r.mdb)}">Bronnen &amp; QR-controle</a>`);
   blocks.push(`<div class="detail-section"><div class="recipe-actions">${links.join('')}</div></div>`);
   const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');mbdRatingPanel(r,body);
   if(r.sourceKind==='Kookboek'){
