@@ -6,8 +6,8 @@
  load('/save-sync-original-v10.js?v=37',()=>{
   const files=[
    '/allergy-integration-v2.js?v=37',
-   '/main-preferences-v1.js?v=37',
-   '/week-select-fix-v1.js?v=37',
+   '/main-preferences-v1.js?v=38',
+   '/week-select-fix-v1.js?v=38',
    '/friend-watch-v2.js?v=37',
    '/library-phase1-v1.js?v=37',
    '/account-library-backup-v1.js?v=37'

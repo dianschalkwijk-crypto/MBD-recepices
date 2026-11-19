@@ -117,7 +117,7 @@ function renderWeekSearchResults(){
   const row=document.createElement("div");row.className="mbd-week-search-result";
   const meta=document.createElement("div");meta.className="mbd-week-search-result-meta";
   const title=document.createElement("strong");title.textContent=r.title||r.originalTitle||"Recept";
-  const code=document.createElement("small");code.textContent=r.mdb||"";meta.append(title,code);
+  const code=document.createElement("small");code.textContent=r.mdb||"";meta.append(title,code);window.MBDWeekCore?.appendRecipeActions(meta,r);
   const actions=document.createElement("div");actions.className="mbd-week-search-days";
   for(const day of days){
    const b=document.createElement("button");b.type="button";b.textContent=day.slice(0,2);b.title="Kies voor "+day;

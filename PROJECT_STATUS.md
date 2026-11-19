@@ -1,4 +1,12 @@
 # MadeByDian — centraal herstelregister
+
+## Bronlinks en socialvolgorde hersteld — 19 november 2026
+
+Productie `b977018` / `dpl_9LN9MTe7gmtqQetdyz56uUk9Es1Y` READY in dezelfde app. Weekmenukeuzes, zoekresultaten, bibliotheek en receptdetails tonen sociallinks eerst en websites apart; Recept bekijken wijzigt de planning niet. MDB-0323 heeft geen bekende exacte social-URL, ook niet in het historische bronregister: zichtbaar als ontbrekend, geen URL verzonnen. Alle 700 catalogusrecords volledig ongewijzigd. Details: `docs/weekmenu-source-links-20261119.md`.
+
+## Weekmenu uitgebreid en live getest — 19 november 2026
+
+Productie `86395d3` / `dpl_B1oK4hqJXAQktZmVwMCYk8wHBq9b` READY in dezelfde receptenapp. Aanpasbare dagcategorieën/collecties, categoriezoeklijst, persoonlijke sterrenfilters en portieomrekening voor standaard vier personen toegevoegd. MDB-0323 bevat 24 cups, geen 24 personen; bronpersonen blijven onbekend tot expliciet ingevuld. 31 unit-/routetests, 16 lokale browsercontroles en zes productie-browsercontroles geslaagd. Alle 700 catalogusrecords vóór/na identiek. Instellingen blijven lokaal. Details: [weekmenucontrole](docs/weekmenu-filters-portions-20261119.md). PR #4 open voor review.
 ## Overdracht overige chats — 19 november 2026
 
 Zie [centrale chatoverdracht](docs/cross-chat-requirements-20261119.md) voor teruggevonden eisen rond 0120/0592/0623/0625, Notion als back-up, HelloFresh/weekmenu, kindervoorkeuren en kookboeken. Dit is een vastgelegde werkvoorraad, geen claim dat die uitbreidingen al gebouwd zijn. Archiefadvies en beperkingen van de chatinventaris staan erbij; kledingkastwerk blijft apart.
