@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## Bronlinks en socialvolgorde hersteld — 19 november 2026
+
+Productie `b977018` / `dpl_9LN9MTe7gmtqQetdyz56uUk9Es1Y` READY in dezelfde app. Weekmenukeuzes, zoekresultaten, bibliotheek en receptdetails tonen sociallinks eerst en websites apart; Recept bekijken wijzigt de planning niet. MDB-0323 heeft geen bekende exacte social-URL, ook niet in het historische bronregister: zichtbaar als ontbrekend, geen URL verzonnen. Alle 700 catalogusrecords volledig ongewijzigd. Details: `docs/weekmenu-source-links-20261119.md`.
+
 ## Actuele weekmenu-uitbreiding — 19 november 2026
 
 Productie `86395d3`, READY-deployment `dpl_B1oK4hqJXAQktZmVwMCYk8wHBq9b`. Categorieën, persoonlijke sterrenfilters en veilige portieomrekening live getest op desktop en telefoonformaat. Recept 0323 blijft 24 cups; geen automatische interpretatie als personen. Alle 700 catalogusrecords ongewijzigd. Zie `docs/weekmenu-filters-portions-20261119.md` voor back-up, rollback, tests en beperkingen.
