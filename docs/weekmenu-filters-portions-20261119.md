@@ -11,3 +11,11 @@ Uitbreiding in de bestaande receptenapp. Basis: productie a35abee; rollback dpl_
 - Oud change-eventscript beperkt tot echte receptkeuzes; anders onderschepte het categorie- en sterrenfilters. Oude generator in voorkeuren verwijderd: die kon de nieuwe filter-/allergieregels omzeilen.
 
 Validatie vóór publicatie: 31 unit-/routetests en TypeScript geslaagd; 16 browsercontroles geslaagd (desktop en iPhone-schermformaat), waaronder de nieuwe categorie-/Mama-/portie-/herlaad-/boodschappentest en alle drie generatoren. Twee live-source-tests in deze lokale run bewust overgeslagen; afzonderlijke productiecontrole volgt. Geen fysieke Safari-test.
+
+## Gepubliceerd en live gecontroleerd
+
+Productiecommit `86395d32f9e7a84f4e6cd529480fea1993d49a99`, READY-deployment `dpl_B1oK4hqJXAQktZmVwMCYk8wHBq9b`, project `madebydian-recipes-dian`, regulier domein bevestigd. PR #4 voor review, niet gemerged.
+
+Zes productie-browsercontroles geslaagd met HTTPS-validatie: twee bestaande bron-/QR-controles met echte catalogus, twee nieuwe weekmenucontroles met echte catalogus/MDB-0323 en twee volledige filter-/sterren-/omreken-/herlaadcontroles met vaste geïsoleerde testrecepten, elk op desktop en iPhone-schermformaat. Geen app-POST in de echte-catalogustest. Een eerste gemengde live-run had twee fouten in de testfixture: de externe-HTTPS-stub onderschepte ook het productiedomein. Stub beperkt tot externe hosts; beide tests daarna geslaagd. Dit was geen fout in de gepubliceerde app.
+
+Volledige 700 catalogusrecords vóór/na publicatie identiek, inclusief foto-/bronvelden en MDB-nummers. Back-up na release: `/workspace/scratch/mbd-after-weekmenu-catalog-20261119.json`. De live weekmenutest vult onbekende bronpersonen bij 0323 bewust niet in. Er is geen bewijs voor het aantal eters bij 24 cups; dat wordt niet gegokt. Alleen de fixturetest controleert een expliciet ingevoerde bronpersoonwaarde.
