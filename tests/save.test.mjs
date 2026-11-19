@@ -4,20 +4,26 @@ import handler,{canonicalSource,findDuplicate,readCatalog} from '../api/notion/s
 
 const originalFetch=globalThis.fetch;
 const originalEnv={NOTION_TOKEN:process.env.NOTION_TOKEN,MBD_SUPABASE_WRITE_SECRET:process.env.MBD_SUPABASE_WRITE_SECRET};
-let calls,rows,next,writeMode,bookFails,trashFails;
+let calls,rows,next,writeMode,bookFails,trashFails,claims;
 const draft=(title='Groentesoep',url='https://example.org/recept')=>({title,ingredients:'200 g wortel',steps:'Kook de wortel.',sourceURL:url});
 const response=(body,status=200,headers={})=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json',...headers}});
 beforeEach(()=>{
-  calls=[];rows=[];next=681;writeMode='ok';bookFails=false;trashFails=false;
+  calls=[];rows=[];claims=new Map();next=681;writeMode='ok';bookFails=false;trashFails=false;
   process.env.NOTION_TOKEN='test-only';process.env.MBD_SUPABASE_WRITE_SECRET='test-only';
   globalThis.fetch=async(raw,options={})=>{
     const u=new URL(raw),body=options.body?JSON.parse(options.body):null;
     calls.push({path:u.pathname,method:options.method||'GET',body});
     if(u.pathname==='/rest/v1/mbd_catalog'){
+      if(u.searchParams.has('mdb'))return response(rows.filter(r=>r.mdb===u.searchParams.get('mdb').slice(3)));
       const offset=Number(u.searchParams.get('offset'))||0;
       return response(rows.slice(offset,offset+2),200,{'content-range':`${offset}-${Math.min(offset+1,rows.length-1)}/${rows.length}`});
     }
-    if(u.pathname.endsWith('/mbd_reserve_number'))return response('MDB-'+String(++next).padStart(4,'0'));
+    if(u.pathname.endsWith('/mbd_claim_recipe_save')){
+      if(body.p_fingerprint===null)return response({status:'authorized'});
+      const key=body.p_source_key||body.p_fingerprint;
+      if(claims.has(key)){const mdb=claims.get(key);return response({mdb,status:rows.some(r=>r.mdb===mdb)?'stored':'processing'});}
+      const mdb='MDB-'+String(++next).padStart(4,'0');claims.set(key,mdb);return response({mdb,status:'claimed'});
+    }
     if(u.pathname.endsWith('/mbd_catalog_server_write')){
       if(writeMode==='conflict')return response({ok:false,reason:'exists'});
       rows.push({mdb:body.p_mdb,recipe:body.p_recipe});
@@ -44,7 +50,7 @@ async function save(body=draft()){
   const res={statusCode:200,setHeader(){return this},status(n){this.statusCode=n;return this},json(data){this.data=data;return this}};
   await handler({method:'POST',body},res);return res;
 }
-const reservations=()=>calls.filter(c=>c.path.endsWith('/mbd_reserve_number'));
+const reservations=()=>calls.filter(c=>c.path.endsWith('/mbd_claim_recipe_save'));
 test('canonical links remove tracking and preserve recipe-identifying query parameters',()=>{
   assert.equal(canonicalSource('https://www.Example.org/recept/?utm_source=ig&b=2&a=1#top'),'example.org/recept?a=1&b=2');
   assert.notEqual(canonicalSource('https://example.org/watch?v=one'),canonicalSource('https://example.org/watch?v=two'));
@@ -107,5 +113,38 @@ test('explicit insert conflict never overwrites a row and reports verified Notio
 test('failed compensation is not reported as a successful rollback',async()=>{
   writeMode='conflict';trashFails=true;const r=await save();assert.equal(r.data.rolledBackNotion,false);assert.equal(r.data.reconciliationRequired,true);
 });
-test.todo('live PostgreSQL: simultaneous identical uploads return one canonical MDB across server instances');
-test.todo('live PostgreSQL: failed upload retry reuses its durable idempotency key');
+test('simultaneous identical uploads permit only one Notion creation',async()=>{
+ const results=await Promise.all([save(),save()]);
+ assert.deepEqual(results.map(r=>r.statusCode).sort(),[200,409]);
+ assert.equal(rows.length,1);assert.equal(new Set(results.map(r=>r.data.mdb)).size,1);
+ assert.equal(calls.filter(c=>c.path==='/v1/pages'&&c.method==='POST').length,1);
+});
+test('incomplete recipes do not allocate or contact Notion',async()=>{
+ for(const body of [{...draft(),ingredients:''},{...draft(),steps:''}]){
+  assert.equal((await save(body)).statusCode,400);
+ }
+ assert.equal(calls.length,0);
+});
+test('retry of an uncertain save retains its claim',async()=>{
+ writeMode='timeout';const first=await save();rows=[];
+ const retry=await save();assert.equal(retry.statusCode,409);assert.equal(retry.data.code,'save_in_progress');
+ assert.equal(retry.data.mdb,first.data.mdb);assert.equal(next,682);
+});
+test('a claimed successful write is not reported saved until it can be read back',async()=>{
+ const priorFetch=globalThis.fetch;
+ globalThis.fetch=async(raw,options)=>{
+  const u=new URL(raw);
+  if(u.pathname==='/rest/v1/mbd_catalog'&&u.searchParams.has('mdb'))return response([]);
+  return priorFetch(raw,options);
+ };
+ const r=await save();assert.equal(r.statusCode,502);assert.equal(r.data.code,'save_outcome_unknown');
+ assert.equal(calls.some(c=>c.body?.in_trash),false);
+});
+
+test('deployment diagnostics verify server credential and Notion reads without allocating or writing',async()=>{
+ const r={statusCode:200,setHeader(){return this},status(n){this.statusCode=n;return this},json(data){this.data=data;return this}};
+ await handler({method:'GET',query:{verify:'1'}},r);
+ assert.equal(r.statusCode,200);assert.equal(r.data.writeAuthorized,true);assert.equal(r.data.mutationPerformed,false);
+ assert.equal(next,681);assert.equal(claims.size,0);assert.equal(rows.length,0);
+ assert.equal(calls.some(c=>c.path==='/v1/pages'||c.path.startsWith('/v1/pages/')),false);
+});
