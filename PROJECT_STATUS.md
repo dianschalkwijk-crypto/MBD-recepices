@@ -1,4 +1,13 @@
 # MadeByDian — centraal herstelregister
+## Vervolgcontrole — 19 november 2026
+
+- Productie d37e75f en preview 51d9f68 opnieuw READY bevonden; verschil uitsluitend documentatie. PR #2 open en mergebaar, geen reviewopmerkingen; geen nieuwe runtime-release nodig.
+- Actuele catalogus is 700, exact gelijk tussen live API en Supabase. Alle oorspronkelijke 689 records zijn geheel ongewijzigd; 11 Fit Piggy-recepten zijn op 17 november toegevoegd en behouden. Geen nieuwe recepten/nummers aangemaakt tijdens deze controle.
+- Zes gerichte opslag-/QR-regressies en twee integratietests met de echte catalogus slagen. Verouderde vaste browsertesttelling 689 vervangen door vergelijking met de actuele API. Twee automatische productie-browsertests blijven door ERR_CERT_AUTHORITY_INVALID geblokkeerd.
+- Nieuw bewezen: de gedeelde browser kon de echte productiepagina openen. Lokale controlenotitie, herstelronde en beslissing bij bestaand technisch recept MDB-0694 opgeslagen en na herladen zichtbaar teruggelezen. Geen bron- of QR-goedkeuring toegevoegd. Controleopslag blijft op dit apparaat.
+- De twee concurrency-TODO's blijven P1: dubbele gelijktijdige opslag en nieuwe reservering bij herhaling na een fout zijn met gesimuleerde externe diensten gereproduceerd. De bestaande claimoplossing staat al in concept-PR #1; niet dupliceren in PR #2 en niet ongetest publiceren.
+- Details en bewijs: `docs/followup-verification-20261119.md`. Deze sectie vervangt oudere algemene vermeldingen dat geen enkele rechtstreekse productie-browsercontrole mogelijk is.
+
 ## Actueel — Bronnen & QR-controle, 16 november 2026
 
 - Gepubliceerd in dezelfde app: `/bronnen-qr.html`, met hoofdnavigatie en koppelingen vanuit recepten. Productie `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`, commit `d37e75fd63f632a7df3d7f67a8fb8dd5658a0666`, Vercel-project uitsluitend `madebydian-recipes-dian`. De oude projectvariant met extra s is niet gebruikt.
