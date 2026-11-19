@@ -752,7 +752,7 @@ function mbdSuggestWeek(){
  persist();renderWeek();alert('Weekmenu ingevuld. Gerechten met 4–5 sterren bij Jake of Mace krijgen voorrang. Controleer de keuzes voordat je opslaat.');
 }
 function renderWeek(){
-  document.querySelector('#mbdSuggestWeekBtn')?.addEventListener('click',mbdSuggestWeek,{once:true});
+
   const days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
   const options=state.recipes.map(r=>`<option value="${r.id}">${esc((r.mdb?`${r.mdb} · `:``)+r.title)}</option>`).join('');
   const box=document.querySelector('#weekPlanner');
@@ -865,5 +865,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=37'></script><script src='/save-sync-v10.js?v=37'></script><script src='/catalog-sync-v2.js?v=37'></script><script src='/allergy-integration-v2.js?v=37'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=37'></script><script src='/scan-enhance-v1.js?v=37'></script></body>
+<script src='/photo-fix-v10.js?v=38'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=37'></script><script src='/week-planning-core.js?v=38'></script><script src='/allergy-integration-v2.js?v=38'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=37'></script><script src='/scan-enhance-v1.js?v=37'></script></body>
 </html>
