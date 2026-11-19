@@ -2,9 +2,10 @@
 'use strict';if(window.__mbdSyncV3)return;window.__mbdSyncV3=true;
 const PUB='sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF',DB='https://ywsdubincfabjhvjqkot.supabase.co';
 function loadPreferenceIntegration(){
+ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',loadPreferenceIntegration,{once:true});return}
  try{
   if(window.__mbdAllergyIntegrated||document.querySelector('script[data-mbd-preferences]'))return;
-  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=20';s.dataset.mbdPreferences='1';
+  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=40';s.dataset.mbdPreferences='1';
   s.onerror=()=>console.warn('Allergie/eetvoorkeur-integratie kon niet worden geladen');
   document.head.appendChild(s);
  }catch(e){console.warn('Voorkeur-integratie',e)}
@@ -72,7 +73,7 @@ if(old){
   if(canRepairSeed&&clearerDutch(old.title,r.title)){old.title=r.title;c=true;seedRepair=true}
   else{console.warn('MDB titelconflict: bestaande waarde behouden',id,origin)}
  }
- for(const p of ['title','originalTitle','ingredients','steps','sourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
+ for(const p of ['title','originalTitle','ingredients','steps','sourceURL','originalSourceURL','originalSourceRef','contentURL','contentSourceURL','socialURL','socialSourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
   if(p==='title'&&name(old.title)===name(r.title))continue;
   if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}
   else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p])){
@@ -85,7 +86,7 @@ if(old){
  if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom=seedRepair?'Nederlandse seed-herstel '+origin:'Aanvulling '+origin;fill++;if(seedRepair)repair++;changed=true}
 
 }else{
- const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
+ const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',originalSourceURL:r.originalSourceURL||'',originalSourceRef:r.originalSourceRef||'',contentURL:r.contentURL||'',contentSourceURL:r.contentSourceURL||'',socialURL:r.socialURL||'',socialSourceURL:r.socialSourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
 for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');
