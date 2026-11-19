@@ -56,3 +56,15 @@ Reproduceerbaar na het beschikbaar maken van de gepinde image: `npm run test:sto
 ## Grenzen
 
 Deze tests bewijzen de huidige PostgreSQL-functies en de gerichte serverroute onder echte gelijktijdigheid in de geïsoleerde omgeving. Notion-netwerkfouten zijn gecontroleerd gesimuleerd; er wordt hiervoor geen nieuw productierecept aangemaakt. De livecontrole gebruikt niet-muterende autorisatie en herhaalde aanvragen voor een al bestaand technisch recept. De huidige productiecatalogus wordt vóór en na de release volledig vergeleken.
+
+## Gepubliceerd en live gecontroleerd
+
+- Productiecommit `a35abee4b03fe09c38638a62947d0d9a7ea3fd23`, deployment `dpl_HgL5U26wuu4Rka2yTCYfEoCBAhdJ`, target production, READY. De vaste alias `madebydian-recipes-dian.vercel.app` is hieraan toegewezen. Het project met extra s is niet gebruikt.
+- `/api/notion/save?verify=1`: HTTP 200, `writeAuthorized: true`, `notionReadable: true`, `mutationPerformed: false`. Dit controleert nu de werkelijk gebruikte claimfunctie, zonder een nummer te reserveren.
+- Twee gelijktijdige echte POST-aanvragen met de exacte inhoud van het bestaande technische recept MDB-0694: allebei HTTP 409 `duplicate_recipe`, hetzelfde MDB-0694. Geen nieuw nummer, Notion-pagina of recept gemaakt.
+- Beide automatische productie-browsertests slagen met TLS-validatie en de eerder vastgelegde beperkte NSS-toegang: desktop en iPhone-schermformaat, **2 passed (12,7 s)**. Productiecatalogus, lokale controleopslag/herladen, originele velden en print/selectie gecontroleerd.
+- Volledige na-snapshot vergeleken met de vóór-snapshot: alle **700 catalogusrecords**, alle **12 reserveringen**, nul claims en alle drie volledige functie-/rechtenbeschrijvingen zijn exact gelijk. Geen productiedatabase, sleutel of bestaande receptdata gewijzigd.
+- Bewijs buiten Git: `/workspace/scratch/mbd-atomic-live-result-20261119.json`, `mbd-atomic-live-check-20261119.py`, `mbd-after-concurrency-fix-20261119.json` (de gegevenssnapshot mode 600). De live testscriptcode controleert eerst aanwezigheid van exact het bekende recept voordat een bestaande dubbele aanvraag wordt verstuurd.
+- De twee oorspronkelijke opslag-TODO's zijn hiermee gericht afgedekt door echte geïsoleerde PostgreSQL-integratietests en de gepubliceerde claimroute. Dit is geen claim dat nieuwe productie-opslag met Notion-foto opnieuw is getest: daarvoor is geen nieuw productierecept toegevoegd. De eerdere live foto-opslagproef blijft afzonderlijk bewijs van de bestaande fotoketen.
+
+PR #3 bevat de gerichte reparatie. Concept-PR #1 blijft een afzonderlijke verzameling concept-/fotofuncties; zijn oudere servervariant mag de verbeterde claim-/boek-/onzekerheidsafhandeling niet overschrijven. Bij verder werk aan PR #1 eerst op deze actuele productiecode baseren.
