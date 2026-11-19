@@ -463,7 +463,7 @@ function renderRecipes(){
       ${r.ingredients?`<div class="recipe-meta">${esc((r.ingredients||'').split('\n')[0]||'')}</div>`:`<div class="recipe-meta">Receptinhoud nog niet lokaal gesynchroniseerd.</div>`}
       <div class="recipe-actions">
         <button data-view="${r.id}">Bekijk</button>
-        ${r.sourceURL?`<button data-open="${r.id}">Bron</button>`:''}
+        ${window.MBDWeekCore?.sourceHTML(r)||''}
         ${r.notionURL?`<button data-notion="${r.id}">Notion</button>`:''}
         <button data-plan="${r.id}">📅 Voeg toe</button><button data-copy="${r.id}">Kopieer</button><button data-delete="${r.id}">Verwijder</button>
       </div>
@@ -549,8 +549,7 @@ function showRecipeDetails(id){
   if(r.storage) blocks.push(`<div class="detail-section"><h3>Bewaren</h3><div class="detail-text">${esc(r.storage)}</div></div>`);
   if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(r.nutrition)}</div></div>`);
   const links=[];
-  if(r.sourceURL) links.push(`<button data-modal-source>Bron openen</button>`);
-  if(r.contentURL && r.contentURL!==r.sourceURL) links.push(`<button data-modal-content>Inhoudsbron</button>`);
+  if(window.MBDWeekCore)links.push(window.MBDWeekCore.sourceHTML(r));
   if(r.notionURL) links.push(`<button data-modal-notion>Notion</button>`);
   links.push(`<button data-modal-copy class="secondary">Kopieer recept</button>`);
   if(r.mdb) links.push(`<a href="/bronnen-qr.html?mdb=${encodeURIComponent(r.mdb)}">Bronnen &amp; QR-controle</a>`);
@@ -865,5 +864,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=38'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=37'></script><script src='/week-planning-core.js?v=39'></script><script src='/allergy-integration-v2.js?v=39'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script></body>
+<script src='/photo-fix-v10.js?v=38'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=37'></script><script src='/week-planning-core.js?v=40'></script><script src='/allergy-integration-v2.js?v=39'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script></body>
 </html>
