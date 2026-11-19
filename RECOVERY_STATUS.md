@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## WhatsApp delen gepubliceerd — 19 november 2026
+
+Productie `798665b` / READY `dpl_GZ5uHtxPmkwa1LCCQ8b9ST6UZdYo`, dezelfde receptenapp. Delen via WhatsApp op receptkaart, details en weekmenu maakt een volledig tekstconcept met social vóór website. Geen contactkeuze of automatische verzending; privévelden blijven weg. Mobiele actierij loopt nu over meerdere regels. 36 unit-/routetests, TypeScript en zes productie-browsercontroles op desktop/telefoonformaat geslaagd, inclusief openen van een afgevangen WhatsApp-conceptlink. Geen echte berichten verstuurd of fysieke WhatsApp-app getest. Alle 700 catalogusrecords vóór/na identiek. PR #6; zie `docs/whatsapp-sharing-20261119.md`.
+
 ## 129 van 134 sociallinks hersteld — 19 november 2026
 
 Alle 134 onderzocht; 122 oorspronkelijke links uit Stashcook-exports plus 7 bestaande Notion-inhoudsbronnen hersteld, inclusief MDB-0323. Vijf open: 0675/0676 (originele screenshot/schermopname nodig), 0687/0688/0689 (screenshots niet opgeslagen, Notion 404). Catalogussynchronisatie bewaart nu beide bronsoorten. Productie `7a737a4` / READY `dpl_DkMY2VkY27zRjeANrd4mGx5e4rts`; PR #5. 700 nummers/recepten behouden, uitsluitend 129 ontbrekende linkvelden aangevuld; foto’s/ingrediënten/porties/bestaande bronvelden en 12 reserveringen ongewijzigd. Herladen en echte live synchronisatie van de 129 links getest op desktop en telefoonformaat. Bij 0323 blijft inhoudelijke vergelijking van social (12 cups) en website (24 cups) open. Details en herstelback-up: `docs/social-source-recovery-20261119.md`. Oudere meldingen hieronder dat de social van 0323 niet gevonden is, zijn achterhaald.
