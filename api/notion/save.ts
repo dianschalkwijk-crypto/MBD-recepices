@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 const V='2026-03-11';
 const R='9573eb17-06e1-49a7-80a9-aa03755ee3d3';
 const B='7780dc25-2324-4c43-9457-944696411e18';
@@ -83,17 +84,19 @@ export function findDuplicate(rows:any[],draft:any){
       (fingerprint&&recipeFingerprint(r)===fingerprint);
   });
 }
-async function reserveMDB(){
+async function reserveMDB(draft:any){
   const secret=process.env.MBD_SUPABASE_WRITE_SECRET?.trim();
   if(!secret)throw new Error('MBD_SUPABASE_WRITE_SECRET ontbreekt');
-  const r=await fetch(DB+'/rest/v1/rpc/mbd_reserve_number',{
+  const hash=(text:string)=>createHash('sha256').update(text).digest('hex');
+  const source=canonicalSource(draft.sourceURL);
+  const r=await fetch(DB+'/rest/v1/rpc/mbd_claim_recipe_save',{
     method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},
-    body:JSON.stringify({p_secret:secret}),cache:'no-store'
+    body:JSON.stringify({p_secret:secret,p_fingerprint:hash(recipeFingerprint(draft)),p_source_key:source?hash(source):null}),cache:'no-store'
   });
   if(!r.ok)throw new Error('MDB-reservering mislukt: HTTP '+r.status);
-  const mdb=await r.json();
-  if(typeof mdb!=='string'||!/^MDB-\d{4,}$/.test(mdb))throw new Error('Ongeldige MDB-reservering');
-  return mdb;
+  const claim=await r.json();
+  if(!/^MDB-\d{4,}$/.test(claim?.mdb)||!['claimed','processing','stored'].includes(claim?.status))throw new Error('Ongeldige MDB-reservering');
+  return claim;
 }
 async function createBook(number:number){
   const name='Boek '+number+' · Nieuwe recepten';
@@ -115,13 +118,17 @@ async function bookCount(bookId:string){
 async function activeBook(){
   const d=await query(B,{page_size:10,sorts:[{property:'Boeknr.',direction:'descending'}],filter:{property:'Status',select:{equals:'Actief'}}});
   let p=(d.results||[])[0];
-  if(!p)return createBook(FIRST_NEW_BOOK);
+  if(!p)return{createNumber:FIRST_NEW_BOOK};
   let number=num(p.properties?.['Boeknr.'])||FIRST_NEW_BOOK;
   let name=plain(p.properties?.['Kookboek'])||('Boek '+number+' · Nieuwe recepten');
   let count=await bookCount(p.id);
   if(count<MAX_PER_BOOK)return{id:p.id,name,number,count};
-  await notion('/pages/'+p.id,{method:'PATCH',body:JSON.stringify({properties:{'Status':{select:{name:'Vol / gereed'}},'Aantal recepten':{number:count}}})});
-  return createBook(number+1);
+  return{createNumber:number+1,closeId:p.id,count};
+}
+async function materializeBook(plan:any){
+  if(!plan.createNumber)return plan;
+  if(plan.closeId)await notion('/pages/'+plan.closeId,{method:'PATCH',body:JSON.stringify({properties:{'Status':{select:{name:'Vol / gereed'}},'Aantal recepten':{number:plan.count}}})});
+  return createBook(plan.createNumber);
 }
 async function supabaseWrite(mdb:string,recipe:any){
   const secret=process.env.MBD_SUPABASE_WRITE_SECRET&&process.env.MBD_SUPABASE_WRITE_SECRET.trim();
@@ -136,6 +143,15 @@ async function supabaseWrite(mdb:string,recipe:any){
   if(!d?.ok) {const e:any=new Error('Supabase conflict: '+(d?.reason||'onbekend'));e.conflict=true;e.details=d;throw e}
   return d;
 }
+async function confirmStored(mdb:string,recipe:any){
+  const r=await fetch(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&mdb=eq.'+encodeURIComponent(mdb)+'&limit=1',{
+    headers:{apikey:PUB},cache:'no-store'
+  });
+  if(!r.ok)throw new Error('Teruglezen van opgeslagen recept mislukt');
+  const rows=await r.json();
+  if(!Array.isArray(rows)||rows[0]?.mdb!==mdb||recipeFingerprint(rows[0]?.recipe)!==recipeFingerprint(recipe)||rows[0]?.recipe?.notionURL!==recipe.notionURL)
+    throw new Error('Opgeslagen recept nog niet bevestigd');
+}
 async function trash(pageId:string){
   try{await notion('/pages/'+pageId,{method:'PATCH',body:JSON.stringify({in_trash:true})});return true}
   catch{console.error('Rollback Notion mislukt');return false}
@@ -143,7 +159,19 @@ async function trash(pageId:string){
 
 export default async function handler(req:any,res:any){
   res.setHeader('Cache-Control','no-store, no-cache, must-revalidate');
-  if(req.method==='GET')return res.status(200).json({ok:true,notionConfigured:!!process.env.NOTION_TOKEN,supabaseWriteConfigured:!!process.env.MBD_SUPABASE_WRITE_SECRET,firstNewBook:FIRST_NEW_BOOK,maxPerBook:MAX_PER_BOOK});
+  if(req.method==='GET'){
+    if(req.query?.verify==='1'){
+      try{
+        const r=await fetch(DB+'/rest/v1/rpc/mbd_claim_recipe_save',{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},
+          body:JSON.stringify({p_secret:process.env.MBD_SUPABASE_WRITE_SECRET?.trim()||'',p_fingerprint:null,p_source_key:null}),cache:'no-store'});
+        const check=await r.json().catch(()=>({}));
+        if(!r.ok||check.status!=='authorized')return res.status(502).json({ok:false,writeAuthorized:false,error:'Schrijftoegang niet bevestigd'});
+        await query(R,{page_size:1});await query(B,{page_size:1});
+        return res.status(200).json({ok:true,writeAuthorized:true,notionReadable:true,mutationPerformed:false});
+      }catch{return res.status(502).json({ok:false,error:'Opslagverbinding niet bevestigd',mutationPerformed:false})}
+    }
+    return res.status(200).json({ok:true,notionConfigured:!!process.env.NOTION_TOKEN,supabaseWriteConfigured:!!process.env.MBD_SUPABASE_WRITE_SECRET,firstNewBook:FIRST_NEW_BOOK,maxPerBook:MAX_PER_BOOK});
+  }
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
   try{
     const b=req.body||{};
@@ -166,6 +194,7 @@ export default async function handler(req:any,res:any){
     const bookPage=/^\d+(?:\s*[-–,]\s*\d+)*$/.test(bookPageRaw)?bookPageRaw:'';
     const sourcePlatform=sourceURL?platform(sourceURL):(sourceKind==='Social / link'?'':sourceKind);
     if(!title)return res.status(400).json({ok:false,error:'Titel ontbreekt'});
+    if(!ingredients||!steps)return res.status(400).json({ok:false,error:'Ingrediënten en bereidingsstappen zijn verplicht.'});
     if(title.length>1000||ingredients.length>60000||steps.length>60000)return res.status(400).json({ok:false,error:'Recept is te groot'});
     if(sourceURL){try{const u=new URL(sourceURL);if(u.protocol!=='https:'&&u.protocol!=='http:')throw 0}catch{return res.status(400).json({ok:false,error:'Bronlink is ongeldig'})}}
 
@@ -176,8 +205,15 @@ export default async function handler(req:any,res:any){
     const duplicate=findDuplicate(await readCatalog(),{title,ingredients,steps,sourceURL});
     if(duplicate)return res.status(409).json({ok:false,code:'duplicate_recipe',mdb:duplicate.mdb,
       notionURL:duplicate.recipe.notionURL||'',error:'Dit recept bestaat al als '+duplicate.mdb+'. Er is geen nieuw nummer aangemaakt.'});
-    const book=await activeBook();
-    const mdb=await reserveMDB();
+    const bookPlan=await activeBook();
+    const claim=await reserveMDB({title,ingredients,steps,sourceURL});
+    const mdb=claim.mdb;
+    if(claim.status!=='claimed')return res.status(409).json({ok:false,code:claim.status==='stored'?'duplicate_recipe':'save_in_progress',mdb,
+      reconciliationRequired:claim.status==='processing',error:'Dit recept heeft al nummer '+mdb+'. Controleer de bestaande opslag; er is geen nieuw nummer aangemaakt.'});
+    let book:any;
+    try{book=await materializeBook(bookPlan)}
+    catch{return res.status(502).json({ok:false,code:'save_outcome_unknown',mdb,reconciliationRequired:true,rolledBackNotion:false,
+      error:'De opslagstatus van '+mdb+' is onzeker. Controleer dit nummer voordat je opnieuw opslaat.'})}
     const props:any={
       'Recept':{title:tt(title)},
       'Publiekstitel':{rich_text:rt(title)},
@@ -193,7 +229,10 @@ export default async function handler(req:any,res:any){
     if(portions)props['Porties']={rich_text:rt(portions)};
     if(bookPage&&/^\d+$/.test(bookPage))props['Pagina']={number:Number(bookPage)};
 
-    const page=await notion('/pages',{method:'POST',body:JSON.stringify({parent:{type:'data_source_id',data_source_id:R},properties:props})});
+    let page:any;
+    try{page=await notion('/pages',{method:'POST',body:JSON.stringify({parent:{type:'data_source_id',data_source_id:R},properties:props})})}
+    catch{return res.status(502).json({ok:false,code:'save_outcome_unknown',mdb,reconciliationRequired:true,rolledBackNotion:false,
+      error:'De opslagstatus van '+mdb+' is onzeker. Controleer dit nummer voordat je opnieuw opslaat.'})}
     const notionURL=String(page.url||'');
     const recipe={
       id:mdb,mdb,title,originalTitle:title,author:sourceAuthor||author,ingredients,steps,
@@ -206,7 +245,7 @@ export default async function handler(req:any,res:any){
     };
 
     let sw:any;
-    try{sw=await supabaseWrite(mdb,recipe)}
+    try{sw=await supabaseWrite(mdb,recipe);await confirmStored(mdb,recipe)}
     catch(e:any){
       // Only an explicit database rejection proves this write did not commit.
       // A timeout/invalid response can occur AFTER commit. Never trash its

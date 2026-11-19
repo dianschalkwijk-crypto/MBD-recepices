@@ -1,4 +1,17 @@
 # MadeByDian — centraal herstelregister
+## Overdracht overige chats — 19 november 2026
+
+Zie [centrale chatoverdracht](docs/cross-chat-requirements-20261119.md) voor teruggevonden eisen rond 0120/0592/0623/0625, Notion als back-up, HelloFresh/weekmenu, kindervoorkeuren en kookboeken. Dit is een vastgelegde werkvoorraad, geen claim dat die uitbreidingen al gebouwd zijn. Archiefadvies en beperkingen van de chatinventaris staan erbij; kledingkastwerk blijft apart.
+
+## Opslagrisico's gerepareerd en gepubliceerd — 19 november 2026
+
+- Actuele productie: `a35abee4b03fe09c38638a62947d0d9a7ea3fd23`, READY-deployment `dpl_HgL5U26wuu4Rka2yTCYfEoCBAhdJ`, uitsluitend project `madebydian-recipes-dian`. PR #3, branch `fix/atomic-recipe-save-20261119`.
+- De route gebruikt de reeds bestaande duurzame databaseclaim. Gelijktijdige identieke opslag en herhaling na een fout houden één nummer; alleen de winnende claim maakt een Notion-recept of volgend boek. Onzekere antwoorden blijven zichtbaar met het oorspronkelijke nummer. Succes vereist teruglezen.
+- 28 unit-/routetests, TypeScript, 10 echte PostgreSQL-17.11-integratietests (afzonderlijke sessies en serverprocessen), 14 browserregressies en beide automatische productie-browsertests geslaagd. De twee oude lege concurrency-TODO's zijn vervangen door uitgevoerde concrete controles.
+- Live claimautorisatie zonder mutatie bevestigd. Twee bestaande dubbele productieaanvragen geven allebei MDB-0694 terug, zonder nieuw recept/nummer. Alle 700 records, 12 reserveringen, nul claims en drie databasefuncties zijn vóór/na volledig identiek.
+- Geen productiemigratie of sleutelrotatie. Alleen het gerichte serverdeel uit PR #1 overgenomen; concept-/foto-/accountfeatures niet mee gepubliceerd. Oudere vermeldingen dat de twee opslagrisico's nog openstaan zijn historisch. PR #1 moet bij vervolg op deze servercorrectie worden gebaseerd.
+- Details, back-up, rollback en werkelijke testgrenzen: `docs/atomic-save-recovery-20261119.md`. Er is voor deze release geen nieuw productierecept met foto toegevoegd.
+
 ## Productiebrowsertests hersteld — 19 november 2026
 
 - Beide automatische productiebrowsertests slagen nu met HTTPS-validatie aan: desktop en iPhone-schermformaat, 2 passed. De testuitvoering heeft gericht schrijfrecht nodig op `/home/agent/.pki/nssdb`; zonder dat recht kon NSS zijn certificaatopslag niet correct gebruiken.

@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## Actuele opslagreparatie — 19 november 2026
+
+Productie is `a35abee` / `dpl_HgL5U26wuu4Rka2yTCYfEoCBAhdJ`. De gerichte claimroute herstelt de twee eerder openstaande opslagrisico's. Tien echte geïsoleerde PostgreSQL-integratietests, 28 unit-/routetests, 14 browserregressies en beide productie-browsertests slagen. Alle 700 catalogusrecords, 12 reserveringen en drie databasefuncties blijven ongewijzigd. Geen migratie of rotatie. Zie `docs/atomic-save-recovery-20261119.md`; oudere blokkade- en TODO-statussen hieronder zijn historisch.
+
 ## Nieuwe actuele uitbreiding — 16 november 2026
 
 Bronnen & QR-controle is gepubliceerd in de bestaande receptenapp, productiecommit `d37e75f`, deployment `dpl_BzapRZdWdExPR4yA3ZUtm2aWaQVd`. Volledige gegevensinventarisatie, lokale controleopslag, back-up/rollback en onderscheid tussen geslaagde lokale integratietests en geblokkeerde rechtstreekse productie-browsertest staan in `docs/source-qr-workspace-20261116.md`. Alle 689 catalogusrecords en bestaande MDB-nummers zijn ongewijzigd. Oudere bronherstelvermeldingen hieronder zijn historisch.
