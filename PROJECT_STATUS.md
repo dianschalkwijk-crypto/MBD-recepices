@@ -1,5 +1,10 @@
 # MadeByDian — centraal herstelregister
 
+## Receptlinks, eigen accounts en collecties — 20 november 2026
+
+Uitbreiding voorbereid op `fix/collections-private-recipe-sharing-20261120`; database-addities toegepast en gecontroleerd. WhatsApp deelt nu een MBD-appreceptlink met fotometadata; eigen accounts/een-recept-deellinks zijn gescheiden van de bestaande openbare hoofdcatalogus. Collecties wissen achtergebleven zoekfilters met behoud van allergieën. Socialcontroles vereisen bewuste opslag en bewijs van verwijdering; geen automatische bronwijzigingen. Actuele catalogus: 702, alle bestaande recepten/nummers te behouden. Todoist-kwartaalherinnering vanaf 1 januari 2027 aangemaakt; ChatGPT-limiet verhinderde een extra ChatGPT-taak. Publicatie en productiebrowserverificatie volgen hieronder na uitvoering. Details: `docs/recipe-links-and-accounts-20261120.md`. Deze linkdeling vervangt het eerdere volledige WhatsApp-tekstconcept.
+
+
 ## WhatsApp delen gepubliceerd — 19 november 2026
 
 Productie `798665b` / READY `dpl_GZ5uHtxPmkwa1LCCQ8b9ST6UZdYo`, dezelfde receptenapp. Delen via WhatsApp op receptkaart, details en weekmenu maakt een volledig tekstconcept met social vóór website. Geen contactkeuze of automatische verzending; privévelden blijven weg. Mobiele actierij loopt nu over meerdere regels. 36 unit-/routetests, TypeScript en zes productie-browsercontroles op desktop/telefoonformaat geslaagd, inclusief openen van een afgevangen WhatsApp-conceptlink. Geen echte berichten verstuurd of fysieke WhatsApp-app getest. Alle 700 catalogusrecords vóór/na identiek. PR #6; zie `docs/whatsapp-sharing-20261119.md`.
