@@ -1,5 +1,7 @@
-(()=>{
-if(window.__mbdAllergyIntegrated)return;window.__mbdAllergyIntegrated=true;
+(function initializeAllergies(){
+if(window.__mbdAllergyIntegrated)return;
+if(!window.MBDWeekCore){window.addEventListener('mbd:week-core-ready',initializeAllergies,{once:true});return;}
+window.__mbdAllergyIntegrated=true;
 const P='mbd_allergy_prefs_v1',D='mbd_dislikes_v1',K='mbd_meal_packages_v1',A='mbd_week_package_assignments_v1',W='mbd_week_portions_v1',days=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag'];
 const $=q=>document.querySelector(q),load=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??f}catch{return f}};
 const pref=()=>{let p=load(P,{});return {groups:p.selected||p.allergens||[],shrimp:p.shrimp!==false,custom:p.custom||[]}};
