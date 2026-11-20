@@ -3,10 +3,13 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import handler from '../api/notion/catalog.ts';
+import shareHandler from '../lib/shared-recipe.ts';
 const root=process.cwd(),port=Number(process.env.MBD_REVIEW_PORT||4174);
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml'};
 createServer(async(req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
+ const mdb=url.pathname.match(/^\/r\/(MDB-\d{4})$/),token=url.pathname.match(/^\/delen\/([a-f0-9-]{36})$/i);
+ if(mdb||token){const response={setHeader:(...a)=>res.setHeader(...a),status(c){res.statusCode=c;return this},json(v){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(v));return this},send(v){res.end(v);return this}};await shareHandler({method:req.method,url:req.url,query:mdb?{mdb:mdb[1]}:{token:token[1]}},response);return;}
  if(url.pathname==='/api/notion/catalog'&&url.searchParams.get('sourceReview')==='1'){
   const response={setHeader:(...args)=>res.setHeader(...args),status(code){res.statusCode=code;return this;},json(value){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return this;}};
   try{await handler({method:req.method,query:{sourceReview:'1'}},response);}catch(e){res.statusCode=500;res.end(JSON.stringify({ok:false,error:e.message}));}return;

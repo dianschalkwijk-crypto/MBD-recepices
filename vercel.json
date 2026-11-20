@@ -7,6 +7,14 @@
   },
   "rewrites": [
     {
+      "source": "/r/:mdb",
+      "destination": "/api/app?share=1&mdb=:mdb"
+    },
+    {
+      "source": "/delen/:token",
+      "destination": "/api/app?share=1&token=:token"
+    },
+    {
       "source": "/",
       "destination": "/index.html"
     }

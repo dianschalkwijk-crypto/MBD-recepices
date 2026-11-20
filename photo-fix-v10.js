@@ -59,6 +59,7 @@ search.addEventListener("input",()=>{
  },35);
 });
 }
+document.addEventListener('mbd:collection-opened',()=>{selected.clear();const pantry=$('#mbd-ingredients');if(pantry)pantry.value='';const search=$('#recipeSearch');if(search)search.value='';$('#mbd-search-tools')?.querySelectorAll('[aria-pressed]').forEach(b=>{b.setAttribute('aria-pressed','false');b.style.background='white'});requestAnimationFrame(update)});
 function update(){
 const list=$("#recipeList"),counter=$("#mbd-result-count");if(!list||!counter)return;
 const pantry=$("#mbd-ingredients"),standard=$("#recipeSearch");
