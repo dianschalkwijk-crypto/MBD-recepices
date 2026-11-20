@@ -257,7 +257,7 @@ function loadState(){
 }
 function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()})); localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[])); }
 function uid(){ return crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function esc(s=''){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s=''){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normalizeSourceText(text){
   let out = text.replace(/\r/g,'').replace(/\u00a0/g,' ');
   replacements.forEach(([from,to]) => out = out.replace(from,to));
