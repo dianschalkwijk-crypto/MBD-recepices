@@ -30,7 +30,10 @@ async function run(){
 if(typeof state==='undefined'||!Array.isArray(state.recipes))return;
 const by=new Map();for(const r of state.recipes)if(r?.mdb&&!by.has(String(r.mdb).toUpperCase()))by.set(String(r.mdb).toUpperCase(),r);
 let server=[];try{
- server=await get(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&limit=1000',{headers:{apikey:PUB}});
+ for(let offset=0;;){
+  const response=await fetch(DB+'/rest/v1/mbd_catalog?select=mdb,recipe&order=mdb.asc&offset='+offset+'&limit=500',{headers:{apikey:PUB,Prefer:'count=exact'},cache:'no-store'});if(!response.ok)throw Error('Catalogus HTTP '+response.status);const page=await response.json();if(!Array.isArray(page))throw Error('Ongeldige catalogus');server.push(...page);offset+=page.length;const raw=response.headers?.get('content-range')?.split('/')[1],total=raw&&/^\d+$/.test(raw)?Number(raw):null;if(total!==null&&offset>=total||!page.length||total===null&&page.length<500)break;if(offset>100000)throw Error('Onvolledige catalogus: veilige paginalimiet bereikt');
+ }
+
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
 // Keep a fresh in-memory copy for THIS sync run. The already-persisted app state remains the durable pre-sync copy until persist() succeeds.
@@ -66,6 +69,14 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false,seedRepair=false;
+ if(r.ahSyncVersion&&r.ahSyncVersion!==old.ahSyncVersion){
+  const previous=r.ahPreviousContent,same=(a,b)=>['title','ingredients','steps'].every(k=>value(a?.[k]).trim()===value(b?.[k]).trim());
+  if(same(old,r)||previous&&same(old,previous)){
+   for(const k of ['title','originalTitle','ingredients','steps','photoURL','hasPhoto','portions','time','timings','nutrition','nutritionData','allergens','allergenStatus','ahLists','ahCategories','ahPhotoURL','ahRecipeId','ahCanonicalURL','ahSyncVersion','notionURL','notionBook','notionBookNo','notionBookId','previouslyMade','contentSynced','warnings'])if(k in r)old[k]=r[k];
+   old.collections=[...new Set([...(old.collections||[]),...(r.collections||[])])];delete old.ahPendingUpdate;c=true;
+  }else{old.ahPendingUpdate={version:r.ahSyncVersion,message:'AH-bron bijgewerkt; afwijkende lokale inhoud behouden.'};console.warn('AH-update wacht op lokale inhoudscontrole',id);c=true;}
+ }
+
  // Bestaande lokale gebruikersdata blijft leidend. Alleen oude ingebouwde seedtekst
  // mag worden vervangen wanneer die aantoonbaar Engels/kapot is en Supabase een duidelijke Nederlandse versie heeft.
  const canRepairSeed=old.seeded===true;
@@ -86,7 +97,7 @@ if(old){
  if(c){old.contentSynced=present(old.ingredients)&&present(old.steps);old.syncedFrom=seedRepair?'Nederlandse seed-herstel '+origin:'Aanvulling '+origin;fill++;if(seedRepair)repair++;changed=true}
 
 }else{
- const n={id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',originalSourceURL:r.originalSourceURL||'',originalSourceRef:r.originalSourceRef||'',contentURL:r.contentURL||'',contentSourceURL:r.contentSourceURL||'',socialURL:r.socialURL||'',socialSourceURL:r.socialSourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
+ const n={...r,id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',originalSourceURL:r.originalSourceURL||'',originalSourceRef:r.originalSourceRef||'',contentURL:r.contentURL||'',contentSourceURL:r.contentSourceURL||'',socialURL:r.socialURL||'',socialSourceURL:r.socialSourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
 for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');

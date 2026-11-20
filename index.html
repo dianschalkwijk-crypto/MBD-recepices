@@ -61,7 +61,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       </div>
       <button class="icon-btn" id="exportBtn" title="Exporteren" aria-label="Exporteren">↗</button>
     </header>
-    <nav aria-label="Receptenbeheer" style="padding:10px 20px;border-bottom:1px solid #e5dcd2"><a href="/bronnen-qr.html" style="color:#734650;font-size:14px">Bronnen &amp; QR-controle →</a> · <a href="/account.html">Mijn account &amp; uitnodigen</a> · <a href="/socials-controleren.html">Socials controleren</a></nav>
+    <nav aria-label="Receptenbeheer" style="padding:10px 20px;border-bottom:1px solid #e5dcd2"><a href="/bronnen-qr.html" style="color:#734650;font-size:14px">Bronnen &amp; QR-controle →</a> · <a href="/account.html">Mijn account &amp; uitnodigen</a> · <a href="/socials-controleren.html">Socials controleren</a> · <a href="/ah-import.html">Allerhande bulkimport</a></nav>
 
     <main>
       <section class="screen active" data-screen="inbox">
@@ -205,6 +205,9 @@ const COLLECTIONS = [
   ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Overig','📌']
 ];
 
+function recipeCollections(r){return window.MBDTimeCore?MBDTimeCore.collections(r):(r.collections||[])}
+function extendCollections(){for(const label of ['AH – Mijn favorieten','Kids','Deze week maken','Party','Gemaakt','Minder dan 15 minuten','15–35 minuten','Meer dan 35 minuten',...state.recipes.flatMap(r=>recipeCollections(r))])if(label&&!COLLECTIONS.some(c=>c[0]===label))COLLECTIONS.push([label,'📌'])}
+
 const collectionRules = {
   'Gezin': /pasta|aardappel|kip|gehakt|rijst|ovenschotel|wrap|pizza|burger/i,
   'Airfryer': /airfryer|air fryer|heteluchtfriteuse/i,
@@ -245,7 +248,7 @@ let state = loadState();
 let currentDraft = null;
 let selectedCollections = new Set();
 
-function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collections:[...(r.collections||[])],warnings:[...(r.warnings||[])]})), week:{}}; }
+function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collections:[...recipeCollections(r)],warnings:[...(r.warnings||[])]})), week:{}}; }
 function loadState(){
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -254,7 +257,7 @@ function loadState(){
 }
 function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); localStorage.setItem('mbd-week-planning-backup',JSON.stringify({week:state.week||{},savedAt:new Date().toISOString()})); localStorage.setItem('mbd-week-archive-backup',JSON.stringify(state.weekArchive||[])); }
 function uid(){ return crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function esc(s=''){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s=''){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normalizeSourceText(text){
   let out = text.replace(/\r/g,'').replace(/\u00a0/g,' ');
   replacements.forEach(([from,to]) => out = out.replace(from,to));
@@ -447,12 +450,12 @@ function showMessage(el,text,type='warn'){
 let activeCollectionFilter = null;
 function renderRecipes(){
   const q=document.querySelector('#recipeSearch').value.trim().toLowerCase();
-  const list=state.recipes.filter(r=>(!activeCollectionFilter||(r.collections||[]).includes(activeCollectionFilter)||(activeCollectionFilter==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${(r.collections||[]).join(' ')}`.toLowerCase().includes(q)));
+  const list=state.recipes.filter(r=>(!activeCollectionFilter||recipeCollections(r).includes(activeCollectionFilter)||(activeCollectionFilter==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(activeCollectionFilter==='Uit kookboeken'&&r.sourceKind==='Kookboek'))&&(!q||`${r.mdb||''} ${r.title||''} ${r.originalTitle||''} ${r.category||''} ${r.cuisine||''} ${r.ingredients||''} ${r.book||''} ${r.bookPage||''} ${recipeCollections(r).join(' ')}`.toLowerCase().includes(q)));
   const box=document.querySelector('#recipeList');
   if(!list.length){box.innerHTML='<div class="empty">Geen passend recept gevonden. 🍲</div>';return;}
   box.innerHTML=list.map(r=>{
     const primaryMeta=[r.category,r.cuisine,r.portions,r.time].filter(Boolean).join(' · ');
-    const appCollections=(r.collections||[]).join(' · ');
+    const appCollections=recipeCollections(r).join(' · ');
     return `<article class="recipe-card">
       <div><span class="mdb-badge">${esc(r.mdb||'NIEUW')}</span><span class="sync-badge">${r.contentSynced?'volledig':'index'}</span></div>
       <div class="recipe-title">${esc(r.title||r.originalTitle||'Naamloos recept')}</div>
@@ -523,6 +526,7 @@ function showRecipeDetails(id){
   document.querySelector('#modalRecipeTitle').textContent=r.title||r.originalTitle||'Recept';
   const pills=[r.category,r.cuisine,r.method,r.portions,r.time].filter(Boolean);
   const blocks=[];
+  if(/^https:\/\/static\.ah\.nl\//.test(r.ahPhotoURL||''))blocks.push(`<div class="detail-section"><img src="${esc(r.ahPhotoURL)}" alt="Originele Allerhande-foto bij ${esc(r.title)}" data-ah-source-photo style="width:100%;max-height:360px;object-fit:contain;border-radius:12px"><p class="recipe-meta">Originele Allerhande-foto</p></div>`);
   if(r.sourceKind==='Kookboek'){
     const hasOwn=!!r.ownPhotoPath,hasSource=Array.isArray(r.sourcePhotoPaths)&&r.sourcePhotoPaths.length>0;
     blocks.push(`<div class="detail-section">
@@ -547,7 +551,10 @@ function showRecipeDetails(id){
   if(r.prepSlim) blocks.push(`<div class="detail-section"><h3>Prep Slim</h3><div class="detail-text">${esc(r.prepSlim)}</div></div>`);
   if(r.kidsSwitch) blocks.push(`<div class="detail-section"><h3>Kids Switch</h3><div class="detail-text">${esc(r.kidsSwitch)}</div></div>`);
   if(r.storage) blocks.push(`<div class="detail-section"><h3>Bewaren</h3><div class="detail-text">${esc(r.storage)}</div></div>`);
-  if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(r.nutrition)}</div></div>`);
+  if(r.timings)blocks.push(`<div class="detail-section"><h3>Tijden</h3><div class="detail-text">${[['Actief',r.timings.activeMinutes],['Oven',r.timings.ovenMinutes],['Wachten',r.timings.waitMinutes],['Totaal',r.timings.totalMinutes]].map(([label,n])=>esc(label)+': '+(n===null||n===undefined?'onbekend':esc(n)+' min')).join(' · ')}</div></div>`);
+  if(r.allergenStatus)blocks.push(`<div class="detail-section"><h3>Allergenen uit bron</h3><div class="detail-text">${esc(r.allergens?.length?r.allergens.join(', '):r.allergenStatus)}</div></div>`);
+  if(r.previouslyMade)blocks.push('<p>Eerder gemaakt · AH-lijst Gemaakt</p>');
+  if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(window.MBDTimeCore?MBDTimeCore.nutritionText(r):r.nutrition)}</div></div>`);
   const links=[];
   if(window.MBDWeekCore)links.push(window.MBDWeekCore.sourceHTML(r));
   if(r.notionURL) links.push(`<button data-modal-notion>Notion</button>`);
@@ -644,8 +651,12 @@ function deleteRecipe(id){
   state.recipes=state.recipes.filter(x=>x.id!==id); Object.keys(state.week).forEach(d=>{if(state.week[d]===id)delete state.week[d]});persist();renderAll();
 }
 function renderCollections(){
+  extendCollections();
+  let timeNote=document.querySelector('#mbd-time-collection-note');if(!timeNote){timeNote=document.createElement('p');timeNote.id='mbd-time-collection-note';timeNote.className='muted';document.querySelector('#collectionOverview')?.before(timeNote)}
+  const known=state.recipes.filter(r=>window.MBDTimeCore?.activeMinutes(r)!==null&&window.MBDTimeCore?.activeMinutes(r)!==undefined).length;timeNote.textContent='Tijdscollecties gebruiken alleen aantoonbare actieve bereidingstijd. '+known+' bekend · '+(state.recipes.length-known)+' nog te controleren; oven- en wachttijd tellen niet mee.';
+
   const box=document.querySelector('#collectionOverview');
-  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>((r.collections||[]).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${window.MBDRecipeVisibility?state.recipes.filter(r=>window.MBDRecipeVisibility(r)&&((r.collections||[]).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length:n} zichtbaar · ${n} totaal</span></button>`}).join('');
+  box.innerHTML=COLLECTIONS.map(([name,emoji])=>{const n=state.recipes.filter(r=>(recipeCollections(r).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length;return `<button type="button" class="collection-card" data-collection-index="${COLLECTIONS.findIndex(c=>c[0]===name)}" style="text-align:left;cursor:pointer"><b>${emoji} ${esc(name)}</b><span>${window.MBDRecipeVisibility?state.recipes.filter(r=>window.MBDRecipeVisibility(r)&&(recipeCollections(r).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek'))).length:n} zichtbaar · ${n} totaal</span></button>`}).join('');
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
@@ -865,5 +876,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/photo-fix-v10.js?v=50'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=41'></script><script src='/week-planning-core.js?v=50'></script><script src='/allergy-integration-v2.js?v=50'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
+<script src='/recipe-time-core.js?v=51'></script><script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=50'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=51'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=52'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
 </html>

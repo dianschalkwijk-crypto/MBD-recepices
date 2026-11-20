@@ -145,7 +145,8 @@ export default async function handler(req:any,res:any){
   if(!page)return res.status(404).json({message:'Recept niet gevonden.'});
   const files=page.properties?.Foto?.files||[];
   const first=files[0];
-  const url=first?.file?.url||first?.external?.url||'';
+  let url=first?.file?.url||first?.external?.url||'';
+  if(!url){const row=await catalogCurrent(mdb),ah=row?.recipe?.ahPhotoURL;if(typeof ah==='string'){try{const u=new URL(ah);if(u.protocol==='https:'&&u.hostname==='static.ah.nl'&&!u.port&&!u.username&&!u.password)url=ah}catch{}}}
   if(!url)return res.status(404).json({message:'Geen foto opgeslagen.'});
   res.setHeader('Location',url);
   return res.status(302).end();

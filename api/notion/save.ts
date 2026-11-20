@@ -12,7 +12,7 @@ function token(){
   if(!t)throw new Error('NOTION_TOKEN ontbreekt');
   return t;
 }
-async function notion(path:string,init:any={}){
+export async function notion(path:string,init:any={}){
   const r=await fetch('https://api.notion.com/v1'+path,{
     ...init,
     headers:{
@@ -26,13 +26,13 @@ async function notion(path:string,init:any={}){
   if(!r.ok){const e:any=new Error(d.message||('Notion HTTP '+r.status));e.status=r.status;e.code=d.code;throw e}
   return d;
 }
-const query=(id:string,body:any)=>notion('/data_sources/'+id+'/query',{method:'POST',body:JSON.stringify(body)});
-const rt=(s:string)=>{
+export const query=(id:string,body:any)=>notion('/data_sources/'+id+'/query',{method:'POST',body:JSON.stringify(body)});
+export const rt=(s:string)=>{
   const v=String(s||'').trim();if(!v)return[];
   const a:any[]=[];for(let i=0;i<v.length;i+=1800)a.push({type:'text',text:{content:v.slice(i,i+1800)}});
   return a;
 };
-const tt=(s:string)=>[{type:'text',text:{content:String(s||'Naamloos recept').slice(0,1900)}}];
+export const tt=(s:string)=>[{type:'text',text:{content:String(s||'Naamloos recept').slice(0,1900)}}];
 const plain=(p:any)=>p&&((p.title)||(p.rich_text)||[]).map((x:any)=>x.plain_text||(x.text&&x.text.content)||'').join('')||'';
 const num=(p:any)=>typeof p?.number==='number'?p.number:null;
 const platform=(u:string)=>{
@@ -46,6 +46,7 @@ export function canonicalSource(raw:any){
   try{
     const u=new URL(String(raw||'').trim());
     if(!['http:','https:'].includes(u.protocol)||u.username||u.password)return '';
+    const ah=u.hostname.replace(/^www\./,'')==='ah.nl'?u.pathname.match(/^\/(?:r\/|allerhande\/recept\/R-R)(\d+)(?:\/|$)/)?.[1]:null;if(ah)return 'ah.nl/recipe/'+ah;
     u.hash='';u.hostname=u.hostname.toLowerCase().replace(/^www\./,'');
     for(const key of [...u.searchParams.keys()])if(/^(utm_.+|fbclid|igshid|igsh|gclid|si)$/i.test(key))u.searchParams.delete(key);
     u.searchParams.sort();
@@ -84,7 +85,7 @@ export function findDuplicate(rows:any[],draft:any){
       (fingerprint&&recipeFingerprint(r)===fingerprint);
   });
 }
-async function reserveMDB(draft:any){
+export async function reserveMDB(draft:any){
   const secret=process.env.MBD_SUPABASE_WRITE_SECRET?.trim();
   if(!secret)throw new Error('MBD_SUPABASE_WRITE_SECRET ontbreekt');
   const hash=(text:string)=>createHash('sha256').update(text).digest('hex');
@@ -115,7 +116,7 @@ async function bookCount(bookId:string){
   const d=await query(R,{page_size:100,filter:{property:'Kookboek',relation:{contains:bookId}}});
   return (d.results||[]).length;
 }
-async function activeBook(){
+export async function activeBook(){
   const d=await query(B,{page_size:10,sorts:[{property:'Boeknr.',direction:'descending'}],filter:{property:'Status',select:{equals:'Actief'}}});
   let p=(d.results||[])[0];
   if(!p)return{createNumber:FIRST_NEW_BOOK};
@@ -125,7 +126,7 @@ async function activeBook(){
   if(count<MAX_PER_BOOK)return{id:p.id,name,number,count};
   return{createNumber:number+1,closeId:p.id,count};
 }
-async function materializeBook(plan:any){
+export async function materializeBook(plan:any){
   if(!plan.createNumber)return plan;
   if(plan.closeId)await notion('/pages/'+plan.closeId,{method:'PATCH',body:JSON.stringify({properties:{'Status':{select:{name:'Vol / gereed'}},'Aantal recepten':{number:plan.count}}})});
   return createBook(plan.createNumber);
