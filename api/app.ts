@@ -1,4 +1,6 @@
+import shareHandler from '../lib/shared-recipe.js';
 export default function handler(_req:any,res:any){
+ if(_req.query?.share==='1')return shareHandler(_req,res);
  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate');
  res.setHeader('Location','/index.html');
  return res.status(307).end();

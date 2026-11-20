@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import handler from '../api/notion/catalog.ts';
-import shareHandler from '../api/shared-recipe.ts';
+import shareHandler from '../lib/shared-recipe.ts';
 const root=process.cwd(),port=Number(process.env.MBD_REVIEW_PORT||4174);
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml'};
 createServer(async(req,res)=>{

@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import '../week-planning-core.js';
-import handler,{pageHTML,publicRecipe} from '../api/shared-recipe.ts';
+import handler,{pageHTML,publicRecipe} from '../lib/shared-recipe.ts';
 const c=globalThis.MBDWeekCore;
 test('WhatsApp contains only title, MDB reference and MBD app link',()=>{const r={mdb:'MDB-0323',title:'Soep 🥣',ingredients:'1 ui',steps:'Kook.',notes:'Privé',socialURL:'https://instagram.com/reel/x/'};const text=new URL(c.whatsappURL(r)).searchParams.get('text');assert.match(text,/Soep/);assert.match(text,/https:\/\/madebydian-recipes-dian.vercel.app\/r\/MDB-0323/);for(const x of ['1 ui','Kook.','Privé','instagram.com'])assert.ok(!text.includes(x));});
 test('private recipe needs an explicit token and unknown recipe is not shared',()=>{assert.equal(c.whatsappURL({title:'Test'}),'');assert.match(c.recipeURL({shareToken:'11111111-1111-1111-1111-111111111111'}),/\/delen\//);assert.equal(c.recipeURL({mdb:'javascript:alert(1)'}),'');});
