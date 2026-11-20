@@ -554,7 +554,7 @@ function showRecipeDetails(id){
   if(r.timings)blocks.push(`<div class="detail-section"><h3>Tijden</h3><div class="detail-text">${[['Actief',r.timings.activeMinutes],['Oven',r.timings.ovenMinutes],['Wachten',r.timings.waitMinutes],['Totaal',r.timings.totalMinutes]].map(([label,n])=>esc(label)+': '+(n===null||n===undefined?'onbekend':esc(n)+' min')).join(' · ')}</div></div>`);
   if(r.allergenStatus)blocks.push(`<div class="detail-section"><h3>Allergenen uit bron</h3><div class="detail-text">${esc(r.allergens?.length?r.allergens.join(', '):r.allergenStatus)}</div></div>`);
   if(r.previouslyMade)blocks.push('<p>Eerder gemaakt · AH-lijst Gemaakt</p>');
-  if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(r.nutrition)}</div></div>`);
+  if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(window.MBDTimeCore?MBDTimeCore.nutritionText(r):r.nutrition)}</div></div>`);
   const links=[];
   if(window.MBDWeekCore)links.push(window.MBDWeekCore.sourceHTML(r));
   if(r.notionURL) links.push(`<button data-modal-notion>Notion</button>`);
