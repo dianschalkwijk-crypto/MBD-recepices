@@ -3,6 +3,9 @@
   "functions": {
     "api/recipes/import.ts": {
       "maxDuration": 60
+    },
+    "api/app.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [

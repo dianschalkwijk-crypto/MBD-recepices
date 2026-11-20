@@ -1,0 +1,33 @@
+# Allerhande bulkimport — 20 november 2026
+
+Bestaande app: https://madebydian-recipes-dian.vercel.app. Productiebasis `30e7d28`; werkbranch `feat/allerhande-bulk-import-20261120`, bovenop de bestaande receptlinks-/accountbranch. Geen nieuwe losse app. Nieuw onderdeel `/ah-import.html`; serveracties draaien binnen de bestaande `api/app.ts`-functie en de bestaande limiet van twaalf Vercel-functies.
+
+## Gecontroleerde bronnen en back-up
+
+Actuele Supabase-catalogus bij aanvang: **704 records**, **16 bestaande nummerreserveringen**. MDB-0709 was al aanwezig met verkorte ingrediënten/stappen, een kleine AH-foto, `contentSynced:false` en zonder Notion-URL. De oorspronkelijke https://www.ah.nl/r/1197714 verwijst aantoonbaar naar de AH-receptpagina met JSON-LD, twaalf ingrediëntenregels, negen volledige stappen, vier personen, 15 minuten bereiden, 45 minuten oventijd en 60 minuten totaal. Geen actieve tijd uit totaal minus oventijd berekend; de bronlabels worden gelezen.
+
+Herstelbare lokale back-ups, niet in Git: `/workspace/scratch/mbd-before-ah-20261120.bundle`, `mbd-before-ah-catalog-20261120.json`, `mbd-before-ah-database-20261120.json`, `mbd-before-ah-notion0709.json`. Volledige Notion-dubbelcontrole op MDB/bron van 0709 vond vóór aanmaak nul pagina's. De bestaande drie boekrecords met nummer 32 zijn behouden: 0706/0707/0708 en 0694 gebruiken allemaal `41348664-8ea9-8111-8406-fdd946ffa0a0`; alleen die bewezen bestaande koppeling is voor 0709 gebruikt.
+
+## Werking
+
+Meerdere receptlinks of titels kunnen worden klaargezet. Korte/lange AH-links delen dezelfde receptidentiteit. Een titelzoekactie toont daadwerkelijk gevonden originele AH-pagina's; de gebruiker kiest en bevestigt de juiste bron. Zoekresultaten zijn geen automatische bronvalidatie. AH-JSON-LD en bronlabels leveren titel, originele foto, exacte ingrediëntregels, alle stappen, personen, voedingswaarden, bron-URL en losse tijden. Expliciet afwezige allergenen blijven onbekend, nooit automatisch allergievrij. AH-categorieën blijven afzonderlijk beschikbaar.
+
+Screenshots en video gebruiken de bestaande herkenningsfunctie in een nieuwe beheerdersmodus die uitsluitend zichtbare titels/lijstnamen/volledig zichtbare URLs leest. De browser bewaart mediabestanden en het laatst verwerkte beeld in IndexedDB. Video wordt verdeeld over maximaal 120 beelden, met een minimumafstand van twee seconden bij lange opnamen; dit is steekproefsgewijs en kan snel voorbijscrollende titels missen. De gebruiker moet de gevonden titels controleren. Mislukte/onderbroken media kunnen worden hervat; afgeronde bestanden kunnen bewust worden opgeruimd zonder recepten te verwijderen. Beschikbare JSON-/HTML-/tekstexports met receptlinks zijn ondersteund. Er is geen AH-wachtwoord/cookie gevraagd of privé-API gebruikt.
+
+Persoonlijke AH-lijstjes rechtstreeks importeren is **niet als werkend bevestigd**: de persoonlijke pagina levert anoniem geen eigen receptlijst op en een geautoriseerde AH-verbinding/export is niet beschikbaar in deze taak. Lijstnamen kunnen via zichtbare beelden, eigen exports of een expliciete lijstselectie worden meegegeven. Er wordt niet beweerd dat alle persoonlijke AH-favorieten zijn opgehaald.
+
+Voor opslag controleert de server alle gepagineerde Supabase- en Notion-records op canonieke bron, titel en genormaliseerde ingrediënten/bereiding. De browser controleert daarnaast eigen lokale recepten en concepten. Onzekere titelmatches of een duplicaat met een andere oorspronkelijke bron vragen bewuste vergelijking; bestaande bronvelden worden niet stilzwijgend vervangen. Alleen een werkelijk nieuw recept gebruikt de bestaande `mbd_claim_recipe_save`/nummerreservering. Bestaande AH-recepten, waaronder 0709, houden hun nummer.
+
+`AH – Mijn favorieten` en persoonlijke lijstjes zijn meerdere collecties van hetzelfde record. Gemaakt wordt als eerder gemaakt bewaard wanneer die lijst aantoonbaar zichtbaar of bewust gekozen is. Er is geen persoonlijk lijstje voor 0709 verzonnen. Tijdscollecties gelden voor alle recepten via één gemeenschappelijke afleiding op **bewezen actieve tijd**; onbekende oudere tijdvelden blijven te controleren. Oven-/wachttijd bepaalt nooit de tijdscollectie. De app toont hoeveel actieve tijden nog onbekend zijn. Er is geen bulkcorrectie van historische receptdata uitgevoerd.
+
+## Hervatbaarheid, beveiliging en voltooiing
+
+De additieve Supabase-migratie `allerhande_import_checkpoints` voegt `mbd_ah_import_jobs` toe. RLS laat alleen beheerderinzage toe; servermutaties gebruiken dezelfde bestaande secret-validator in de read-only modus. Sleutels zijn niet gewijzigd. Een databaselease serialiseert AH-imports; checkpoints bewaren het bestaande MDB, Notion-aanmaakpoging, pagina-ID en afzonderlijke werkelijke controles. Een verloren Notion-antwoord leidt tot terugzoeken op datzelfde MDB, nooit blind een tweede pagina/nummer. Een verlopen lease kan worden hervat. Een mislukte Supabase-write meldt geen voltooiing en overschrijft een gelijktijdige wijziging niet.
+
+De laatste status blijft onvoltooid totdat Notion en Supabase zijn teruggelezen, de originele afbeelding is opgehaald, en een iframe met de echte receptenapp de juiste versie zichtbaar heeft geopend en de foto daadwerkelijk heeft gedecodeerd. Alleen daarna kan een beheerdersverzoek de bevestigde appstatus bewaren. Geen cosmetische tijdgestuurde voortgang. De bestaande app synchroniseert AH-updates alleen over de aantoonbare vorige broninhoud; eigen afwijkende lokale wijzigingen blijven behouden als controleconflict. Notities, eigen fotoverwijzingen en MDB's blijven bestaan. Catalogusladen is gepagineerd, zodat meer dan duizend recepten niet stilzwijgend afvallen.
+
+## Verificatie tot publicatie
+
+43 unit-/routetests, TypeScript, vier echte PostgreSQL-17-checkpointtests, vijf API-pipelinetests en 36 lokale browsercontroles op desktop/mobiel slagen. Tests omvatten één claim voor een uniek nieuw recept, geen claim voor 0709, twee keer hervatten zonder dubbele pagina, verloren Notion-antwoord, opslagconflict, verkeerde rechten, echte brondata, onbekende allergenen/tijd, eigen lokale wijzigingen en bewaard gebleven bestaande functies. De nieuwe nummerproef is uitsluitend een geïsoleerde fixture, geen productierecept.
+
+De echte 0709-synchronisatie is uitgevoerd via de geautoriseerde Notion-/Supabase-connectors met dezelfde bronparser. De interactieve beheerdersimport is nog niet met een echte aangemelde browsersessie getest. Er waren geen echte AH-screenshots/schermopnamen aangeleverd; herkenningsinvoer en voortgang zijn technisch getest, geen volledigheidsclaim over een persoonlijke favorietenlijst. Productie-app-/fotocontrole en publicatie worden hieronder na uitvoering vastgelegd.

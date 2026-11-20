@@ -1,5 +1,10 @@
 # MadeByDian — centraal herstelregister
 
+## Allerhande bulkimport — 20 november 2026
+
+Voorbereid op `feat/allerhande-bulk-import-20261120`. Actuele catalogus 704 / 16 reserveringen. Alleen bestaand MDB-0709 uit de originele AH-bron gesynchroniseerd naar Supabase en één Notion-pagina in de bewezen bestaande boek-32-koppeling. App-/fotocontrole en publicatie volgen; nog niet als voltooid gemarkeerd. Herstelback-up vooraf gemaakt. Dashboard met hervatbare links/titels, beelden, bron-/duplicaatcontrole, persoonlijke lijstjes en afzonderlijke actieve/oven-/wachttijden toegevoegd. Geen directe privé-AH-accountkoppeling bevestigd. Details en testgrenzen: `docs/allerhande-bulk-import-20261120.md`.
+
+
 ## Receptlinks, eigen accounts en collecties — 20 november 2026
 
 Gepubliceerd in dezelfde app: productiecommit `30e7d28`, READY `dpl_CaFknqNrTVUrFpt9U7sasA9SH7w6`, PR #7. Database-addities toegepast en gecontroleerd. WhatsApp deelt nu een MBD-appreceptlink met fotometadata; eigen accounts/een-recept-deellinks zijn gescheiden van de bestaande openbare hoofdcatalogus. Collecties wissen achtergebleven zoekfilters met behoud van allergieën. Socialcontroles vereisen bewuste opslag en bewijs van verwijdering; geen automatische bronwijzigingen. Actuele catalogus: 702, alle bestaande recepten/nummers te behouden. Todoist-kwartaalherinnering vanaf 1 januari 2027 aangemaakt; ChatGPT-limiet verhinderde een extra ChatGPT-taak. Geverifieerd: TypeScript, 38 unit-/routetests, zes PostgreSQL-tests, 30 lokale browsercontroles en 16 verschillende productiebrowsercontroles op desktop/telefoonformaat. Echte foto/Open Graph, expliciete bewaarknop, collecties met echte catalogus, weekmenu, socialherstel en bron-/QR-readback/print slagen. Alle 702 catalogusrecords exact gelijk aan de vooraf gemaakte back-up; 14 bestaande nummerreserveringen behouden. Geen blijvende testrecepten, deellinks of socialstatussen aangemaakt. Echte e-mailbevestiging en WhatsApp op een fysieke telefoon niet getest. Details: `docs/recipe-links-and-accounts-20261120.md`. Deze linkdeling vervangt het eerdere volledige WhatsApp-tekstconcept.
