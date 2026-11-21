@@ -32,7 +32,7 @@ beforeEach(()=>{
     }
     if(u.pathname.includes('/data_sources/')){
       if(bookFails)return response({message:'Book service unavailable'},503);
-      return response({results:u.pathname.includes('7780dc25')?[{id:'book-31',properties:{'Boeknr.':{number:31},Kookboek:{title:[{plain_text:'Boek 31'}]}}}]:[]});
+      return response({results:u.pathname.includes('7780dc25')?[{id:'book-31',properties:{Status:{select:{name:'Actief'}},'Boeknr.':{number:31},Kookboek:{title:[{plain_text:'Boek 31'}]}}}]:[]});
     }
     if(u.pathname==='/v1/pages')return response({id:'page-'+body.properties['MDB-ID'].rich_text[0].text.content,url:'https://notion.so/'+body.properties['MDB-ID'].rich_text[0].text.content});
     if(u.pathname.startsWith('/v1/pages/')){

@@ -113,19 +113,21 @@ async function createBook(number:number){
   return{id:p.id,name,number,count:0};
 }
 async function bookCount(bookId:string){
-  const d=await query(R,{page_size:100,filter:{property:'Kookboek',relation:{contains:bookId}}});
-  return (d.results||[]).length;
+  let count=0,cursor:string|undefined;
+  do{const d:any=await query(R,{page_size:100,filter:{property:'Kookboek',relation:{contains:bookId}},...(cursor?{start_cursor:cursor}:{})});count+=(d.results||[]).filter((p:any)=>!p.in_trash).length;cursor=d.has_more?d.next_cursor:undefined;if(d.has_more&&!cursor)throw Error('Boektelling onvolledig')}while(cursor);return count;
 }
+async function readAllBooks(){let all:any[]=[],cursor:string|undefined;do{const d:any=await query(B,{page_size:100,...(cursor?{start_cursor:cursor}:{})});all.push(...(d.results||[]).filter((p:any)=>!p.in_trash));cursor=d.has_more?d.next_cursor:undefined;if(d.has_more&&!cursor)throw Error('Kookboekencontrole onvolledig')}while(cursor);return all}
+
 export async function activeBook(){
-  const d=await query(B,{page_size:10,sorts:[{property:'Boeknr.',direction:'descending'}],filter:{property:'Status',select:{equals:'Actief'}}});
-  let p=(d.results||[])[0];
-  if(!p)return{createNumber:FIRST_NEW_BOOK};
-  let number=num(p.properties?.['Boeknr.'])||FIRST_NEW_BOOK;
-  let name=plain(p.properties?.['Kookboek'])||('Boek '+number+' · Nieuwe recepten');
-  let count=await bookCount(p.id);
-  if(count<MAX_PER_BOOK)return{id:p.id,name,number,count};
-  return{createNumber:number+1,closeId:p.id,count};
+  const all=await readAllBooks(),nextNumber=Math.max(FIRST_NEW_BOOK-1,...all.map((p:any)=>num(p.properties?.['Boeknr.'])||0))+1;
+  const active=all.filter((p:any)=>p.properties?.Status?.select?.name==='Actief'&&!/^AH\s*[–-]\s*Allerhande\s*[·-]\s*Deel\s+[1-9]\d*$/i.test(plain(p.properties?.Kookboek))).sort((a:any,b:any)=>(num(b.properties?.['Boeknr.'])||0)-(num(a.properties?.['Boeknr.'])||0));
+  if(!active.length)return{createNumber:nextNumber};
+  const highest=num(active[0].properties?.['Boeknr.'])||FIRST_NEW_BOOK,candidates=active.filter((p:any)=>(num(p.properties?.['Boeknr.'])||FIRST_NEW_BOOK)===highest);
+  const counted=await Promise.all(candidates.map(async(p:any)=>({p,count:await bookCount(p.id)})));counted.sort((a,b)=>b.count-a.count);const {p,count}=counted[0];
+  const name=plain(p.properties?.Kookboek)||('Boek '+highest+' · Nieuwe recepten');
+  return count<MAX_PER_BOOK?{id:p.id,name,number:highest,count}:{createNumber:nextNumber,closeId:p.id,count};
 }
+
 export async function materializeBook(plan:any){
   if(!plan.createNumber)return plan;
   if(plan.closeId)await notion('/pages/'+plan.closeId,{method:'PATCH',body:JSON.stringify({properties:{'Status':{select:{name:'Vol / gereed'}},'Aantal recepten':{number:plan.count}}})});
