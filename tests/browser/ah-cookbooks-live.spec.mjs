@@ -7,8 +7,8 @@ test('older recipes return to original books and themes; only newly imported 070
  const ids=['MDB-0164','MDB-0230','MDB-0232','MDB-0271','MDB-0275','MDB-0307','MDB-0709'],original=all.filter(x=>ids.includes(x.mdb)).map(x=>({...x.recipe,id:x.mdb,mdb:x.mdb}));
  const old=original.map(r=>r.bookRestore?{...r,book:r.bookRestore.from.book,bookNo:41,bookRestore:undefined,ahBookVersion:'old',ahCookbook:{name:r.bookRestore.from.book}}:r);
  await page.addInitScript(old=>{const KEY='madebydian-recipes-filled-copy-v0.5';if(!localStorage.getItem(KEY))localStorage.setItem(KEY,JSON.stringify({recipes:old,week:{}}))},old);
- await page.goto('/index.html');await page.waitForFunction(()=>state.recipes.filter(r=>r.bookRestore?.version==='original-books-20261121').length===6);
- const active=all.filter(x=>x.recipe.syncStatus!=='duplicate-quarantined');await page.waitForFunction(n=>state.recipes.length===n,active.length);
+ await page.goto('/index.html');await page.waitForFunction(()=>state.recipes.filter(r=>r.bookRestore?.version==='original-books-20261121').length===6,null,{timeout:20000}).catch(async e=>{console.log('BOOK RESTORE',await page.evaluate(()=>({n:state.recipes.length,restores:state.recipes.filter(r=>r.bookRestore).map(r=>[r.mdb,r.book,r.bookRestore]),sync:document.querySelector('#mbd-sync-v2')?.textContent})));throw e});
+ const active=all.filter(x=>x.recipe.syncStatus!=='duplicate-quarantined');await page.waitForFunction(n=>state.recipes.length===n,active.length,{timeout:20000}).catch(async e=>{console.log('CATALOG COUNT',await page.evaluate(()=>({n:state.recipes.length,sync:document.querySelector('#mbd-sync-v2')?.textContent})));throw e});
  const themes=await page.evaluate(()=>MBDTimeCore.standardCollections);
  for(let i=0;i<2;i++){
   if(i){await page.reload();await page.waitForFunction(()=>!!window.__mbdAllergyIntegrated)}

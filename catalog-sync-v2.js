@@ -5,7 +5,7 @@ function loadPreferenceIntegration(){
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',loadPreferenceIntegration,{once:true});return}
  try{
   if(window.__mbdAllergyIntegrated||document.querySelector('script[data-mbd-preferences]'))return;
-  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=55';s.dataset.mbdPreferences='1';
+  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=56';s.dataset.mbdPreferences='1';
   s.onerror=()=>console.warn('Allergie/eetvoorkeur-integratie kon niet worden geladen');
   document.head.appendChild(s);
  }catch(e){console.warn('Voorkeur-integratie',e)}

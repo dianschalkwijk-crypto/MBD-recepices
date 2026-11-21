@@ -6,7 +6,7 @@ test('original theme memberships survive old cached AH migration and source labe
  const server=old.slice(0,2).map(r=>({mdb:r.mdb,recipe:{...r,book:r.mdb==='MDB-0164'?'Gezin':'Pasta',bookNo:2,bookRestore:{version:'restore-test',from}}}));
  for(const row of server){delete row.recipe.ahCookbook;delete row.recipe.ahBookVersion}
  await page.route('https://**/*',r=>{const u=new URL(r.request().url());if(u.origin===new URL(process.env.MBD_LIVE_URL||'http://127.0.0.1:4174').origin)return r.continue();if(u.pathname.includes('/rest/v1/mbd_catalog'))return r.fulfill({json:server});return r.fulfill({contentType:'application/javascript',body:u.href.includes('supabase')?`window.supabase={createClient(){return {auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:null}}),onAuthStateChange(){}},from(){const q=new Proxy({},{get(_,k){if(k==='then')return resolve=>Promise.resolve({data:[],error:null}).then(resolve);return ()=>q}});return q}}}};`:'[]'})});
- await page.route('**/api/**',r=>r.fulfill({json:{ok:true,items:[],recipes:[]}}));await page.route('**/pinterest-books-23-29.json',r=>r.fulfill({json:{recipes:[]}}));
+ await page.route('**/api/**',r=>r.fulfill({json:{ok:true,items:[],recipes:[]}}));await page.route('**/pinterest-books-23-29.json',r=>r.fulfill({json:{recipes:[{book:23,number:1,title:'Historisch Pinterest recept dat niet opnieuw geïmporteerd mag worden',ingredients:'1 ei',preparation:'Bak.',sourceURL:'https://pinterest.com/pin/historical/'}]}}));
  await page.addInitScript(({KEY,old})=>{if(!localStorage.getItem(KEY))localStorage.setItem(KEY,JSON.stringify({recipes:old,week:{}}))},{KEY,old});
  await page.goto('/index.html');await page.waitForFunction(()=>state.recipes.find(r=>r.mdb==='MDB-0164')?.book==='Gezin');
  for(let round=0;round<2;round++){
@@ -14,7 +14,7 @@ test('original theme memberships survive old cached AH migration and source labe
   await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(27);
   for(const label of ['TikTok','Instagram','Insta','rijst','Rijst','AH – Mijn favorieten','AH – Allerhande · Deel 1'])await expect(tiles.filter({hasText:label})).toHaveCount(0);
   for(const theme of ['Gezin','Pasta','AH']){const tile=tiles.filter({hasText:theme==='AH'?/^🛒 AH/:theme});await expect(tile).toContainText('1 totaal');await tile.click();await expect(page.locator('#recipeList .recipe-card:visible')).toHaveCount(1);await page.locator('[data-target="collections"]').click()}
-  const after=await page.evaluate(()=>state.recipes);for(const r of old)expect(after.find(x=>x.mdb===r.mdb).collections).toEqual(r.collections);
+  const after=await page.evaluate(()=>state.recipes);expect(after).toHaveLength(3);for(const r of old)expect(after.find(x=>x.mdb===r.mdb).collections).toEqual(r.collections);
   expect(after.find(r=>r.mdb==='MDB-0271').book).toBe('Mijn bewuste eigen boek');
   expect(after.find(r=>r.mdb==='MDB-0164').ahCookbook).toBeUndefined();
  }

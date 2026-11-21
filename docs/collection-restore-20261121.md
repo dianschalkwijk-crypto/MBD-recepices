@@ -3,6 +3,7 @@
 De opdracht was één AH-collectie toe te voegen voor nieuwe AH-imports. De uitbreiding ging te ver: alle opgeslagen labels werden collectieknoppen (ook automatisch opgeslagen sociallabels en trefwoorden) en zes oudere recepten kregen een AH-boekrelatie. Dit herstel draait die neveneffecten terug.
 
 - De oorspronkelijke vaste themacollecties, HelloFresh en de eerder gevraagde actieve-tijdsfilters blijven; alleen AH komt erbij. Geen automatische nieuwe knoppen uit bronplatform, trefwoorden, lijstjes of kookboekdelen. Dit geldt ook voor het weekmenufilter.
+- De oude automatische herimport van het ingebouwde Pinterest-bestand is uitgeschakeld. Deze kon vóór catalogussynchronisatie nieuwe lokale MDB-nummers bedenken bij een onvolledige lokale bibliotheek. Geen bestaande lokale of online Pinterest-recepten verwijderd.
 - Geen AH-detectie meer uit oude bronlinks of alleen boeknamen. AH gebruikt de expliciete nieuwe AH-importmetadata. Alle bestaande themalidmaatschappen blijven intact.
 - De oude browsercode die Instagram/Insta/TikTok/Pinterest automatisch in receptcollecties schreef, is uitgeschakeld. Bestaande opgeslagen labels worden niet massaal verwijderd, maar veroorzaken geen knoppen.
 - Zes oudere boekrelaties hersteld uit de oorspronkelijke back-up: MDB-0164 Gezin 2, 0230 Borrel 4, 0232 Easy oven / traybake 9, 0271 en 0275 Pasta 20, 0307 Vegetarisch 11. In Supabase én de eerder gemigreerde Notion-pagina's. MDB-0709 blijft in AH-boek 41. Boektellingen teruggelezen en bijgewerkt.
