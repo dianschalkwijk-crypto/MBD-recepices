@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 test('serviceworker keeps collection normalization ahead of first inline app render',async()=>{
- const context=vm.createContext({Response,self:{addEventListener(){}}});
+ const context=vm.createContext({Response,Headers,self:{addEventListener(){}}});
  vm.runInContext(readFileSync('service-worker.js','utf8'),context);
  const result=await context.inject(new Response(readFileSync('index.html','utf8'),{headers:{'content-type':'text/html'}}));
  const html=await result.text();
