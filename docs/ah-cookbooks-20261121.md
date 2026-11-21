@@ -17,3 +17,13 @@ De app toont zowel de verzameling **AH – Allerhande** als het afzonderlijke de
 ## Verificatie
 
 TypeScript, vijftig unit-/routetests, zeven AH-pipelinetests en tien echte PostgreSQL-tests van de bestaande atomische opslag slagen. Aanvullende tests bewijzen: AH versus gewone import, doorgaan naar Deel 2 bij dertig recepten, geen verplaatsing bij het bewerken van een bestaand vol deel, stoppen bij dubbelzinnige delen/onzekere aanmaak, behoud van lokale inhoud en thema's, en mobiele weergave. Volledige browsercontrole en publicatie volgen hieronder na uitvoering.
+
+## Publicatie en daadwerkelijke controle
+
+Productiecommit `44602804be816eda7c352e247c2ec7ceb942f250`, READY `dpl_EXJBfGR4K2u4R4bFgg72nd8ziESQ`, PR #9. Live in dezelfde app via **Collecties → AH – Allerhande · Deel 1**. De latere vastleggingscommit bevat uitsluitend documentatie.
+
+48 lokale browsercontroles en achttien echte productie-browsercontroles geslaagd, elk op desktop en telefoonformaat. De productietest begon met een geïsoleerde oude lokale boekindeling en bevestigde dat alle zeven recepten dezelfde MDB/titel/ingrediënten/stappen/bronlinks/fotoreferenties behouden, het eigen AH-boek zichtbaar is, de originele foto bij 0709 werkelijk laadt en de indeling na herladen terugkomt. Ook weekmenu, receptdelen, socialherstel en bron-/QR-opslag/herladen/print opnieuw geverifieerd. Geen certificaatcontrole uitgeschakeld; de lokale browser vertrouwt de CA van de testomgeving. De vervolgdelen zijn geïsoleerd getest, geen dertig kunstmatige productierecepten toegevoegd.
+
+Volledige catalogusvergelijking: alle 697 niet-geselecteerde records inclusief `updated_at` geheel identiek; voor de zeven geselecteerde records alleen boekvelden en de bijbehorende herstelmetadata veranderd. Ingrediënten, bereiding, titels, foto's, bronlinks, bestaande collecties en persoonlijke velden exact gelijk. Totaal **704** records, **686 actief**, **18 apart gehouden duplicaten**; alle **16 nummerreserveringen** volledig gelijk (hash en aantal vergeleken). De Notion-koppelingen en boekteller van Deel 1 zijn teruggelezen: precies zeven bestaande pagina's. Geen nieuwe receptpagina's of MDB-nummers gemaakt. Runtime-error/fatal-scan van de deployment gaf geen records.
+
+Herstelbestanden en de concrete selectie/patch staan onder `/workspace/scratch/mbd-*ah-books-*20261121*`. Deze taak verandert de eerdere AH-toegangsbeperking niet: AH blokkeert ophalen vanaf Vercel; eigen bronexport/HTML blijft de veilige importroute. Persoonlijke favorieten en onbekende bronnen zijn niet automatisch samengevoegd of aangevuld.
