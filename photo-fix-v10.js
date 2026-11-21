@@ -118,17 +118,6 @@ const host=document.querySelector("#recipeList");if(host){let status=document.qu
 }
 document.addEventListener("DOMContentLoaded",run);if(document.readyState!=="loading")run();
 })();
-;(()=>{if(window.__mbdOriginTags)return;window.__mbdOriginTags=true;
-function tag(){if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
-for(const r of state.recipes){const s=[r.sourceURL,r.sourceAuthor,r.platform,r.book,r.sourceText].filter(Boolean).join(" ").toLowerCase();const c=Array.isArray(r.collections)?r.collections:(r.collections=[]);
-if(/instagram\.com|instagram|insta\b/.test(s)){if(!c.includes("Instagram"))c.push("Instagram");if(!c.includes("Insta"))c.push("Insta")}
-if(/pinterest\.|pin\.it|pinterest/.test(s)&&!c.includes("Pinterest"))c.push("Pinterest");
-if(/tiktok\.com|tiktok/.test(s)&&!c.includes("TikTok"))c.push("TikTok");
-}}
-document.addEventListener("input",e=>{if(e.target?.id==="recipeSearch")tag()},true);
-document.addEventListener("DOMContentLoaded",()=>{tag();setTimeout(()=>{tag();if(typeof renderRecipes==="function")renderRecipes()},600)});
-if(document.readyState!=="loading"){tag();setTimeout(tag,600)}
-})();
 ;(()=>{if(window.__mbdCountFix)return;window.__mbdCountFix=true;
 function update(){if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
 const count=state.recipes.length;

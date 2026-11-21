@@ -5,7 +5,7 @@ function loadPreferenceIntegration(){
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',loadPreferenceIntegration,{once:true});return}
  try{
   if(window.__mbdAllergyIntegrated||document.querySelector('script[data-mbd-preferences]'))return;
-  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=40';s.dataset.mbdPreferences='1';
+  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=55';s.dataset.mbdPreferences='1';
   s.onerror=()=>console.warn('Allergie/eetvoorkeur-integratie kon niet worden geladen');
   document.head.appendChild(s);
  }catch(e){console.warn('Voorkeur-integratie',e)}
@@ -69,6 +69,15 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false,seedRepair=false;
+ if(r.bookRestore&&old.bookRestore?.version!==r.bookRestore.version){
+  const fix=r.bookRestore;
+  if(!old.book||old.book===fix.from.book||old.book===r.book){
+   for(const k of ['book','bookNo','notionBook','notionBookNo','notionBookId']){if(k in r)old[k]=r[k];else delete old[k]}
+   for(const k of ['ahCookbook','ahBookVersion','ahPreviousBook','ahBookConflict'])delete old[k];
+   old.bookRestore=fix;c=true;
+  }else{console.warn('Oorspronkelijk boekherstel overgeslagen: eigen lokale boekkeuze behouden',id)}
+ }
+
  if(r.ahCookbook&&r.ahBookVersion&&old.ahBookVersion!==r.ahBookVersion){
   const previous=r.ahPreviousBook;
   if(!old.book||old.book===r.book||old.book===previous?.name){for(const k of ['book','bookNo','notionBook','notionBookNo','notionBookId','ahCookbook','ahBookVersion','ahPreviousBook'])if(k in r)old[k]=r[k];delete old.ahBookConflict;c=true}

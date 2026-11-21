@@ -193,7 +193,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       <button class="tab" data-target="settings"><span>⚙️</span>Meer</button>
     </nav>
   </div>
-  <script src="/recipe-time-core.js?v=54"></script>
+  <script src="/recipe-time-core.js?v=55"></script>
   <script>
 const APP_VARIANT = 'GEVULDE KOPIE v0.7 HTTPS';
 const LIBRARY_SEED_VERSION = 'MRB-2026-09-10';
@@ -207,7 +207,7 @@ const COLLECTIONS = [
 ];
 
 function recipeCollections(r){return window.MBDTimeCore?MBDTimeCore.collections(r):(r.collections||[])}
-function extendCollections(){for(const label of ['Minder dan 15 minuten','15–35 minuten','Meer dan 35 minuten',...state.recipes.flatMap(r=>recipeCollections(r))])if(!COLLECTIONS.some(c=>c[0]===label))COLLECTIONS.push([label,window.MBDTimeCore?.buckets.includes(label)?'⏱️':'📌'])}
+function extendCollections(){for(const label of MBDTimeCore.buckets)if(!COLLECTIONS.some(c=>c[0]===label))COLLECTIONS.push([label,'⏱️'])}
 
 const collectionRules = {
   'Gezin': /pasta|aardappel|kip|gehakt|rijst|ovenschotel|wrap|pizza|burger/i,
@@ -249,7 +249,7 @@ let state = loadState();
 let currentDraft = null;
 let selectedCollections = new Set();
 
-function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collections:[...recipeCollections(r)],warnings:[...(r.warnings||[])]})), week:{}}; }
+function freshSeedState(){ return {recipes:SEED_RECIPES.map(r=>({...r,collections:[...(r.collections||[])],warnings:[...(r.warnings||[])]})), week:{}}; }
 function loadState(){
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -878,5 +878,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=54'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=53'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=54'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
+<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=55'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=55'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=55'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
 </html>
