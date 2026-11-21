@@ -67,7 +67,7 @@ if(pantry?.value.trim()&&standard?.value.trim()){standard.value="";}
 const all=recipes(),byId=new Map(all.map(r=>[String(r.mdb||"").toUpperCase(),r])),byLocalId=new Map(all.map(r=>[String(r.id||""),r])),words=terms();
 const q=words.length?"":norm($("#recipeSearch")?.value||""),queryWords=q.split(/\s+/).filter(Boolean);
 const cards=[...list.querySelectorAll(".recipe-card")];
-for(const card of cards){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=byLocalId.get(String(localId))||byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(r?.collections||[]),r?.category||""].map(norm);const categoryOk=!selected.size||[...selected].some(c=>cats.includes(norm(c)));
+for(const card of cards){const localId=card.querySelector("[data-view]")?.getAttribute("data-view")||"";const r=byLocalId.get(String(localId))||byId.get(idOf(card.querySelector(".mdb-badge")?.textContent));const cats=[...(window.MBDTimeCore?MBDTimeCore.collections(r):(r?.collections||[])),r?.category||""].map(norm);const categoryOk=!selected.size||[...selected].some(c=>cats.includes(norm(c)));
 const hay=norm(ingredientText(r));const ingredientsOk=!words.length||(allTerms?words.every(w=>hasTerm(hay,w)):words.some(w=>hasTerm(hay,w)));
 const fullHay=norm(searchableText(r));const queryOk=!queryWords.length||queryWords.every(w=>hasTerm(fullHay,w));
 const ok=categoryOk&&ingredientsOk&&queryOk; if(card.hidden!==!ok)card.hidden=!ok;const display=ok?"":"none";if(card.style.display!==display)card.style.display=display}
