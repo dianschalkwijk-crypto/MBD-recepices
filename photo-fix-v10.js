@@ -90,45 +90,7 @@ function run(){setup();photos();update()}
 new MutationObserver(m=>{if(m.every(x=>x.target.closest?.("#mbd-search-tools")))return;clearTimeout(timer);timer=setTimeout(run,100)}).observe(document.body,{childList:true,subtree:true});
 document.addEventListener("DOMContentLoaded",run);run();
 })();
-;(()=>{
-if(window.__mbdPinterestImport)return;window.__mbdPinterestImport=true;
-const norm=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
-const url=s=>/instagram\.com|pinterest\.|pin\.it|tiktok\.com|youtube\.com/i.test(s||"")?String(s).split("?")[0].replace(/\/$/,"").toLowerCase():"";
-async function run(){
-try{
-const response=await fetch("/pinterest-books-23-29.json",{cache:"no-store"});if(!response.ok)throw Error("Bestand ontbreekt");
-const data=await response.json();if(!Array.isArray(data.recipes))throw Error("Ongeldig bestand");
-if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
-const knownUrls=new Set(state.recipes.map(r=>url(r.sourceURL)).filter(Boolean));
-const knownTitles=new Set(state.recipes.map(r=>norm(r.title||r.originalTitle)).filter(x=>x.length>18));
-const knownSlots=new Set(state.recipes.filter(r=>Number(r.bookNo)>=23&&Number(r.bookNo)<=29).map(r=>r.bookNo+":"+r.order));
-const ids=new Set(state.recipes.map(r=>String(r.mdb||r.id).toUpperCase()));
-let next=Math.max(353,...[...ids].map(x=>Number((x.match(/MDB-(\d+)/)||[])[1]||0)))+1,added=0,duplicates=0;
-for(const r of data.recipes){
-const slot=r.book+":"+r.number,u=url(r.sourceURL),title=norm(r.title);
-if(knownSlots.has(slot)||(u&&knownUrls.has(u))||(!u&&title.length>18&&knownTitles.has(title))){duplicates++;continue}
-while(ids.has("MDB-"+String(next).padStart(4,"0"))||next===182)next++;
-const mdb="MDB-"+String(next++).padStart(4,"0"),full=String(r.originalText||"").trim();
-state.recipes.push({id:mdb,mdb,title:r.title||"Pinterest recept "+r.number,originalTitle:r.title||"",book:"Pinterest · Kookboek "+r.book,bookNo:r.book,order:r.number,category:"Overig",collections:["Pinterest"],ingredients:r.ingredients||full,preparation:r.preparation||full,method:r.preparation||full,sourceText:full,sourceURL:r.sourceURL||"",contentSynced:true,warnings:[],notionURL:""});
-ids.add(mdb);knownSlots.add(slot);if(u)knownUrls.add(u);if(title)knownTitles.add(title);added++;
-}
-if(added){persist();renderRecipes()}
-const host=document.querySelector("#recipeList");if(host){let status=document.querySelector("#mbd-pinterest-status");if(!status){status=document.createElement("div");status.id="mbd-pinterest-status";status.style.cssText="padding:8px 0;font-size:12px;color:#65564f";host.before(status)}status.textContent="Pinterest kookboeken 23–29: "+added+" toegevoegd, "+duplicates+" al aanwezig of dubbel. Bewaard op dit apparaat."}
-}catch(e){console.error("Pinterest import",e)}
-}
-document.addEventListener("DOMContentLoaded",run);if(document.readyState!=="loading")run();
-})();
-;(()=>{if(window.__mbdOriginTags)return;window.__mbdOriginTags=true;
-function tag(){if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
-for(const r of state.recipes){const s=[r.sourceURL,r.sourceAuthor,r.platform,r.book,r.sourceText].filter(Boolean).join(" ").toLowerCase();const c=Array.isArray(r.collections)?r.collections:(r.collections=[]);
-if(/instagram\.com|instagram|insta\b/.test(s)){if(!c.includes("Instagram"))c.push("Instagram");if(!c.includes("Insta"))c.push("Insta")}
-if(/pinterest\.|pin\.it|pinterest/.test(s)&&!c.includes("Pinterest"))c.push("Pinterest");
-if(/tiktok\.com|tiktok/.test(s)&&!c.includes("TikTok"))c.push("TikTok");
-}}
-document.addEventListener("input",e=>{if(e.target?.id==="recipeSearch")tag()},true);
-document.addEventListener("DOMContentLoaded",()=>{tag();setTimeout(()=>{tag();if(typeof renderRecipes==="function")renderRecipes()},600)});
-if(document.readyState!=="loading"){tag();setTimeout(tag,600)}
-})();
+// Historical Pinterest data is already in the catalog; never auto-import or allocate local MDB numbers.
 ;(()=>{if(window.__mbdCountFix)return;window.__mbdCountFix=true;
 function update(){if(typeof state==="undefined"||!Array.isArray(state.recipes))return;
 const count=state.recipes.length;

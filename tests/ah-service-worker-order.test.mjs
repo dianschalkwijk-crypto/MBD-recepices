@@ -9,5 +9,5 @@ test('serviceworker keeps collection normalization ahead of first inline app ren
  const html=await result.text();
  assert.equal((html.match(/src=['"]\/recipe-time-core\.js/g)||[]).length,1);
  assert.ok(html.indexOf('/recipe-time-core.js')<html.indexOf('function extendCollections'));
- assert.match(html,/recipe-time-core\.js\?v=54/);
+ assert.match(html,/recipe-time-core\.js\?v=56/);
 });
