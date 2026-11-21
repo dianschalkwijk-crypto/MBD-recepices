@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## Eén AH-collectie — 21 november 2026
+
+Gepubliceerd: productie `75acb66`, READY `dpl_AbjzHsuWf66MtMUVvRU7nzoLeCzu`, PR #10. Eén AH-keuze zoals HelloFresh; geen losse AH-brontrefwoorden/favorieten/boekdelen in collecties of weekmenufilter. Eigen AH-kookboeken behouden. Bestaande bronmetadata niet verwijderd. Alle 704 catalogusrecords exact ongewijzigd. Back-up en verificatie in `docs/ah-single-collection-20261121.md`. TypeScript, 54 unit-/routetests, 7 pipelinetests, 50 lokale en 10 productie-browsercontroles geslaagd. Ook herladen met actieve serviceworker gecontroleerd.
+
 ## Eigen AH-kookboeken — 21 november 2026
 
 Gepubliceerd: productie `4460280`, READY `dpl_EXJBfGR4K2u4R4bFgg72nd8ziESQ`, PR #9. Eigen Notion-kookboek **AH – Allerhande · Deel 1** aangemaakt (boekindex 41), met zeven bestaande oorspronkelijke AH-recepten: 0164, 0230, 0232, 0271, 0275, 0307, 0709. Alleen boekmetadata/koppelingen aangepast; oorspronkelijke mapping bewaard, MDB's en inhoud behouden. Vijf alleen-aanvullende AH-inhoudsbronnen niet verplaatst. Maximaal 30 per deel bij AH-bulkimport, gewone imports blijven buiten AH. Herstelback-ups vooraf gemaakt. Gecontroleerd in productie op desktop en telefoonformaat: zeven AH-recepten in eigen boek, oude lokale boeklabels bijgewerkt, thema’s en bronvelden behouden na herladen, originele foto van 0709 laadt. 50 unit-/routetests, 7 AH-pipelinetests, 10 echte PostgreSQL-opslagtests, 48 lokale en 18 productie-browsercontroles geslaagd. Totaal blijft 704 records / 686 actief / 18 apart gehouden duplicaten. Alle 16 nummerreserveringen identiek; overige 697 records geheel identiek; bij de zeven alleen boekmetadata veranderd. Zie `docs/ah-cookbooks-20261121.md`.

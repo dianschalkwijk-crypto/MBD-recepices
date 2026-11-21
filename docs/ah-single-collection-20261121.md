@@ -1,0 +1,9 @@
+# Eén AH-collectie — 21 november 2026
+
+AH staat als één keuze naast HelloFresh. AH-brontrefwoorden zoals budget en wat eten we vandaag, favorieten en boekdelen worden niet automatisch losse collecties. Algemene thema's en tijdsfilters blijven werken. Persoonlijke AH-lijstjes blijven receptmetadata; de eigen AH-kookboeken blijven intact. Andere bestaande persoonlijke collecties blijven behouden.
+
+De import maakt voortaan alleen AH, bewust gekozen bestaande thema's en de bewezen actieve-tijdscollectie aan. Oorspronkelijke AH-categorieën blijven afzonderlijk bewaard. De browser toont bestaande AH-records via dezelfde regel, zonder databasegegevens te overschrijven. De gedeelde regel laadt vóór de eerste render, ook via de serviceworker.
+
+Back-ups: /workspace/scratch/mbd-before-ah-single-collection-20261121.bundle en mbd-before-ah-single-collection-20261121.json. Alle 704 catalogusrecords na de wijziging exact vergeleken: geheel gelijk. Geen Supabase- of Notion-mutaties, geen nummerreservering, geen wijzigingen aan recepten, foto's of bronlinks.
+
+Validatie: TypeScript, 54 unit-/routetests en 7 AH-pipelinetests geslaagd. 50 lokale browsercontroles geslaagd op desktop en telefoonformaat. Serviceworker-volgorde afzonderlijk getest. Gepubliceerd: productiecommit `75acb66`, READY `dpl_AbjzHsuWf66MtMUVvRU7nzoLeCzu`, PR #10. Alle 10 productie-browsercontroles geslaagd op desktop en telefoonformaat: één AH-tegel, HelloFresh behouden, ongewenste labels afwezig, categorie in weekmenu, zeven eigen AH-boekrelaties, 0709-inhoud/foto en herladen. Aanvullend met actieve serviceworker herladen: één AH-tegel, geen trefwoord-/favorieten-/boekdeeltegels; 0709 zichtbaar. Browserprojectie kan ook bestaande AH-bronverwijzingen tonen; de zeven oorspronkelijke AH-boekrelaties zijn afzonderlijk geverifieerd. Geen error-/fatal-runtimeberichten gevonden voor deze deployment tijdens controle.

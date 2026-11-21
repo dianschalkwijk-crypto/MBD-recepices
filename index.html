@@ -193,6 +193,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       <button class="tab" data-target="settings"><span>⚙️</span>Meer</button>
     </nav>
   </div>
+  <script src="/recipe-time-core.js?v=54"></script>
   <script>
 const APP_VARIANT = 'GEVULDE KOPIE v0.7 HTTPS';
 const LIBRARY_SEED_VERSION = 'MRB-2026-09-10';
@@ -200,13 +201,13 @@ const SEED_RECIPES = [{"id":"MDB-0001","mdb":"MDB-0001","title":"Big Mac Burrito
 const STORAGE_KEY = 'madebydian-recipes-filled-copy-v0.5';
 
 const COLLECTIONS = [
-  ['Uit kookboeken','📚'],['HelloFresh','🥗'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
+  ['Uit kookboeken','📚'],['HelloFresh','🥗'],['AH','🛒'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
   ['Camping 1pans','⛺'],['Mealprep','🧊'],['Easy oven','🔥'],['Ontbijt','🥣'],['Vegetarisch','🥬'],['Aziatisch','🍜'],
   ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Overig','📌']
 ];
 
 function recipeCollections(r){return window.MBDTimeCore?MBDTimeCore.collections(r):(r.collections||[])}
-function extendCollections(){for(const label of ['AH – Mijn favorieten','Kids','Deze week maken','Party','Gemaakt','Minder dan 15 minuten','15–35 minuten','Meer dan 35 minuten',...state.recipes.flatMap(r=>recipeCollections(r))])if(label&&!COLLECTIONS.some(c=>c[0]===label))COLLECTIONS.push([label,label.startsWith('AH – Allerhande')?'📗':'📌'])}
+function extendCollections(){for(const label of ['Minder dan 15 minuten','15–35 minuten','Meer dan 35 minuten',...state.recipes.flatMap(r=>recipeCollections(r))])if(!COLLECTIONS.some(c=>c[0]===label))COLLECTIONS.push([label,window.MBDTimeCore?.buckets.includes(label)?'⏱️':'📌'])}
 
 const collectionRules = {
   'Gezin': /pasta|aardappel|kip|gehakt|rijst|ovenschotel|wrap|pizza|burger/i,
@@ -553,6 +554,7 @@ function showRecipeDetails(id){
   if(r.storage) blocks.push(`<div class="detail-section"><h3>Bewaren</h3><div class="detail-text">${esc(r.storage)}</div></div>`);
   if(r.timings)blocks.push(`<div class="detail-section"><h3>Tijden</h3><div class="detail-text">${[['Actief',r.timings.activeMinutes],['Oven',r.timings.ovenMinutes],['Wachten',r.timings.waitMinutes],['Totaal',r.timings.totalMinutes]].map(([label,n])=>esc(label)+': '+(n===null||n===undefined?'onbekend':esc(n)+' min')).join(' · ')}</div></div>`);
   if(r.allergenStatus)blocks.push(`<div class="detail-section"><h3>Allergenen uit bron</h3><div class="detail-text">${esc(r.allergens?.length?r.allergens.join(', '):r.allergenStatus)}</div></div>`);
+  if(r.ahLists?.length)blocks.push(`<div class="detail-section"><h3>Mijn AH-lijstjes</h3><div class="detail-text">${esc(r.ahLists.join(', '))}</div></div>`);
   if(r.previouslyMade)blocks.push('<p>Eerder gemaakt · AH-lijst Gemaakt</p>');
   if(r.nutrition) blocks.push(`<div class="detail-section"><h3>Voedingswaarden</h3><div class="detail-text">${esc(window.MBDTimeCore?MBDTimeCore.nutritionText(r):r.nutrition)}</div></div>`);
   const links=[];
@@ -876,5 +878,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/recipe-time-core.js?v=53'></script><script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=50'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=53'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=52'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
+<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=54'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=53'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=54'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script></body>
 </html>
