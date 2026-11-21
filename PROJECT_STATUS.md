@@ -1,5 +1,10 @@
 # MadeByDian — centraal herstelregister
 
+## Eigen AH-kookboeken — 21 november 2026
+
+Voorbereid op `feat/ah-cookbooks-20261121`. Eigen Notion-kookboek **AH – Allerhande · Deel 1** aangemaakt (boekindex 41), met zeven bestaande oorspronkelijke AH-recepten: 0164, 0230, 0232, 0271, 0275, 0307, 0709. Alleen boekmetadata/koppelingen aangepast; oorspronkelijke mapping bewaard, MDB's en inhoud behouden. Vijf alleen-aanvullende AH-inhoudsbronnen niet verplaatst. Maximaal 30 per deel bij AH-bulkimport, gewone imports blijven buiten AH. Herstelback-ups vooraf gemaakt. Publicatie/appcontrole volgen. Zie `docs/ah-cookbooks-20261121.md`.
+
+
 ## Allerhande bulkimport — 20 november 2026
 
 Gepubliceerd in dezelfde app: productie `b4c3122`, READY `dpl_9sWvcPNUSzbMK6CQky1VYKRtinC5`, PR #8. Actuele catalogus 704 / 16 reserveringen. Alleen bestaand MDB-0709 uit de originele AH-bron gesynchroniseerd naar Supabase en één Notion-pagina in de bewezen bestaande boek-32-koppeling. MDB-0709 is na echte desktop- en telefoonformaatcontrole voltooid vastgelegd: juiste bron, 12 ingrediëntenregels, alle 9 stappen, juiste bestaande boek-32-relatie, Notion-foto en daadwerkelijk geladen originele 1224×900-foto. Actief 15 / oven 45 / totaal 60 minuten, juiste tijdscollectie. Alle overige 703 catalogusrecords en alle 16 nummerreserveringen exact gelijk aan back-up. Herstelback-up vooraf gemaakt. Dashboard met hervatbare links/titels, beelden, bron-/duplicaatcontrole, persoonlijke lijstjes en afzonderlijke actieve/oven-/wachttijden toegevoegd. AH schermt direct ophalen vanaf Vercel af (foto HTTP 403, ook gewone/canonieke receptpagina niet bereikbaar). Originele AH-browserexport / opgeslagen AH-HTML is daarom als veilige route toegevoegd; geen cookies/wachtwoorden geëxporteerd. Een volledige persoonlijke favorietenlijst is niet opgehaald. 44 unit-/routetests, 4 PostgreSQL-tests, 7 pipelinetests, 46 lokale browsercontroles en 16 productie-browsercontroles slagen. Details en testgrenzen: `docs/allerhande-bulk-import-20261120.md`.

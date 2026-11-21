@@ -41,7 +41,7 @@ async function upstream(req,res){
    throw Error('Unexpected database endpoint');
   }
   if(url.hostname!=='api.notion.com')throw Error('Real external network forbidden');
-  if(url.pathname.includes('/data_sources/'))return send(res,{results:url.pathname.includes('7780dc25')?[{id:'fixture-book',properties:{'Boeknr.':{number:31},Kookboek:{title:[{plain_text:'Fixture book'}]}}}]:state.fullBook?Array.from({length:30},(_,i)=>({id:'fixture-existing-'+i})):[]});
+  if(url.pathname.includes('/data_sources/'))return send(res,{results:url.pathname.includes('7780dc25')?[{id:'fixture-book',properties:{Status:{select:{name:'Actief'}},'Boeknr.':{number:31},Kookboek:{title:[{plain_text:'Fixture book'}]}}}]:state.fullBook?Array.from({length:30},(_,i)=>({id:'fixture-existing-'+i})):[]});
   if(url.pathname==='/v1/pages'){
    if(!b.properties['MDB-ID']){state.bookCreates++;return send(res,{id:'fixture-new-book'});}
    state.notionCreates++;if(state.fault==='notion-response-lost'){state.fault='';return send(res,{message:'Fixture Notion response lost'},503);}

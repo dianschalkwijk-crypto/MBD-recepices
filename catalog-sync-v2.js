@@ -69,10 +69,16 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false,seedRepair=false;
+ if(r.ahCookbook&&r.ahBookVersion&&old.ahBookVersion!==r.ahBookVersion){
+  const previous=r.ahPreviousBook;
+  if(!old.book||old.book===r.book||old.book===previous?.name){for(const k of ['book','bookNo','notionBook','notionBookNo','notionBookId','ahCookbook','ahBookVersion','ahPreviousBook'])if(k in r)old[k]=r[k];delete old.ahBookConflict;c=true}
+  else {old.ahBookConflict='Afwijkende lokale kookboekkeuze behouden; AH-indeling controleren.';c=true}
+ }
+
  if(r.ahSyncVersion&&r.ahSyncVersion!==old.ahSyncVersion){
   const previous=r.ahPreviousContent,same=(a,b)=>['title','ingredients','steps'].every(k=>value(a?.[k]).trim()===value(b?.[k]).trim());
   if(same(old,r)||previous&&same(old,previous)){
-   for(const k of ['title','originalTitle','ingredients','steps','photoURL','hasPhoto','portions','time','timings','nutrition','nutritionData','allergens','allergenStatus','ahLists','ahCategories','ahPhotoURL','ahRecipeId','ahCanonicalURL','ahSyncVersion','notionURL','notionBook','notionBookNo','notionBookId','previouslyMade','contentSynced','warnings'])if(k in r)old[k]=r[k];
+   for(const k of ['title','originalTitle','ingredients','steps','photoURL','hasPhoto','portions','time','timings','nutrition','nutritionData','allergens','allergenStatus','ahLists','ahCategories','ahPhotoURL','ahRecipeId','ahCanonicalURL','ahSyncVersion','notionURL','notionBook','notionBookNo','notionBookId','previouslyMade','contentSynced','warnings'])if(k in r&&(!old.ahBookConflict||!['book','bookNo','notionBook','notionBookNo','notionBookId'].includes(k)))old[k]=r[k];
    old.collections=[...new Set([...(old.collections||[]),...(r.collections||[])])];delete old.ahPendingUpdate;c=true;
   }else{old.ahPendingUpdate={version:r.ahSyncVersion,message:'AH-bron bijgewerkt; afwijkende lokale inhoud behouden.'};console.warn('AH-update wacht op lokale inhoudscontrole',id);c=true;}
  }
