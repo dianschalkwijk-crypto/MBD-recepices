@@ -2,7 +2,7 @@
 
 ## Eén AH-collectie — 21 november 2026
 
-Voorbereid: één AH-keuze zoals HelloFresh; geen losse AH-brontrefwoorden/favorieten/boekdelen in collecties of weekmenufilter. Eigen AH-kookboeken behouden. Bestaande bronmetadata niet verwijderd. Alle 704 catalogusrecords exact ongewijzigd. Back-up en verificatie in `docs/ah-single-collection-20261121.md`. Publicatiecontrole volgt.
+Gepubliceerd: productie `75acb66`, READY `dpl_AbjzHsuWf66MtMUVvRU7nzoLeCzu`, PR #10. Eén AH-keuze zoals HelloFresh; geen losse AH-brontrefwoorden/favorieten/boekdelen in collecties of weekmenufilter. Eigen AH-kookboeken behouden. Bestaande bronmetadata niet verwijderd. Alle 704 catalogusrecords exact ongewijzigd. Back-up en verificatie in `docs/ah-single-collection-20261121.md`. TypeScript, 54 unit-/routetests, 7 pipelinetests, 50 lokale en 10 productie-browsercontroles geslaagd. Ook herladen met actieve serviceworker gecontroleerd.
 
 ## Eigen AH-kookboeken — 21 november 2026
 
