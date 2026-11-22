@@ -1,5 +1,9 @@
 # Broncodeherstel
 
+## Vervolgcontrole — 22 november 2026
+
+Voorbereid: AH-herimport behoudt oudere recepten volledig, ook bij bestaande Notion-duplicaten; geen verplaatsing naar AH of nieuw nummer. Tien echte PostgreSQL-opslagtests opnieuw geslaagd: oude concurrency-TODO’s zijn al opgelost. Socialherstel 129/134 al uitgevoerd; vijf bronnen missen nog bewijs. 54 unit-/routetests, 10 AH-pipelinetests en 20 gerichte browsercontroles geslaagd. Actuele grenzen en bewijs: `docs/followup-20261122.md`.
+
 ## Herstel oorspronkelijke collecties — 21 november 2026
 
 Gepubliceerd: productie `d2ea7a5`, READY `dpl_7FxSiwthJve7oKcZm3DRiGaq6Lkd`, PR #11. AH uitsluitend voor nieuw geïmporteerde recepten; zes te breed aangepaste oudere boekrelaties teruggezet in Supabase en Notion. Oorspronkelijke vaste themacollecties hersteld; geen dynamische social-/trefwoordtegels. Bestaande receptcollecties en inhoud ongewijzigd. Zie `docs/collection-restore-20261121.md`. Dit vervangt de brede indeling uit PR #9 en #10. Oude automatische Pinterest-herimport en lokale nummertoekenning uitgeschakeld. TypeScript, 54 unit-/routetests, 52 lokale browsercontroles plus vier gerichte herimportcontroles en 12 definitieve productie-browsercontroles geslaagd. Alle oorspronkelijke thematellingen na herladen geverifieerd, AH alleen 0709.
