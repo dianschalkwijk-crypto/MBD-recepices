@@ -6,9 +6,9 @@ beforeEach(()=>{state={html,catalog:[{mdb:'MDB-0709',updated_at:'version1',recip
  if(u.hostname==='www.ah.nl'&&state.blockAH)return response({error:'restricted'},403);if(u.hostname==='www.ah.nl')return new Response(state.html,{headers:{'Content-Type':'text/html'}});if(u.hostname==='static.ah.nl'&&state.blockPhoto)return response({error:'restricted'},403);if(u.hostname==='static.ah.nl')return new Response(new Uint8Array(1000),{headers:{'Content-Type':'image/jpeg'}});
  if(u.pathname==='/auth/v1/user')return opts.headers.Authorization==='Bearer fixture-token'?response({id:A}):response({},401);
  if(u.pathname==='/rest/v1/profiles')return response([{role:'admin'}]);
- if(u.pathname==='/rest/v1/mbd_catalog'){let rows=state.catalog;if(u.searchParams.get('mdb'))rows=rows.filter(x=>x.mdb===u.searchParams.get('mdb').slice(3));return response(rows,200,{'content-range':'0-'+Math.max(0,rows.length-1)+'/'+rows.length})}
+ if(u.pathname==='/rest/v1/mbd_catalog'){let rows=state.hideCatalogInScan&&!u.searchParams.get('mdb')?[]:state.catalog;if(u.searchParams.get('mdb'))rows=rows.filter(x=>x.mdb===u.searchParams.get('mdb').slice(3));return response(rows,200,{'content-range':'0-'+Math.max(0,rows.length-1)+'/'+rows.length})}
  if(u.pathname.endsWith('/mbd_ah_checkpoint')){if(b.p_action==='claim')return response({lease:'fixture-lease',state:state.job,collections:b.p_collections||[],busy:false});state.job={...state.job,...b.p_state};return response({state:state.job,busy:false,lease:'fixture-lease'})}
- if(u.pathname.endsWith('/mbd_claim_recipe_save')){state.allocations++;return response({mdb:'MDB-0710',status:'claimed'})}
+ if(u.pathname.endsWith('/mbd_claim_recipe_save')){state.allocations++;return response(state.claimResult||{mdb:'MDB-0710',status:'claimed'})}
  if(u.pathname.endsWith('/mbd_catalog_server_write')){state.writes++;if(state.fault==='conflict')return response({ok:false,reason:'conflict'});const row=state.catalog.find(x=>x.mdb===b.p_mdb);if(row){row.recipe=JSON.parse(JSON.stringify(b.p_recipe));row.recipe.timings=Object.fromEntries(Object.entries(row.recipe.timings).sort());row.updated_at='version2'}else state.catalog.push({mdb:b.p_mdb,recipe:b.p_recipe,updated_at:'version2'});return response({ok:true})}
  if(u.hostname!=='api.notion.com')throw Error('Unexpected real external network');
  if(opts.method&&opts.method!=='GET'&&!u.pathname.endsWith('/query'))state.notionWrites++;
@@ -47,4 +47,9 @@ test('Notion-only existing recipe keeps its original book and is not copied to S
 test('Notion duplicate without MDB prevents new reservation rather than assigning a second recipe number',async()=>{
  state.catalog=[];state.pages[0].properties['MDB-ID']=prop('');state.pages[0].properties.Inhoudsbron={url:SOURCE};
  const r=await invoke('import',{url:SOURCE,localChecked:true});assert.equal(r.status,422);assert.match(r.data.error,/zonder MDB-nummer/);assert.equal(state.allocations,0);assert.equal(state.creates,0);assert.equal(state.writes,0);assert.equal(state.notionWrites,0);
+});
+
+test('concurrent claim finding an older recipe retains it instead of moving it into AH',async()=>{
+ delete state.catalog[0].recipe.ahRecipeId;state.hideCatalogInScan=true;state.claimResult={mdb:'MDB-0709',status:'stored'};const before=structuredClone(state.catalog);
+ const r=await invoke('import',{url:SOURCE,localChecked:true});assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.state.duplicateRetained,true);assert.equal(r.data.state.mdb,'MDB-0709');assert.deepEqual(state.catalog,before);assert.equal(state.catalog.length,1);assert.equal(state.writes,0);assert.equal(state.notionWrites,0);assert.equal(state.creates,0);
 });

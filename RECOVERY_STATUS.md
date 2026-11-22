@@ -2,7 +2,7 @@
 
 ## Vervolgcontrole — 22 november 2026
 
-Voorbereid: AH-herimport behoudt oudere recepten volledig, ook bij bestaande Notion-duplicaten; geen verplaatsing naar AH of nieuw nummer. Tien echte PostgreSQL-opslagtests opnieuw geslaagd: oude concurrency-TODO’s zijn al opgelost. Socialherstel 129/134 al uitgevoerd; vijf bronnen missen nog bewijs. 54 unit-/routetests, 10 AH-pipelinetests en 20 gerichte browsercontroles geslaagd. Actuele grenzen en bewijs: `docs/followup-20261122.md`.
+Gepubliceerd: productie `70d0f58`, READY `dpl_FFVQznwAQVGMmhpcvFLzoNKumAu4`, PR #12. AH-herimport behoudt oudere recepten volledig, ook bij bestaande Notion-duplicaten; geen verplaatsing naar AH of nieuw nummer. Tien echte PostgreSQL-opslagtests opnieuw geslaagd: oude concurrency-TODO’s zijn al opgelost. Socialherstel 129/134 al uitgevoerd; vijf bronnen missen nog bewijs. 54 unit-/routetests, 11 AH-pipelinetests, 20 gerichte lokale en 24 productie-browsercontroles geslaagd. Alle 705 volledige catalogusrecords exact ongewijzigd; 687 actief, 18 apart gehouden duplicaten. MDB-0710 was vóór deze controle toegevoegd; alle 704 eerdere records gelijk aan gisteren. Actuele grenzen en bewijs: `docs/followup-20261122.md`.
 
 ## Herstel oorspronkelijke collecties — 21 november 2026
 
