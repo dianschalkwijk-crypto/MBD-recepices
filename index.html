@@ -663,41 +663,116 @@ function renderCollections(){
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
 setTimeout(()=>mbdSyncRatings(),2500);
-async function syncCatalogRecipes(){
- if(!weekCloud)return;
- try{
-  const {data,error}=await weekCloud.from('mbd_catalog').select('mdb,recipe').order('mdb',{ascending:true}).limit(1000);
-  if(error)throw error;
-  if(!Array.isArray(data)||!data.length)return;
-  const known=new Set(state.recipes.map(r=>r.mdb).filter(Boolean));let added=0,updated=0;
-  const sameRecipe=(a,b)=>{
-   const urls=[a.sourceURL,a.contentURL].filter(Boolean);
-   const other=[b.sourceURL,b.contentURL].filter(Boolean);
-   if(urls.length&&other.length)return urls.some(u=>other.includes(u));
-   return String(a.title||'').trim().toLowerCase()===String(b.title||'').trim().toLowerCase()
-     && String(a.ingredients||'').trim()===String(b.ingredients||'').trim()
-     && String(a.steps||'').trim()===String(b.steps||'').trim();
-  };
-  for(const row of data){const p=row.recipe||{};if(!row.mdb)continue;
-   if(known.has(row.mdb)){
-    const local=state.recipes.find(r=>r.mdb===row.mdb);
-    if(local&&!sameRecipe(local,p)){console.warn('MDB-conflict veilig overgeslagen:',row.mdb);continue;}
-    if(local){for(const key of ['sourcePhotoPaths','sourcePhotoPrivate','sourcePhotoCredit','ownPhotoPath']){
-     if(p[key]&&JSON.stringify(local[key])!==JSON.stringify(p[key])){local[key]=p[key];updated++;}
-    }
-    if(p.sourceKind==='Kookboek'&&local.sourceKind!=='Kookboek'){local.sourceKind='Kookboek';updated++;}
-    if(p.book&&!local.book){local.book=p.book;updated++;}
-    if(p.bookPage&&!local.bookPage){local.bookPage=p.bookPage;updated++;}
-    }continue;
-   }
-   const origin=p.sourceKind||p.source||'';
-   const isBook=/kookboek/i.test(String(origin))||!!p.book;
-   const collections=Array.isArray(p.collections)?[...p.collections]:[];
-   if(isBook&&!collections.includes('Uit kookboeken'))collections.push('Uit kookboeken');
-   state.recipes.push({...p,id:p.id||row.mdb,mdb:row.mdb,sourceKind:isBook?'Kookboek':origin,bookPage:p.bookPage||'',collections,contentSynced:true});known.add(row.mdb);added++;
+
+async function syncCatalogRecipes() {
+  if (!weekCloud) {
+    console.warn('Supabase niet beschikbaar');
+    return;
   }
-  if(added||updated){try{persist()}catch(storageError){console.warn('Lokale opslag vol; online recepten blijven in Supabase:',storageError.message)}renderRecipes();renderCollections();}
- }catch(e){console.warn('Catalogus synchronisatie niet beschikbaar:',e.message)}
+
+  try {
+    const online = [];
+    const pageSize = 500;
+
+    // Haal alle recepten uit Supabase op.
+    for (let start = 0; ; start += pageSize) {
+      const { data, error } = await weekCloud
+        .from('mbd_catalog')
+        .select('mdb,recipe')
+        .order('mdb', { ascending: true })
+        .range(start, start + pageSize - 1);
+
+      if (error) throw error;
+
+      online.push(...(data || []));
+
+      if (!data || data.length < pageSize) break;
+    }
+
+    if (!online.length) {
+      console.warn('Geen online recepten ontvangen');
+      return;
+    }
+
+    // Bestaande lokale recepten behouden.
+    const byMdb = new Map();
+
+    for (const recipe of state.recipes) {
+      if (recipe.mdb) {
+        byMdb.set(recipe.mdb, recipe);
+      }
+    }
+
+    let added = 0;
+    let conflicts = 0;
+
+    for (const row of online) {
+      if (!row.mdb || !row.recipe) continue;
+
+      const remote = {
+        ...row.recipe,
+        id: row.recipe.id || row.mdb,
+        mdb: row.mdb
+      };
+
+      const local = byMdb.get(row.mdb);
+
+      if (local) {
+        // Alleen ontbrekende gegevens aanvullen.
+        for (const [key, value] of Object.entries(remote)) {
+          if (
+            (local[key] === undefined ||
+             local[key] === null ||
+             local[key] === '') &&
+            value !== undefined &&
+            value !== null
+          ) {
+            local[key] = value;
+          }
+        }
+
+        if (
+          local.title &&
+          remote.title &&
+          local.title !== remote.title
+        ) {
+          conflicts++;
+          console.warn('Controleer MDB-conflict:', row.mdb);
+        }
+
+        continue;
+      }
+
+      state.recipes.push(remote);
+      byMdb.set(row.mdb, remote);
+      added++;
+    }
+
+    // Probeer lokaal op te slaan.
+    // Bij opslagproblemen blijven recepten
+    // tijdens deze sessie zichtbaar.
+    try {
+      persist();
+    } catch (error) {
+      console.warn(
+        'Lokale opslag mislukt; online data blijft geladen',
+        error
+      );
+    }
+
+    renderRecipes();
+    renderCollections();
+
+    console.info('MadeByDian synchronisatie', {
+      online: online.length,
+      totaal: state.recipes.length,
+      toegevoegd: added,
+      conflicten: conflicts
+    });
+
+  } catch (error) {
+    console.error('Synchronisatie mislukt:', error);
+  }
 }
 // Load missing cloud recipes without overwriting local records.\nsetTimeout(()=>syncCatalogRecipes(),3500);\ndocument.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCatalogRecipes();});\nwindow.addEventListener('online',()=>syncCatalogRecipes());\n/* catalog handled by safe sync */
 let cloudUser=null;
