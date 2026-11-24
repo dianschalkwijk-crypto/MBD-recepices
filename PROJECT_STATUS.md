@@ -1,3 +1,5 @@
+> Vervolg 24 november 2026: gebruiker heeft portiecorrecties en publicatie goedgekeurd. Zie [publicatieverslag](docs/reviews/release-20261124.md) voor de laatste stand; de eerder afgewezen vijf correcties zijn inmiddels opgeslagen en teruggelezen.
+
 > Actuele controle 24 november 2026: zie [receptencontrole](docs/reviews/recipes-20261124.md). Dataherstel teruggelezen; code uitsluitend lokaal voorbereid, geen merge/push/deploy. Vijf portievoorstellen wachten op expliciete toestemming. Oudere status hieronder is historisch.
 
 # MadeByDian — centraal herstelregister

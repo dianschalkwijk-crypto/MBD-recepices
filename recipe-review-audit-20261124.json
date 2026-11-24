@@ -1473,14 +1473,14 @@
     },
     "MDB-0719": {
       "expected": {
-        "ingredients": "335 g stamppotaardappelen\n1 klein scharrelei (praktische afronding van ⅔ ei)\n35 g feta\n135 g fijngesneden andijvie\n1 tl dijonmosterd\n8 g ongezouten roomboter\n1 tl traditionele olijfolie\n90 g biologische rundersoepballetjes",
+        "ingredients": "1 kg stamppotaardappelen\n2 middelgrote scharreleieren\n100 g feta\n400 g fijngesneden andijvie\n1 el dijonmosterd\n25 g ongezouten roomboter\n1 el traditionele olijfolie\n275 g biologische rundersoepballetjes",
         "steps": "1. Schil de aardappelen, snijd ze in gelijke stukken en kook in water met eventueel zout in 20 min. gaar. Verwarm de oven voor op 200 °C.\n2. Splits de eieren en klop het eiwit heel stijf met een handmixer. Snijd de feta in blokjes van 3 mm. Voeg de laatste minuut de andijvie toe aan de aardappelen. Giet af. Voeg de mosterd en boter toe en stamp met de pureestamper tot een stamppot. Roer de feta erdoor en breng op smaak met peper en eventueel zout. Roer de eidooiers door de stamppot en spatel daarna het stijve eiwit er snel en luchtig door (je mag nog eiwitdeeltjes zien).\n3. Doe de papieren cakevormpjes in de holtes van de muffinvorm. Verdeel de stamppot over de vormpjes en laat in ca. 20 min. gaar worden in de oven. Verhit ondertussen de olie in een koekenpan en bak de soepballetjes in 8 min. bruin en gaar. Neem de muffins uit de oven en garneer met de balletjes.",
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1190084/andijviemuffins-met-feta-en-soepballetjes",
         "originalSourceURL": null,
         "contentURL": null,
         "photoURL": "https://static.ah.nl/static/recepten/img_102901_1224x900_JPG.jpg",
-        "portions": "4 personen",
-        "reviewStatus": "approved"
+        "portions": "12 muffins",
+        "reviewStatus": "pending_user_approval"
       },
       "audit": {
         "run": "2026-11-24",
@@ -1492,9 +1492,43 @@
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
-        "portionCorrectionPending": true
+        "portionCorrectionPending": false
       },
-      "update": null
+      "update": {
+        "version": "review-20261124",
+        "fields": [
+          "hasPhoto",
+          "photoURL",
+          "portions",
+          "ahPhotoURL",
+          "imageStatus",
+          "ingredients",
+          "reviewStatus",
+          "contentSynced",
+          "portionPolicy",
+          "imageProvenance",
+          "originalPortions",
+          "portionPolicyNote",
+          "completenessStatus",
+          "reviewChangeHistory"
+        ],
+        "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
+          "portions": "4 personen",
+          "ahPhotoURL": null,
+          "imageStatus": null,
+          "ingredients": "335 g stamppotaardappelen\n1 klein scharrelei (praktische afronding van ⅔ ei)\n35 g feta\n135 g fijngesneden andijvie\n1 tl dijonmosterd\n8 g ongezouten roomboter\n1 tl traditionele olijfolie\n90 g biologische rundersoepballetjes",
+          "reviewStatus": "approved",
+          "contentSynced": false,
+          "portionPolicy": null,
+          "imageProvenance": null,
+          "originalPortions": "12 personen",
+          "portionPolicyNote": null,
+          "completenessStatus": "Compleet en goedgekeurd",
+          "reviewChangeHistory": null
+        }
+      }
     },
     "MDB-0720": {
       "expected": {
@@ -1804,14 +1838,14 @@
     },
     "MDB-0726": {
       "expected": {
-        "ingredients": "400 g cottagecheese\n4 middelgrote eieren\n2 tl za’atar\n1 tomaat\n1 snoepkomkommer\n100 g zuivelspread naturel\n6 blaadjes babyromaine\n75 g kipfiletplakjes (vleeswaren)\n1 el sriracha\nPeper en eventueel zout",
+        "ingredients": "800 g cottagecheese\n8 middelgrote eieren\n4 tl za’atar\n2 tomaten\n2 snoepkomkommers\n200 g zuivelspread naturel\n12 blaadjes babyromaine\n150 g kipfiletplakjes (vleeswaren)\n2 el sriracha\nPeper en eventueel zout",
         "steps": "1. Verwarm de oven voor op 200 °C. Pureer cottagecheese en eieren ongeveer 30 seconden tot een glad mengsel. Breng op smaak met peper en eventueel zout.\n2. Spreid uit op een met bakpapier beklede bakplaat, strooi za’atar erover en bak ongeveer 30 minuten. Draai de bakplaat halverwege.\n3. Laat het flatbread 5 minuten op de bakplaat afkoelen.\n4. Snijd tomaat en komkommer klein. Besmeer de helft met zuivelspread en voeg groenten, sla en kipfilet toe. Maak af met sriracha en vouw dubbel.",
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1200171/cottage-cheese-flatbread",
         "originalSourceURL": null,
         "contentURL": null,
         "photoURL": "https://static.ah.nl/static/recepten/img_RAM_PRD191748_1224x900_JPG.jpg",
-        "portions": "2 personen",
-        "reviewStatus": "approved"
+        "portions": "4 personen",
+        "reviewStatus": "pending_user_approval"
       },
       "audit": {
         "run": "2026-11-24",
@@ -1823,9 +1857,41 @@
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
-        "portionCorrectionPending": true
+        "portionCorrectionPending": false
       },
-      "update": null
+      "update": {
+        "version": "review-20261124",
+        "fields": [
+          "hasPhoto",
+          "photoURL",
+          "portions",
+          "ahPhotoURL",
+          "imageStatus",
+          "ingredients",
+          "reviewStatus",
+          "portionPolicy",
+          "imageProvenance",
+          "originalPortions",
+          "portionPolicyNote",
+          "completenessStatus",
+          "reviewChangeHistory"
+        ],
+        "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
+          "portions": "2 personen",
+          "ahPhotoURL": null,
+          "imageStatus": null,
+          "ingredients": "400 g cottagecheese\n4 middelgrote eieren\n2 tl za’atar\n1 tomaat\n1 snoepkomkommer\n100 g zuivelspread naturel\n6 blaadjes babyromaine\n75 g kipfiletplakjes (vleeswaren)\n1 el sriracha\nPeper en eventueel zout",
+          "reviewStatus": "approved",
+          "portionPolicy": null,
+          "imageProvenance": null,
+          "originalPortions": null,
+          "portionPolicyNote": null,
+          "completenessStatus": "Compleet en goedgekeurd",
+          "reviewChangeHistory": null
+        }
+      }
     },
     "MDB-0727": {
       "expected": {
@@ -3760,14 +3826,14 @@
     },
     "MDB-0771": {
       "expected": {
-        "ingredients": "150 ml halfvolle melk\n250 g tarwebloem\n3,5 g gedroogde gist\n¼ el kristalsuiker\n½ el traditionele olijfolie\n¼ el zout\n7,5 g takjes rozemarijn\n37,5 g gedroogde cranberry’s\n½ Vacherin Mont d’Or kaas (praktisch: 1 heel kaasje voor de fondue)\nEidooier om te bestrijken (hoeveelheid niet vermeld in bronlijst)",
+        "ingredients": "300 ml halfvolle melk\n500 g tarwebloem\n7 g gedroogde gist\n0.5 el kristalsuiker\n1 el traditionele olijfolie\n0.5 el zout\n15 g takjes rozemarijn\n75 g gedroogde cranberry's\n1 Vacherin Mont d'Or kaas\nEidooier om te bestrijken (hoeveelheid niet apart vermeld in bronlijst)",
         "steps": "1. Verwarm de melk tot lauwwarm. Maak een kuiltje in de bloem en schenk de helft van de melk erin.\n2. Voeg gist, suiker en olie toe aan de melk en strooi zout over de bloem. Meng vanuit het midden met een vork.\n3. Voeg de rest van de melk toe en meng opnieuw.\n4. Bestuif werkblad, handen en kom met bloem. Kneed tot elastisch deeg, dek af en laat circa 1 uur warm en tochtvrij rijzen tot het volume verdubbeld is.\n5. Ris en hak de rozemarijn; houd ½ tl apart. Kneed de lucht uit het deeg en meng rozemarijn en cranberry’s erdoor. Vorm 6 bolletjes (omgerekend van 12).\n6. Plaats het deksel van de kaasdoos midden op een bakplaat met bakpapier. Zet de kaas apart.\n7. Leg de bolletjes tegen elkaar rond het doosje, dek af en laat nog 30 minuten warm en droog rijzen.\n8. Verwarm de oven voor op 180 °C. Verwijder folie en snijd de bolletjes naast elkaar in, maar niet los.\n9. Splits het ei, klop de dooier los en bestrijk het deeg. Vervang het deksel door het ovenbestendige doosje met kaas. Bak circa 20 minuten goudbruin en gaar. Laat 10 minuten afkoelen.\n10. Snijd de kaas in en garneer met de resterende rozemarijn.",
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1186518/breekbroodrozet-met-fondue-vacherin-mont-d-or",
         "originalSourceURL": null,
         "contentURL": null,
         "photoURL": null,
-        "portions": "4 personen",
-        "reviewStatus": "approved"
+        "portions": "1 breekbrood met 1 kaasje (bron: 8 porties)",
+        "reviewStatus": "pending_user_approval"
       },
       "audit": {
         "run": "2026-11-24",
@@ -3779,9 +3845,31 @@
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
-        "portionCorrectionPending": true
+        "portionCorrectionPending": false
       },
-      "update": null
+      "update": {
+        "version": "review-20261124",
+        "fields": [
+          "portions",
+          "ingredients",
+          "reviewStatus",
+          "contentSynced",
+          "portionPolicy",
+          "portionPolicyNote",
+          "completenessStatus",
+          "reviewChangeHistory"
+        ],
+        "previous": {
+          "portions": "4 personen",
+          "ingredients": "150 ml halfvolle melk\n250 g tarwebloem\n3,5 g gedroogde gist\n¼ el kristalsuiker\n½ el traditionele olijfolie\n¼ el zout\n7,5 g takjes rozemarijn\n37,5 g gedroogde cranberry’s\n½ Vacherin Mont d’Or kaas (praktisch: 1 heel kaasje voor de fondue)\nEidooier om te bestrijken (hoeveelheid niet vermeld in bronlijst)",
+          "reviewStatus": "approved",
+          "contentSynced": false,
+          "portionPolicy": null,
+          "portionPolicyNote": null,
+          "completenessStatus": "Inhoud compleet – goedgekeurd",
+          "reviewChangeHistory": null
+        }
+      }
     },
     "MDB-0772": {
       "expected": {
@@ -4714,14 +4802,14 @@
     },
     "MDB-0793": {
       "expected": {
-        "ingredients": "167 g spareribs\n⅓ tl Chinese kruiden\n½ el sojasaus\n½ tl honing\n⅓ gedroogd chilipepertje\n⅓ teen knoflook\n⅓ cm verse gemberwortel\n½ tl geroosterde sesamzaadjes",
+        "ingredients": "1 kg spareribs\n2 tl Chinese kruiden\n3 el sojasaus\n1 el vloeibare honing\n2 gedroogde chilipepertjes\n2 tenen knoflook\n2 cm verse gemberwortel\n1 el geroosterde sesamzaadjes",
         "steps": "1. Snijd de spareribs tussen de ribben los en bestrooi met Chinese kruiden. Meng sojasaus en honing. Verkruimel het chilipepertje erboven. Pers de knoflook erboven uit. Schil en snijd de gemberwortel fijn en meng door de marinade. Schenk de marinade over de spareribs en laat afgedekt circa 4 uur in de koelkast marineren.\n2. Verwarm de oven voor op 175 °C. Bekleed een bakblik met aluminiumfolie. Leg de spareribs erop en bak circa 50 minuten gaar. Keer tussentijds 3 keer en bestrijk telkens met marinade. Neem uit de oven en bestrooi met sesamzaadjes. Serveer warm of koud.",
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R521056/spareribs-uit-singapore",
         "originalSourceURL": null,
         "contentURL": null,
         "photoURL": "https://static.ah.nl/static/recepten/img_009657_1224x900_JPG.jpg",
-        "portions": "4 personen",
-        "reviewStatus": "approved"
+        "portions": "originele batch van 1 kg (bron: 24 hapjes/porties)",
+        "reviewStatus": "pending_user_approval"
       },
       "audit": {
         "run": "2026-11-24",
@@ -4733,9 +4821,41 @@
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
-        "portionCorrectionPending": true
+        "portionCorrectionPending": false
       },
-      "update": null
+      "update": {
+        "version": "review-20261124",
+        "fields": [
+          "hasPhoto",
+          "photoURL",
+          "portions",
+          "ahPhotoURL",
+          "imageStatus",
+          "ingredients",
+          "reviewStatus",
+          "contentSynced",
+          "portionPolicy",
+          "imageProvenance",
+          "portionPolicyNote",
+          "completenessStatus",
+          "reviewChangeHistory"
+        ],
+        "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
+          "portions": "4 personen",
+          "ahPhotoURL": null,
+          "imageStatus": null,
+          "ingredients": "167 g spareribs\n⅓ tl Chinese kruiden\n½ el sojasaus\n½ tl honing\n⅓ gedroogd chilipepertje\n⅓ teen knoflook\n⅓ cm verse gemberwortel\n½ tl geroosterde sesamzaadjes",
+          "reviewStatus": "approved",
+          "contentSynced": false,
+          "portionPolicy": null,
+          "imageProvenance": null,
+          "portionPolicyNote": null,
+          "completenessStatus": "Inhoud compleet – goedgekeurd",
+          "reviewChangeHistory": null
+        }
+      }
     },
     "MDB-0794": {
       "expected": {
@@ -4780,14 +4900,14 @@
     },
     "MDB-0795": {
       "expected": {
-        "ingredients": "1 kleine rode ui\n50 ml witte wijnazijn\n8 sneetjes volkorenbrood\n250 g mozzarella\n380 g Tasty Tom trostomaten\n½ portie rucolapesto",
+        "ingredients": "1 kleine rode ui\n50 ml witte wijnazijn\n8 sneetjes volkorenbrood\n250 g mozzarella\n380 g Tasty Tom trostomaten\n0,66 portie rucolapesto",
         "steps": "Snipper de rode ui en laat in wittewijnazijn trekken. Rooster het volkorenbrood. Snijd mozzarella en tomaten in plakjes. Bestrijk het brood met rucolapesto en verdeel mozzarella, tomaat en ingelegde ui erover. Breng op smaak met peper.",
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1195065/toast-met-mozzarella-tomaat-en-ingelegde-rode-ui",
         "originalSourceURL": null,
         "contentURL": null,
         "photoURL": "https://static.ah.nl/static/recepten/img_RAM_PRD147211_1224x900_JPG.jpg",
         "portions": "4 personen",
-        "reviewStatus": "approved"
+        "reviewStatus": "pending_user_approval"
       },
       "audit": {
         "run": "2026-11-24",
@@ -4799,9 +4919,37 @@
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
-        "portionCorrectionPending": true
+        "portionCorrectionPending": false
       },
-      "update": null
+      "update": {
+        "version": "review-20261124",
+        "fields": [
+          "hasPhoto",
+          "photoURL",
+          "ahPhotoURL",
+          "imageStatus",
+          "ingredients",
+          "reviewStatus",
+          "contentSynced",
+          "imageProvenance",
+          "portionPolicyNote",
+          "completenessStatus",
+          "reviewChangeHistory"
+        ],
+        "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
+          "ahPhotoURL": null,
+          "imageStatus": null,
+          "ingredients": "1 kleine rode ui\n50 ml witte wijnazijn\n8 sneetjes volkorenbrood\n250 g mozzarella\n380 g Tasty Tom trostomaten\n½ portie rucolapesto",
+          "reviewStatus": "approved",
+          "contentSynced": false,
+          "imageProvenance": null,
+          "portionPolicyNote": null,
+          "completenessStatus": "Compleet en goedgekeurd",
+          "reviewChangeHistory": null
+        }
+      }
     },
     "MDB-0796": {
       "expected": {
