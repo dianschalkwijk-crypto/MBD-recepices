@@ -8,15 +8,15 @@ MDB-0676,Eiwitrijke kaneelwafel (weightloss wafel),,2026-11-24,False,True,True,F
 MDB-0677,Romige feta-spinaziepasta uit de oven,https://www.instagram.com/reel/DS8GbPWkSfK/,2026-11-24,False,False,False,False,False,False,True,False,False
 MDB-0682,Cheeseburger Protein Hot Pockets,https://www.instagram.com/reel/DeyF_KpCW9y/,2026-11-24,False,False,False,False,False,True,False,False,False
 MDB-0683,Zelfgemaakte pitabroodjes — @amberenbart,,2026-11-24,False,True,True,True,False,False,True,False,False
-MDB-0684,Ontbijtwraps voor mealprep — @roro_cuistot,https://www.instagram.com/reel/DcG3h1ktjHV/,2026-11-24,False,False,False,False,False,True,False,False,False
-MDB-0685,Chocolade-courgettemuffins (20 stuks),https://www.instagram.com/reel/DehbozJNz11/,2026-11-24,False,False,False,False,False,True,True,False,False
+MDB-0684,Ontbijtwraps voor mealprep — @roro_cuistot,https://www.instagram.com/reel/DcG3h1ktjHV/,2026-11-24,False,False,False,False,True,True,False,False,False
+MDB-0685,Chocolade-courgettemuffins (20 stuks),https://www.instagram.com/reel/DehbozJNz11/,2026-11-24,False,False,False,False,True,True,True,False,False
 MDB-0686,Instagram-recept – nog uitlezen,https://www.instagram.com/reel/DfDKZLtAYJI/,2026-11-24,False,False,False,False,False,True,True,False,False
 MDB-0687,Yoghurt bark met aardbei en banaan,,2026-11-24,False,False,True,False,False,False,True,False,False
 MDB-0688,Mini bananenbroodjes,,2026-11-24,False,False,True,False,False,False,True,False,False
 MDB-0689,Krokante chocolade-rijstcakecups (notenvariant bron),,2026-11-24,False,False,True,False,False,False,True,False,False
 MDB-0690,Kruidenmix – Facebook-video nog uitlezen,https://www.facebook.com/share/r/1HCRohrBeC/,2026-11-24,False,False,False,False,False,False,True,False,False
 MDB-0691,Italiaanse kruidenmix – nog uitlezen,https://www.facebook.com/share/r/1CJqf9PPx3/,2026-11-24,False,False,False,False,False,False,True,False,False
-MDB-0692,Sinterklaas traybake,https://sterkindekeuken.nl/sinterklaas-fudge/,2026-11-24,False,False,True,False,False,True,True,True,False
+MDB-0692,Sinterklaas traybake,https://sterkindekeuken.nl/sinterklaas-fudge/,2026-11-24,False,False,True,False,True,True,True,True,False
 MDB-0693,Snack – Facebook-video nog uitlezen,https://www.facebook.com/share/r/1JTvR9nXge/,2026-11-24,False,False,False,False,False,False,True,False,False
 MDB-0694,Controletest 15-11-2026 — appel met kaneel,,2026-11-24,False,True,True,False,False,True,True,False,False
 MDB-0695,Fit Piggy – Krokante kaneelwafels,,2026-11-24,False,True,True,False,False,False,True,False,False
@@ -47,7 +47,7 @@ MDB-0719,Andijviemuffins met feta en soepballetjes,https://www.ah.nl/allerhande/
 MDB-0720,Banaan-honingbroodjes,https://www.ah.nl/allerhande/recept/R-R910942/banaan-honingbroodjes,2026-11-24,False,False,False,False,True,True,True,True,False
 MDB-0721,Banaan-honingmuffins,https://www.ah.nl/allerhande/recept/R-R324176/banaan-honingmuffins,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0722,Basisrecept wafels,https://www.ah.nl/allerhande/recept/R-R1199836/basisrecept-wafels,2026-11-24,False,False,False,False,True,True,False,False,False
-MDB-0723,Borrelplank met bladerdeeghapjes van Koopmans (advertentie),https://www.ah.nl/allerhande/recept/R-R1199126/borrelplank-met-bladerdeeghapjes-van-koopmans-advertentie,2026-11-24,False,False,False,False,False,True,True,True,False
+MDB-0723,Borrelplank met bladerdeeghapjes van Koopmans (advertentie),https://www.ah.nl/allerhande/recept/R-R1199126/borrelplank-met-bladerdeeghapjes-van-koopmans-advertentie,2026-11-24,False,False,False,False,True,True,True,True,False
 MDB-0724,Bramensoufflé met chocoladeschotsen,https://www.ah.nl/allerhande/recept/R-R497772/bramensouffle-met-chocoladeschotsen,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0725,Caesar tostada,https://www.ah.nl/allerhande/recept/R-R1187321/caesar-tostada,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0726,Cottage cheese flatbread,https://www.ah.nl/allerhande/recept/R-R1200171/cottage-cheese-flatbread,2026-11-24,False,False,False,False,True,True,True,False,False
@@ -94,7 +94,7 @@ MDB-0767,Geroosterde prei met burrata,https://www.ah.nl/allerhande/recept/R-R119
 MDB-0768,Maaltijdsoep met kip en witte bonen,https://www.ah.nl/allerhande/recept/R-R1196205/maaltijdsoep-met-kip-en-witte-bonen,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0769,"Snelle bowl met bloemkoolrijst, zalm en avocado",https://www.ah.nl/allerhande/recept/R-R1194843/snelle-bowl-met-bloemkoolrijst-zalm-en-avocado,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0770,Bloemkoolrijst-schotel met rode kidneybonen,https://www.ah.nl/allerhande/recept/R-R1194943/bloemkoolrijst-schotel-met-rode-kidneybonen,2026-11-24,False,False,False,False,True,True,False,False,False
-MDB-0771,Breekbroodrozet met fondue vacherin mont d’or,https://www.ah.nl/allerhande/recept/R-R1186518/breekbroodrozet-met-fondue-vacherin-mont-d-or,2026-11-24,False,False,False,False,False,True,True,False,False
+MDB-0771,Breekbroodrozet met fondue vacherin mont d’or,https://www.ah.nl/allerhande/recept/R-R1186518/breekbroodrozet-met-fondue-vacherin-mont-d-or,2026-11-24,False,False,False,False,True,True,True,False,False
 MDB-0772,Courgettecake met hüttenkäse,https://www.ah.nl/allerhande/recept/R-R704168/courgettecake-met-huttenkase,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0773,Couscous met gebakken rodekool,https://www.ah.nl/allerhande/recept/R-R1192855/couscous-met-gebakken-rodekool,2026-11-24,False,False,False,False,True,True,False,False,False
 MDB-0774,Couscoussalade met courgette en witte kaas,https://www.ah.nl/allerhande/recept/R-R1195288/couscoussalade-met-courgette-en-witte-kaas,2026-11-24,False,False,False,False,True,True,False,False,False
@@ -132,4 +132,4 @@ MDB-0805,Zwitserse kaasfondue,https://www.ah.nl/allerhande/recept/R-R767232/zwit
 MDB-0806,Kip Shalimar,,2026-11-24,False,True,True,False,False,False,True,False,False
 MDB-0807,Kip Slalimar BBQ Kip,,2026-11-24,False,True,True,False,False,False,True,False,False
 MDB-0808,Wortelwrap met hummus en kip,https://www.instagram.com/reel/Df7jdyzuD2W/?fqnt=MTlmODR2MDh5MG9jaQ==,2026-11-24,False,False,False,False,False,True,True,False,False
-MDB-0809,Bladerdeegworteltjes met kipfilet en rucola,,2026-11-24,False,False,True,False,False,False,True,False,False
+MDB-0809,Bladerdeegworteltjes met kipfilet en rucola,,2026-11-24,False,False,True,False,True,True,True,False,False

@@ -268,7 +268,7 @@
         "sourceURL": "https://www.instagram.com/reel/DcG3h1ktjHV/",
         "originalSourceURL": "https://www.instagram.com/reel/DcG3h1ktjHV/",
         "contentURL": null,
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0684&v=20261124-ai",
         "portions": "20 wraps",
         "reviewStatus": "approved"
       },
@@ -278,7 +278,7 @@
         "missingSource": false,
         "missingExactOriginalURL": false,
         "wrongSource": false,
-        "imageVerified": false,
+        "imageVerified": true,
         "notionVerified": true,
         "awaitingApproval": false,
         "sourceVerified": false,
@@ -287,18 +287,28 @@
       "update": {
         "version": "review-20261124",
         "fields": [
+          "hasPhoto",
+          "photoURL",
           "sourceURL",
+          "imageStatus",
           "contentSynced",
+          "imageProvenance",
           "originalSourceURL",
           "sourceCheckStatus",
-          "sourceVerification"
+          "sourceVerification",
+          "catalogReviewUpdate"
         ],
         "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
           "sourceURL": null,
+          "imageStatus": null,
           "contentSynced": null,
+          "imageProvenance": null,
           "originalSourceURL": null,
           "sourceCheckStatus": null,
-          "sourceVerification": "Ingrediënten uit screenshot en bereidingsvolgorde gecontroleerd via aangeleverde Instagram-schermopname 2026-11-24."
+          "sourceVerification": "Ingrediënten uit screenshot en bereidingsvolgorde gecontroleerd via aangeleverde Instagram-schermopname 2026-11-24.",
+          "catalogReviewUpdate": null
         }
       }
     },
@@ -309,7 +319,7 @@
         "sourceURL": "https://www.instagram.com/reel/DehbozJNz11/",
         "originalSourceURL": null,
         "contentURL": null,
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0685&v=20261124-ai",
         "portions": "20 muffins",
         "reviewStatus": "pending_user_approval"
       },
@@ -319,7 +329,7 @@
         "missingSource": false,
         "missingExactOriginalURL": false,
         "wrongSource": false,
-        "imageVerified": false,
+        "imageVerified": true,
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
@@ -328,18 +338,28 @@
       "update": {
         "version": "review-20261124",
         "fields": [
+          "hasPhoto",
+          "photoURL",
           "portions",
           "allergens",
+          "imageStatus",
           "portionPolicy",
+          "imageProvenance",
           "sourceCheckStatus",
-          "sourceCheckDetails"
+          "sourceCheckDetails",
+          "catalogReviewUpdate"
         ],
         "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
           "portions": 20,
           "allergens": null,
+          "imageStatus": null,
           "portionPolicy": null,
+          "imageProvenance": null,
           "sourceCheckStatus": null,
-          "sourceCheckDetails": null
+          "sourceCheckDetails": null,
+          "catalogReviewUpdate": null
         }
       }
     },
@@ -561,7 +581,7 @@
         "sourceURL": null,
         "originalSourceURL": null,
         "contentURL": "https://sterkindekeuken.nl/sinterklaas-fudge/",
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0692&v=20261124-ai",
         "portions": "minimaal 20 stukjes",
         "reviewStatus": "pending_user_approval"
       },
@@ -571,7 +591,7 @@
         "missingSource": false,
         "missingExactOriginalURL": true,
         "wrongSource": false,
-        "imageVerified": false,
+        "imageVerified": true,
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": true,
@@ -582,6 +602,8 @@
         "fields": [
           "time",
           "steps",
+          "hasPhoto",
+          "photoURL",
           "portions",
           "notionURL",
           "contentURL",
@@ -591,15 +613,19 @@
           "contentSynced",
           "originalTitle",
           "portionPolicy",
+          "imageProvenance",
           "completenessNotes",
           "sourceCheckStatus",
           "completenessStatus",
           "sourceVerification",
+          "catalogReviewUpdate",
           "preparationTextOrigin"
         ],
         "previous": {
           "time": null,
           "steps": null,
+          "hasPhoto": null,
+          "photoURL": null,
           "portions": null,
           "notionURL": null,
           "contentURL": null,
@@ -609,10 +635,12 @@
           "contentSynced": false,
           "originalTitle": null,
           "portionPolicy": null,
+          "imageProvenance": null,
           "completenessNotes": "Gebruiker noemt het Sinterklaas traybake. In meegestuurde video heet bronrecept Sinterklaas Fudge. Ingrediënten en exacte hoeveelheden nog controleren. Foto aangeleverd in chat maar nog niet geüpload naar app-opslag.",
           "sourceCheckStatus": null,
           "completenessStatus": "Niet compleet",
           "sourceVerification": null,
+          "catalogReviewUpdate": null,
           "preparationTextOrigin": null
         }
       }
@@ -1692,7 +1720,7 @@
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1199126/borrelplank-met-bladerdeeghapjes-van-koopmans-advertentie",
         "originalSourceURL": "https://www.ah.nl/allerhande/recept/R-R1199126/borrelplank-met-bladerdeeghapjes-van-koopmans-advertentie",
         "contentURL": "https://www.ah.nl/allerhande/recept/R-R1199126/borrelplank-met-bladerdeeghapjes-van-koopmans-advertentie",
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0723&v=20261124-ai",
         "portions": "1 borrelplank (originele batch; bron: 24 porties)",
         "reviewStatus": "pending_user_approval"
       },
@@ -1702,7 +1730,7 @@
         "missingSource": false,
         "missingExactOriginalURL": false,
         "wrongSource": false,
-        "imageVerified": false,
+        "imageVerified": true,
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": true,
@@ -1712,6 +1740,8 @@
         "version": "review-20261124",
         "fields": [
           "steps",
+          "hasPhoto",
+          "photoURL",
           "portions",
           "sourceURL",
           "contentURL",
@@ -1722,17 +1752,21 @@
           "reviewStatus",
           "contentSynced",
           "portionPolicy",
+          "imageProvenance",
           "originalPortions",
           "completenessNotes",
           "originalSourceURL",
           "sourceCheckStatus",
           "completenessStatus",
           "sourceVerification",
+          "catalogReviewUpdate",
           "preparationTextOrigin",
           "sourceContentSnapshot"
         ],
         "previous": {
           "steps": null,
+          "hasPhoto": null,
+          "photoURL": null,
           "portions": null,
           "sourceURL": null,
           "contentURL": null,
@@ -1743,12 +1777,14 @@
           "reviewStatus": null,
           "contentSynced": false,
           "portionPolicy": null,
+          "imageProvenance": null,
           "originalPortions": null,
           "completenessNotes": "Overgenomen van AH favorieten screenshot 22-11-2026; officiële receptlink, ingrediënten en bereidingswijze nog controleren",
           "originalSourceURL": null,
           "sourceCheckStatus": null,
           "completenessStatus": "Niet compleet",
           "sourceVerification": null,
+          "catalogReviewUpdate": null,
           "preparationTextOrigin": null,
           "sourceContentSnapshot": null
         }
@@ -3831,7 +3867,7 @@
         "sourceURL": "https://www.ah.nl/allerhande/recept/R-R1186518/breekbroodrozet-met-fondue-vacherin-mont-d-or",
         "originalSourceURL": null,
         "contentURL": null,
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0771&v=20261124-ai",
         "portions": "1 breekbrood met 1 kaasje (bron: 8 porties)",
         "reviewStatus": "pending_user_approval"
       },
@@ -3841,7 +3877,7 @@
         "missingSource": false,
         "missingExactOriginalURL": false,
         "wrongSource": false,
-        "imageVerified": false,
+        "imageVerified": true,
         "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
@@ -3850,23 +3886,33 @@
       "update": {
         "version": "review-20261124",
         "fields": [
+          "hasPhoto",
+          "photoURL",
           "portions",
+          "imageStatus",
           "ingredients",
           "reviewStatus",
           "contentSynced",
           "portionPolicy",
+          "imageProvenance",
           "portionPolicyNote",
           "completenessStatus",
+          "catalogReviewUpdate",
           "reviewChangeHistory"
         ],
         "previous": {
+          "hasPhoto": null,
+          "photoURL": null,
           "portions": "4 personen",
+          "imageStatus": null,
           "ingredients": "150 ml halfvolle melk\n250 g tarwebloem\n3,5 g gedroogde gist\n¼ el kristalsuiker\n½ el traditionele olijfolie\n¼ el zout\n7,5 g takjes rozemarijn\n37,5 g gedroogde cranberry’s\n½ Vacherin Mont d’Or kaas (praktisch: 1 heel kaasje voor de fondue)\nEidooier om te bestrijken (hoeveelheid niet vermeld in bronlijst)",
           "reviewStatus": "approved",
           "contentSynced": false,
           "portionPolicy": null,
+          "imageProvenance": null,
           "portionPolicyNote": null,
           "completenessStatus": "Inhoud compleet – goedgekeurd",
+          "catalogReviewUpdate": null,
           "reviewChangeHistory": null
         }
       }
@@ -5449,7 +5495,7 @@
         "sourceURL": null,
         "originalSourceURL": null,
         "contentURL": null,
-        "photoURL": null,
+        "photoURL": "/api/notion/photo?mdb=MDB-0809&v=20261124-ai",
         "portions": null,
         "reviewStatus": "pending_user_approval"
       },
@@ -5459,8 +5505,8 @@
         "missingSource": false,
         "missingExactOriginalURL": true,
         "wrongSource": false,
-        "imageVerified": false,
-        "notionVerified": false,
+        "imageVerified": true,
+        "notionVerified": true,
         "awaitingApproval": true,
         "sourceVerified": false,
         "portionCorrectionPending": false
@@ -5469,15 +5515,27 @@
         "version": "review-20261124",
         "fields": [
           "steps",
+          "hasPhoto",
+          "photoURL",
+          "notionURL",
+          "imageStatus",
           "reviewStatus",
           "contentSynced",
-          "portionPolicy"
+          "portionPolicy",
+          "imageProvenance",
+          "catalogReviewUpdate"
         ],
         "previous": {
           "steps": null,
+          "hasPhoto": null,
+          "photoURL": null,
+          "notionURL": null,
+          "imageStatus": "Tekstvrije AI-bewerking beschikbaar in ChatGPT, nog niet geüpload naar app",
           "reviewStatus": null,
           "contentSynced": false,
-          "portionPolicy": null
+          "portionPolicy": null,
+          "imageProvenance": null,
+          "catalogReviewUpdate": null
         }
       }
     }
