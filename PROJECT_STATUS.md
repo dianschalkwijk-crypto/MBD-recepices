@@ -1,3 +1,5 @@
+> Actuele controle 24 november 2026: zie [receptencontrole](docs/reviews/recipes-20261124.md). Dataherstel teruggelezen; code uitsluitend lokaal voorbereid, geen merge/push/deploy. Vijf portievoorstellen wachten op expliciete toestemming. Oudere status hieronder is historisch.
+
 # MadeByDian — centraal herstelregister
 
 ## Vervolgcontrole — 22 november 2026

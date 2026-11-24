@@ -193,7 +193,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       <button class="tab" data-target="settings"><span>⚙️</span>Meer</button>
     </nav>
   </div>
-  <script src="/recipe-time-core.js?v=56"></script>
+  <script src="/recipe-time-core.js?v=58"></script><script src="/recipe-review-core.js?v=58"></script><script src="/person-ratings-core.js?v=58"></script>
   <script>
 const APP_VARIANT = 'GEVULDE KOPIE v0.7 HTTPS';
 const LIBRARY_SEED_VERSION = 'MRB-2026-09-10';
@@ -203,7 +203,7 @@ const STORAGE_KEY = 'madebydian-recipes-filled-copy-v0.5';
 const COLLECTIONS = [
   ['Uit kookboeken','📚'],['HelloFresh','🥗'],['AH','🛒'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
   ['Camping 1pans','⛺'],['Mealprep','🧊'],['Easy oven','🔥'],['Ontbijt','🥣'],['Vegetarisch','🥬'],['Aziatisch','🍜'],
-  ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Overig','📌']
+  ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Feestdagen','🎄'],['Overig','📌']
 ];
 
 function recipeCollections(r){return window.MBDTimeCore?MBDTimeCore.collections(r):(r.collections||[])}
@@ -456,15 +456,15 @@ function renderRecipes(){
   if(!list.length){box.innerHTML='<div class="empty">Geen passend recept gevonden. 🍲</div>';return;}
   box.innerHTML=list.map(r=>{
     const primaryMeta=[r.category,r.cuisine,r.portions,r.time].filter(Boolean).join(' · ');
-    const appCollections=recipeCollections(r).join(' · ');
+    const appCollections=recipeCollections(r).join(' · ');const score=MBDRecipeReview.score(r);const aiImage=/^ai_/.test(r.imageProvenance?.kind||'');
     return `<article class="recipe-card">
-      <div><span class="mdb-badge">${esc(r.mdb||'NIEUW')}</span><span class="sync-badge">${r.contentSynced?'volledig':'index'}</span></div>
-      <div class="recipe-title">${esc(r.title||r.originalTitle||'Naamloos recept')}</div>
+      <div><span class="mdb-badge">${esc(r.mdb||'NIEUW')}</span><span class="sync-badge">${r.reviewAudit?.fullyVerified?'volledig gecontroleerd':r.contentSynced?'inhoud aanwezig':'index'}</span></div>
+      <div class="recipe-title">${esc(r.title||r.originalTitle||'Naamloos recept')}</div>${score?`<div data-recipe-score="${score.kind}" style="background:${score.background};padding:5px 8px;border-radius:8px;font-size:12px">${esc(score.label)}${score.grade?' · '+esc(score.grade):''}</div>`:''}
       ${r.originalTitle&&r.originalTitle!==r.title?`<div class="recipe-meta">Origineel: ${esc(r.originalTitle)}</div>`:''}
-      ${primaryMeta?`<div class="recipe-meta">${esc(primaryMeta)}</div>`:''}
+      ${aiImage?`<div class="recipe-meta" data-image-credit>AI-beeld${r.imageProvenance.kind==='ai_edited_original'?' · bewerkte bronfoto':' · illustratie'}</div>`:''}${primaryMeta?`<div class="recipe-meta">${esc(primaryMeta)}</div>`:''}
       ${r.sourceKind==='Kookboek'?`<div class="recipe-meta">📚 Kookboek${r.book?': '+esc(r.book):''}${r.bookPage?' · bladzijde '+esc(r.bookPage):''}</div>`:''}
       ${appCollections?`<div class="recipe-meta">Collectie: ${esc(appCollections)}</div>`:''}
-      ${r.ingredients?`<div class="recipe-meta">${esc((r.ingredients||'').split('\n')[0]||'')}</div>`:`<div class="recipe-meta">Receptinhoud nog niet lokaal gesynchroniseerd.</div>`}
+      ${r.ingredients?`<div class="recipe-meta">${esc(MBDRecipeReview.text(r.ingredients).split('\n')[0]||'')}</div>`:`<div class="recipe-meta">Receptinhoud nog niet lokaal gesynchroniseerd.</div>`}
       <div class="recipe-actions">
         <button data-view="${r.id}">Bekijk</button>
         ${window.MBDWeekCore?.sourceHTML(r)||''}${window.MBDWeekCore?.whatsappHTML(r)||''}
@@ -492,21 +492,42 @@ function planRecipeDate(id){
  const msg=document.createElement('p');save.onclick=()=>{if(!date.value){msg.textContent='Kies eerst een datum.';return}const key='mbd-dated-meals-v1';let items=[];try{items=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(items))items=[];const existing=items.findIndex(x=>x.date===date.value&&x.meal===meal.value);const entry={date:date.value,meal:meal.value,recipeId:r.id,mdb:r.mdb||'',title:r.title||'',savedAt:new Date().toISOString()};if(existing>=0){if(!confirm('Er staat al een recept op dit eetmoment. Vervangen?'))return;items[existing]=entry}else items.push(entry);localStorage.setItem(key,JSON.stringify(items));msg.textContent='Toegevoegd: '+date.value+' · '+meal.value+'. Op dit apparaat bewaard.';setTimeout(()=>panel.remove(),1800)};
  panel.append(title,label,mealLabel,save,cancel,msg);
 }
-let mbdRatingsSyncTimer=null;
-async function mbdSyncRatings(){
- if(!weekCloud)return;
- try{const {data:{user}}=await weekCloud.auth.getUser();if(!user)return;
- const {data,error}=await weekCloud.from('mbd_person_ratings').select('mdb,ratings').eq('owner_id',user.id);if(error)throw error;
- const local=mbdRatingsRead();let changed=false;
- for(const row of data||[]){if(!local[row.mdb]){local[row.mdb]=row.ratings;changed=true}}
- if(changed)mbdRatingsSave(local,false);
- const rows=Object.entries(local).filter(([mdb])=>/^MDB-\\d+/i.test(mdb)).map(([mdb,ratings])=>({owner_id:user.id,mdb,ratings,updated_at:new Date().toISOString()}));
- if(rows.length){const {error:saveError}=await weekCloud.from('mbd_person_ratings').upsert(rows,{onConflict:'owner_id,mdb'});if(saveError)throw saveError;}
- }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}
-}
+let mbdRatingsSyncTimer=null,mbdRatingsOwner=null,mbdRatingsBusy=false,mbdRatingsQueued=false,mbdRatingsDirty={};
 const MBD_RATINGS_KEY='mbd_person_ratings_v1';
+const mbdScopedRatings=id=>MBD_RATINGS_KEY+':owner:'+id;
 function mbdRatingsRead(){try{return JSON.parse(localStorage.getItem(MBD_RATINGS_KEY)||'{}')||{}}catch{return{}}}
-function mbdRatingsSave(all,sync=true){try{localStorage.setItem(MBD_RATINGS_KEY,JSON.stringify(all));if(sync){clearTimeout(mbdRatingsSyncTimer);mbdRatingsSyncTimer=setTimeout(mbdSyncRatings,800)}}catch(e){alert('Beoordeling kon niet worden bewaard: '+e.message)}}
+function mbdRatingsSave(all,sync=true){try{
+ const before=mbdRatingsRead();localStorage.setItem(MBD_RATINGS_KEY,JSON.stringify(all));
+ if(mbdRatingsOwner){localStorage.setItem(mbdScopedRatings(mbdRatingsOwner),JSON.stringify(all));if(sync){const delta=MBDPersonRatings.changes(before,all);for(const [mdb,people] of Object.entries(delta)){mbdRatingsDirty[mdb]=MBDPersonRatings.patch(mbdRatingsDirty[mdb],people)}localStorage.setItem(mbdScopedRatings(mbdRatingsOwner)+':dirty',JSON.stringify(mbdRatingsDirty))}}
+ if(sync){clearTimeout(mbdRatingsSyncTimer);mbdRatingsSyncTimer=setTimeout(mbdSyncRatings,800)}
+}catch(e){alert('Beoordeling kon niet worden bewaard: '+e.message)}}
+async function mbdSyncRatings(){
+ if(!weekCloud)return;if(mbdRatingsBusy){mbdRatingsQueued=true;return}mbdRatingsBusy=true;
+ try{
+  const {data:{user}}=await weekCloud.auth.getUser();
+  if(!user){if(mbdRatingsOwner){mbdRatingsOwner=null;mbdRatingsDirty={};mbdRatingsSave({},false);renderAll()}return}
+  const owner=user.id;
+  if(owner!==mbdRatingsOwner){
+   const legacy=mbdRatingsRead();if(!localStorage.getItem(MBD_RATINGS_KEY+':legacy-backup'))localStorage.setItem(MBD_RATINGS_KEY+':legacy-backup',JSON.stringify(legacy));
+   let saved=localStorage.getItem(mbdScopedRatings(owner));
+   if(!saved&&!mbdRatingsOwner&&!localStorage.getItem(MBD_RATINGS_KEY+':legacy-owner')){const {data:profiles,error}=await weekCloud.from('profiles').select('role').eq('user_id',owner);if(!error&&profiles?.[0]?.role==='admin'){saved=JSON.stringify(legacy);localStorage.setItem(MBD_RATINGS_KEY+':legacy-owner',owner)}}
+   mbdRatingsOwner=owner;mbdRatingsDirty=JSON.parse(localStorage.getItem(mbdScopedRatings(owner)+':dirty')||'{}');mbdRatingsSave(JSON.parse(saved||'{}'),false);
+  }
+  const {data,error}=await weekCloud.from('mbd_person_ratings').select('mdb,ratings').eq('owner_id',owner);if(error)throw error;
+  if(owner!==mbdRatingsOwner)return;
+  const remote=Object.fromEntries((data||[]).map(row=>[row.mdb,row.ratings]));mbdRatingsSave(MBDPersonRatings.merge(remote,mbdRatingsRead(),mbdRatingsDirty),false);
+  for(const [mdb,dirty] of Object.entries(mbdRatingsDirty)){
+   if(!MBDPersonRatings.valid(mdb)||owner!==mbdRatingsOwner)continue;
+   const {data:current,error:readError}=await weekCloud.from('mbd_person_ratings').select('ratings,updated_at').eq('owner_id',owner).eq('mdb',mdb);if(readError)throw readError;
+   const previous=current?.[0],next=MBDPersonRatings.patch(previous?.ratings,dirty),stamp=new Date().toISOString();let result;
+   if(previous){let q=weekCloud.from('mbd_person_ratings').update({ratings:next,updated_at:stamp}).eq('owner_id',owner).eq('mdb',mdb);q=previous.updated_at?q.eq('updated_at',previous.updated_at):q.is('updated_at',null);result=await q.select('mdb');if(!result.error&&!result.data?.length)throw Error('Beoordeling intussen elders gewijzigd; lokale aanpassing bewaard voor opnieuw proberen.')}
+   else result=await weekCloud.from('mbd_person_ratings').insert({owner_id:owner,mdb,ratings:next,updated_at:stamp});
+   if(result.error)throw result.error;if(owner!==mbdRatingsOwner)return;
+   delete mbdRatingsDirty[mdb];localStorage.setItem(mbdScopedRatings(owner)+':dirty',JSON.stringify(mbdRatingsDirty));
+  }
+  renderAll();const body=document.querySelector('#modalRecipeBody');if(!document.querySelector('#recipeModal').classList.contains('hidden')&&body.dataset.recipeId)showRecipeDetails(body.dataset.recipeId);
+ }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}finally{mbdRatingsBusy=false;if(mbdRatingsQueued){mbdRatingsQueued=false;setTimeout(mbdSyncRatings,0)}}
+}
 function mbdRatingPanel(recipe,body){
  const key=recipe.mdb||recipe.id,all=mbdRatingsRead(),data=all[key]||{},people=['Mama','Jake','Mace','Gast'];
  const panel=document.createElement('section');panel.className='detail-section';
@@ -526,7 +547,7 @@ function showRecipeDetails(id){
   document.querySelector('#modalRecipeMdb').textContent=[r.mdb,r.book].filter(Boolean).join(' · ');
   document.querySelector('#modalRecipeTitle').textContent=r.title||r.originalTitle||'Recept';
   const pills=[r.category,r.cuisine,r.method,r.portions,r.time].filter(Boolean);
-  const blocks=[];
+  const blocks=[];if(/^ai_/.test(r.imageProvenance?.kind||''))blocks.push(`<p class="recipe-meta" data-image-credit>AI-beeld${r.imageProvenance.kind==='ai_edited_original'?' · bewerkte bronfoto, tekst/logo verwijderd':' · illustratie, geen oorspronkelijke bronfoto'}</p>`);const score=MBDRecipeReview.score(r);if(score)blocks.push(`<div class="detail-section" data-recipe-score="${score.kind}" style="background:${score.background};padding:12px;border-radius:12px"><h3>${esc(score.label)}${score.grade?' · '+esc(score.grade):''}</h3><p>${esc(score.detail)}</p></div>`);
   if(/^https:\/\/static\.ah\.nl\//.test(r.ahPhotoURL||''))blocks.push(`<div class="detail-section"><img src="${esc(r.ahPhotoURL)}" alt="Originele Allerhande-foto bij ${esc(r.title)}" data-ah-source-photo style="width:100%;max-height:360px;object-fit:contain;border-radius:12px"><p class="recipe-meta">Originele Allerhande-foto</p></div>`);
   if(r.sourceKind==='Kookboek'){
     const hasOwn=!!r.ownPhotoPath,hasSource=Array.isArray(r.sourcePhotoPaths)&&r.sourcePhotoPaths.length>0;
@@ -564,7 +585,7 @@ function showRecipeDetails(id){
   if(window.MBDWeekCore)links.push(window.MBDWeekCore.whatsappHTML(r));
   if(r.mdb) links.push(`<a href="/bronnen-qr.html?mdb=${encodeURIComponent(r.mdb)}">Bronnen &amp; QR-controle</a>`);
   blocks.push(`<div class="detail-section"><div class="recipe-actions">${links.join('')}</div></div>`);
-  const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');mbdRatingPanel(r,body);
+  const body=document.querySelector('#modalRecipeBody'); body.innerHTML=blocks.join('');body.dataset.recipeId=id;mbdRatingPanel(r,body);
   if(r.sourceKind==='Kookboek'){
     const photoBox=body.querySelector('#mbdCookbookPhoto'),photoStatus=body.querySelector('#mbdPhotoStatus');
     const client=weekCloud;
@@ -662,7 +683,7 @@ function renderCollections(){
   box.querySelectorAll('[data-collection-index]').forEach(b=>b.addEventListener('click',()=>{const name=COLLECTIONS[Number(b.dataset.collectionIndex)]?.[0];if(!name)return;document.querySelector('#recipeSearch').value='';setScreen('recipes',name);document.querySelector('#pageTitle').textContent='Collectie: '+name;}));
 }
 const weekCloud=window.supabase?.createClient('https://ywsdubincfabjhvjqkot.supabase.co','sb_publishable_sIPgFRcpRiszmq8vuWLkAg_K-C0gzfF');
-setTimeout(()=>mbdSyncRatings(),2500);
+setTimeout(()=>mbdSyncRatings(),2500);weekCloud?.auth.onAuthStateChange?.(()=>setTimeout(()=>mbdSyncRatings(),0));
 
 async function syncCatalogRecipes() {
   if (!weekCloud) {
@@ -910,7 +931,7 @@ function importDataFile(file){
 function clearAllData(){
   alert('Veiligheidsblokkade: terugzetten naar de oude 352-receptenindex is uitgeschakeld. Je actuele Supabase-catalogus en nieuwere lokale recepten blijven behouden. Gebruik de exportfunctie om eerst een back-up te bewaren.');
 }
-function renderAll(){renderRecipes();renderCollections();renderWeek();renderSettings();}
+function renderAll(){renderRecipes();renderCollections();renderWeek();renderSettings();window.dispatchEvent(new Event('mbd:recipes-rendered'));}
 
 document.querySelector('#analyzeBtn').onclick=analyze;
 document.querySelector('#saveRecipeBtn').onclick=saveRecipe;
@@ -953,5 +974,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=56'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=56'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=56'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=1'></script></body>
+<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=58'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=58'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=58'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=1'></script></body>
 </html>

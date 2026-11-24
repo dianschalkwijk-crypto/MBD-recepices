@@ -9,6 +9,8 @@ const save=()=>{localStorage.setItem(KEY,JSON.stringify(decisions));};
 const key=r=>r.mdb||r.id;
 function draw(){
  const root=document.getElementById('mbdIncompleteReview');if(!root)return;
+ if(window.MBDRecipeReview){const scope=state.recipes.filter(r=>r.reviewAudit?.run==='2026-11-24'),c=MBDRecipeReview.counts(scope);let panel=document.getElementById('mbdControlCounter');if(!panel){panel=document.createElement('section');panel.id='mbdControlCounter';panel.className='card';root.before(panel)}panel.innerHTML='<h3>Actuele receptencontrole</h3><p>Catalogus: '+(window.MBDCatalogTotal||state.recipes.length)+' · actief op dit apparaat: '+state.recipes.length+' · controlewerkset: '+scope.length+'</p><dl>'+[['Volledig gecontroleerd',c.fully],['Onvolledig / controle open',c.incomplete],['Ontbrekende bron',c.missingSource],['Verkeerde bron afgezonderd',c.wrongSource],['Ontbrekende / ongecontroleerde afbeelding',c.missingImage],['Nog niet volledig met Notion gesynchroniseerd',c.notSynced],['Nog goed te keuren',c.awaitingApproval]].map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl><p>Controlepunten kunnen overlappen. Een schatting of lokale beslissing geldt niet automatisch als volledige bron- en beeldgoedkeuring.</p>'}
+
  const all=state.recipes.filter(r=>!String(r.ingredients||'').trim()||!String(r.steps||'').trim());
  const list=incomplete();position=Math.max(0,Math.min(position,list.length-1));
  const approved=all.length-list.length;
@@ -28,7 +30,7 @@ function draw(){
 function init(){
  const screen=document.querySelector('[data-screen="settings"]');if(!screen)return;
  const div=document.createElement('section');div.id='mbdIncompleteReview';div.className='card';div.style.margin='16px 0';screen.querySelector('#mbdAudit')?.after(div)||screen.prepend(div);
- draw();document.addEventListener('visibilitychange',()=>{if(!document.hidden)draw()});
+ draw();window.addEventListener('mbd:recipes-rendered',draw);document.addEventListener('visibilitychange',()=>{if(!document.hidden)draw()});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
