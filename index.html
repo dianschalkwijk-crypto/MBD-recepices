@@ -193,7 +193,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       <button class="tab" data-target="settings"><span>⚙️</span>Meer</button>
     </nav>
   </div>
-  <script src="/recipe-time-core.js?v=58"></script><script src="/recipe-review-core.js?v=58"></script><script src="/person-ratings-core.js?v=58"></script>
+  <script src="/recipe-time-core.js?v=58"></script><script src="/recipe-review-core.js?v=58"></script><script src="/person-ratings-core.js?v=59"></script>
   <script>
 const APP_VARIANT = 'GEVULDE KOPIE v0.7 HTTPS';
 const LIBRARY_SEED_VERSION = 'MRB-2026-09-10';
@@ -523,7 +523,7 @@ async function mbdSyncRatings(){
    if(previous){let q=weekCloud.from('mbd_person_ratings').update({ratings:next,updated_at:stamp}).eq('owner_id',owner).eq('mdb',mdb);q=previous.updated_at?q.eq('updated_at',previous.updated_at):q.is('updated_at',null);result=await q.select('mdb');if(!result.error&&!result.data?.length)throw Error('Beoordeling intussen elders gewijzigd; lokale aanpassing bewaard voor opnieuw proberen.')}
    else result=await weekCloud.from('mbd_person_ratings').insert({owner_id:owner,mdb,ratings:next,updated_at:stamp});
    if(result.error)throw result.error;if(owner!==mbdRatingsOwner)return;
-   delete mbdRatingsDirty[mdb];localStorage.setItem(mbdScopedRatings(owner)+':dirty',JSON.stringify(mbdRatingsDirty));
+   const remaining=MBDPersonRatings.acknowledge(mbdRatingsDirty[mdb],dirty);if(Object.keys(remaining).length){mbdRatingsDirty[mdb]=remaining;mbdRatingsQueued=true}else delete mbdRatingsDirty[mdb];localStorage.setItem(mbdScopedRatings(owner)+':dirty',JSON.stringify(mbdRatingsDirty));
   }
   renderAll();const body=document.querySelector('#modalRecipeBody');if(!document.querySelector('#recipeModal').classList.contains('hidden')&&body.dataset.recipeId)showRecipeDetails(body.dataset.recipeId);
  }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}finally{mbdRatingsBusy=false;if(mbdRatingsQueued){mbdRatingsQueued=false;setTimeout(mbdSyncRatings,0)}}
@@ -544,6 +544,7 @@ function mbdRatingPanel(recipe,body){
 }
 function showRecipeDetails(id){
   const r=state.recipes.find(x=>x.id===id); if(!r) return;
+  const previousPhoto=document.querySelector('#mbd-detail-photo');if(previousPhoto&&previousPhoto.dataset.mdb!==r.mdb)previousPhoto.remove();
   document.querySelector('#modalRecipeMdb').textContent=[r.mdb,r.book].filter(Boolean).join(' · ');
   document.querySelector('#modalRecipeTitle').textContent=r.title||r.originalTitle||'Recept';
   const pills=[r.category,r.cuisine,r.method,r.portions,r.time].filter(Boolean);
@@ -974,5 +975,5 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=58'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=58'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=58'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=1'></script></body>
+<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=58'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=59'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=58'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=1'></script></body>
 </html>

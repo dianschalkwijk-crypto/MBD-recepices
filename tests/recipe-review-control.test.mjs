@@ -26,3 +26,4 @@ test('audit is a dated snapshot and never certifies modified content or a blocke
  const r={ingredients:'1 ei',steps:'Bak',portions:'4 personen',reviewStatus:'approved'};core.audit(r,entry);assert.equal(r.reviewAudit.notionVerified,true);assert.equal(core.counts([r]).awaitingApproval,1);assert.equal(core.counts([r]).fully,0);
  r.ingredients='eigen wijziging';core.audit(r,entry);assert.equal(r.reviewAudit.stale,true);assert.equal(r.reviewAudit.notionVerified,false);
 });
+test('acknowledging an in-flight save never clears a newer star selection or another pending note',()=>{assert.deepEqual(ratings.acknowledge({Mama:{stars:4,note:'nieuw'},Jake:{stars:3}},{Mama:{stars:3}}),{Mama:{stars:4,note:'nieuw'},Jake:{stars:3}});assert.deepEqual(ratings.acknowledge({Mama:{stars:3,note:'nieuw'}},{Mama:{stars:3}}),{Mama:{note:'nieuw'}})});

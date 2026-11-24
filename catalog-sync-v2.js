@@ -37,7 +37,7 @@ let server=[];try{
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
 let auditEntries={};try{const report=await get('/recipe-review-audit-20261124.json');if(report.run==='2026-11-24'&&report.entries)auditEntries=report.entries}catch(e){console.warn('Controleverslag niet geladen',e)}
-for(const row of server){const entry=auditEntries[row.mdb];if(entry?.update&&Object.entries(entry.expected).every(([k,v])=>value(row.recipe?.[k])===value(v)))row.recipe.catalogReviewUpdate=entry.update;}
+for(const row of server){const entry=auditEntries[row.mdb];if(!row.recipe?.catalogReviewUpdate&&entry?.update&&Object.entries(entry.expected).every(([k,v])=>value(row.recipe?.[k])===value(v)))row.recipe.catalogReviewUpdate=entry.update;}
 // Keep a fresh in-memory copy for THIS sync run. The already-persisted app state remains the durable pre-sync copy until persist() succeeds.
 let preSyncState;
 try {
