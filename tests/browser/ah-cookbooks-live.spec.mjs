@@ -12,7 +12,7 @@ test('older recipes return to original books and themes; only newly imported 070
  const themes=await page.evaluate(()=>MBDTimeCore.standardCollections);
  for(let i=0;i<2;i++){
   if(i){await page.reload();await page.waitForFunction(()=>!!window.__mbdAllergyIntegrated)}
-  await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(27);
+  await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(28);
   for(const name of themes){const n=active.filter(x=>{const r=x.recipe;return (r.collections||[]).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek')}).length;await expect(tiles.filter({hasText:name})).toContainText(new RegExp('· '+n+' totaal$'))}
   for(const label of ['TikTok','Instagram','Insta','rijst','Rijst','AH – Mijn favorieten','AH – Allerhande · Deel 1'])await expect(tiles.filter({hasText:label})).toHaveCount(0);
   const ah=tiles.filter({hasText:/^🛒 AH/});await expect(ah).toContainText('1 totaal');await ah.click();await expect(page.locator('#recipeList .recipe-card:visible')).toHaveCount(1);await expect(page.locator('#recipeList')).toContainText('Rijst uit de oven met vis');
