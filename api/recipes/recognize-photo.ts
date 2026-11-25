@@ -1,3 +1,4 @@
+import {kitchenRecognition} from '../../lib/kitchen-api.js';
 import {admin} from '../../lib/ah-import.js';
 import OpenAI from "openai";
 
@@ -21,6 +22,7 @@ async function translateRecognition(ai:OpenAI,result:any){
 export default async function handler(req:any,res:any){
  if(req.method!=="POST")return res.status(405).json({error:"Methode niet toegestaan"});
  const {image,hint}=req.body||{};
+ if(hint==='kitchen_products')return kitchenRecognition(req,res);
  const sourceContext=typeof req.body?.sourceContext==="string"?req.body.sourceContext.slice(0,12000):"";
  const sourceURL=typeof req.body?.sourceURL==="string"?req.body.sourceURL.slice(0,4000):"";
  const sourceAuthor=typeof req.body?.sourceAuthor==="string"?req.body.sourceAuthor.slice(0,500):"";

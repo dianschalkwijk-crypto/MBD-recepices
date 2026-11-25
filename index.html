@@ -50,7 +50,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
     .detail-pill{font-size:12px;background:#f7f3f5;border-radius:999px;padding:5px 8px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-</head>
+<link rel="stylesheet" href="/kitchen.css?v=60"><script src="/kitchen-core.js?v=60"></script><script defer src="/kitchen-app.js?v=60"></script></head>
 <body>
   <div class="app-shell">
     <header class="topbar">
@@ -481,6 +481,7 @@ function renderRecipes(){
   box.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteRecipe(b.dataset.delete));
 }
 function planRecipeDate(id){
+ if(window.MBDKitchenApp?.planRecipe){const r=state.recipes.find(x=>x.id===id);if(r)MBDKitchenApp.planRecipe(r);return;}
  const r=state.recipes.find(x=>x.id===id);if(!r)return;
  let panel=document.getElementById('mbd-date-plan');
  if(!panel){panel=document.createElement('section');panel.id='mbd-date-plan';panel.className='card';panel.style='position:fixed;z-index:9999;inset:auto 12px 12px;max-width:520px;margin:auto;max-height:85vh;overflow:auto;box-shadow:0 8px 40px #0005;background:white;padding:20px;border-radius:16px';document.body.appendChild(panel)}

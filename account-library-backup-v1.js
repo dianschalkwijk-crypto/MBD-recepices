@@ -9,7 +9,7 @@ async function auth(){
  const {data:{user},error}=await client.auth.getUser();if(error||!user){msg('Log eerst in via Account in dezelfde browser.');return null}return user
 }
 function makeBackup(){
- const storage={};for(const k of [LIB,...PREFS]){const v=localStorage.getItem(k);if(v!==null)storage[k]=v}
+ const storage={};for(const k of [LIB,...PREFS,...Object.keys(localStorage).filter(k=>k.startsWith('mbd_kitchen_'))]){const v=localStorage.getItem(k);if(v!==null)storage[k]=v}
  return {schema:'mbd-account-backup-v1',createdAt:new Date().toISOString(),storage}
 }
 async function upload(){
