@@ -1,0 +1,12 @@
+CREATE ROLE authenticated NOLOGIN;
+CREATE ROLE anon NOLOGIN;
+CREATE SCHEMA auth;
+CREATE TABLE auth.users(id uuid primary key);
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+GRANT USAGE ON SCHEMA auth TO authenticated,anon;
+GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon;
+INSERT INTO auth.users VALUES ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222');
+CREATE TABLE public.week_menus(id uuid default gen_random_uuid() primary key,owner_id uuid references auth.users,week_start date,meals jsonb,servings integer,grocery_list jsonb,created_at timestamptz default now(),UNIQUE(owner_id,week_start));
+ALTER TABLE public.week_menus ENABLE ROW LEVEL SECURITY;
+CREATE POLICY week_all ON public.week_menus FOR ALL TO authenticated USING(owner_id=auth.uid()) WITH CHECK(owner_id=auth.uid());
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.week_menus TO authenticated;

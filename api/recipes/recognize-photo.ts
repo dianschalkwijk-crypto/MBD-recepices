@@ -1,0 +1,76 @@
+import {kitchenRecognition} from '../../lib/kitchen-api.js';
+import {admin} from '../../lib/ah-import.js';
+import OpenAI from "openai";
+
+function looksEnglish(value:any){
+ const s=(typeof value==="string"?value:JSON.stringify(value||"")).toLowerCase();
+ const en=(s.match(/\b(chicken|beef|pork|flour|cup|cups|tablespoon|tablespoons|teaspoon|teaspoons|bake|cook|fry|add|mix|stir|minutes|onion|garlic|butter|cheese|rice|cream|eggs?|salt|pepper|serve|until|with|and)\b/g)||[]).length;
+ const nl=(s.match(/\b(kip|rund|varken|bloem|eetlepel|theelepel|bak|kook|voeg|meng|roer|minuten|ui|knoflook|boter|kaas|rijst|room|eieren?|zout|peper|serveer|tot|met|en)\b/g)||[]).length;
+ return en>=3&&en>nl;
+}
+async function translateRecognition(ai:OpenAI,result:any){
+ const completion=await ai.chat.completions.create({
+  model:process.env.OPENAI_MODEL||"gpt-4.1-mini",response_format:{type:"json_object"},messages:[
+   {role:"system",content:"Vertaal alleen de menselijk leesbare recepttekstvelden van dit fotoherkennings-JSON naar natuurlijk Nederlands. Vertaal title, ingredients, steps, notes, alternatives, mainIngredient en portions. Behoud confidence, imageType, sourceKind, sourceAuthor en sourceURL exact. Gebruik voor method alleen Airfryer, Oven, Pan, Koken of Overig; voor category alleen Ontbijt, Lunch, Avondeten, Snack of Bijgerecht. Behoud book als eigennaam en bookPage exact. Verzin niets. Antwoord uitsluitend als JSON."},
+   {role:"user",content:JSON.stringify(result)}
+  ]
+ });
+ const raw=completion.choices[0]?.message?.content;if(!raw)return result;
+ try{return {...result,...JSON.parse(raw),confidence:result.confidence,imageType:result.imageType,book:result.book,bookPage:result.bookPage}}catch{return result}
+}
+
+export default async function handler(req:any,res:any){
+ if(req.method!=="POST")return res.status(405).json({error:"Methode niet toegestaan"});
+ const {image,hint}=req.body||{};
+ if(hint==='kitchen_products')return kitchenRecognition(req,res);
+ const sourceContext=typeof req.body?.sourceContext==="string"?req.body.sourceContext.slice(0,12000):"";
+ const sourceURL=typeof req.body?.sourceURL==="string"?req.body.sourceURL.slice(0,4000):"";
+ const sourceAuthor=typeof req.body?.sourceAuthor==="string"?req.body.sourceAuthor.slice(0,500):"";
+ if(typeof image!=="string"||!/^data:image\/(jpeg|png|webp);base64,/.test(image)||image.length>9000000)return res.status(400).json({error:"Upload een JPG, PNG of WebP kleiner dan ongeveer 6 MB."});
+ if(!process.env.OPENAI_API_KEY)return res.status(503).json({error:"Fotoherkenning is nog niet geconfigureerd."});
+ if(hint==='ah_favorites'){
+  try{await admin(req)}catch(e:any){return res.status(e.status||401).json({error:e.message})}
+  try{const ai=new OpenAI({apiKey:process.env.OPENAI_API_KEY});const completion=await ai.chat.completions.create({model:process.env.OPENAI_MODEL||'gpt-4.1-mini',response_format:{type:'json_object'},messages:[{role:'system',content:'Lees uitsluitend daadwerkelijk zichtbare recepttitels en lijstnamen uit deze screenshot/schermopname van AH-favorieten. Geef JSON {entries:[{title:string,url:string|null,listName:string|null}],note:string}. Neem alle duidelijk leesbare titels over, ook zonder zichtbare URL. Geef een url ALLEEN wanneer het volledige originele ah.nl-receptadres letterlijk leesbaar is. Verzin geen URL, recept-ID, ontbrekende titel, ingrediënten of hoeveelheden. Geen algemene navigatielabels als recept. Een zichtbare lijstnaam geldt voor de recepten in die lijst; bij twijfel null. Onleesbare delen weglaten en onzekerheid in note noemen.'},{role:'user',content:[{type:'image_url',image_url:{url:image,detail:'high'}}]}]});const value=JSON.parse(completion.choices[0]?.message?.content||'{}');return res.status(200).json({entries:(Array.isArray(value.entries)?value.entries:[]).filter((x:any)=>typeof x.title==='string'&&x.title.trim()).slice(0,60).map((x:any)=>({title:x.title.trim().slice(0,300),url:typeof x.url==='string'&&/^https:\/\/(?:www\.)?ah\.nl\/(?:r\/\d+|allerhande\/recept\/R-R\d+)(?:\/[^\s]*)?$/.test(x.url)?x.url:null,listName:typeof x.listName==='string'?x.listName.trim().slice(0,120):null})),note:String(value.note||'').slice(0,1000)});}catch(e:any){console.error('AH screenshot recognition failed',{status:e?.status});return res.status(e?.status===429?429:502).json({error:'AH-titels konden niet betrouwbaar worden gelezen. De voortgang blijft bewaard; probeer opnieuw of plak de zichtbare titels.'});}
+ }
+ const typeHint=hint==="recipe_page"?"Behandel de afbeelding als receptpagina en lees de zichtbare tekst zorgvuldig.":hint==="food_photo"?"Behandel de afbeelding als foto van een bereid gerecht. Maak alleen een voorzichtig voorstel en benoem onzekerheid.":"Bepaal eerst zelf of dit een receptpagina, een foto van een bereid gerecht of iets onduidelijks is.";
+ const contextHint=sourceContext?("Bij dezelfde bronlink is deze tekst/caption al gevonden. Gebruik dit uitsluitend als tweede bron naast de foto. Neem alleen ingrediënten, hoeveelheden of stappen over die expliciet in deze context staan; verzin niets en laat bij conflict de onzekerheid staan. Bron/account niet vertalen.\nBron: "+sourceURL+"\nAccount: "+sourceAuthor+"\nContext:\n"+sourceContext):"";
+ try{
+  const ai=new OpenAI({apiKey:process.env.OPENAI_API_KEY});
+  const completion=await ai.chat.completions.create({
+   model:process.env.OPENAI_MODEL||"gpt-4.1-mini",
+   response_format:{type:"json_object"},
+   messages:[
+    {role:"system",content:"Analyseer de afbeelding als mogelijk recept of gerecht. Antwoord volledig in natuurlijk Nederlands als JSON met: title (string), ingredients (array strings), steps (array strings), confidence (low/medium/high), notes (string), imageType (recipe_page, food_photo of unclear), alternatives (array met maximaal 3 korte mogelijke gerechtstitels, alleen bij twijfel; anders leeg), method (Airfryer, Oven, Pan, Koken of Overig), category (Ontbijt, Lunch, Avondeten, Snack of Bijgerecht), mainIngredient (string), portions (string; alleen als het aantal personen/porties duidelijk zichtbaar is, anders leeg), bookPage (alleen duidelijk zichtbaar paginanummer, anders leeg), book (alleen als boeknaam zichtbaar, anders leeg), sourceKind (Instagram, TikTok, Facebook, Pinterest, Website, Kookboek, Eigen recept, Anders of leeg; alleen als zichtbaar/herkenbaar), sourceAuthor (zichtbare accountnaam/auteur/website of leeg), sourceURL (alleen een volledig zichtbaar webadres, anders leeg). Bij een receptpagina: gebruik uitsluitend daadwerkelijk zichtbare ingrediënten en instructies en verzin niets, maar vertaal titel, ingrediëntnamen, opmerkingen en bereidingsstappen naar natuurlijk Nederlands wanneer de zichtbare bron een andere taal gebruikt. Behoud hoeveelheden, merknamen en betekenis exact. Zoek paginanummers onderaan of bovenaan de pagina, ook in een gekleurd rondje. Verwar paginanummers niet met bereidingstijden of hoeveelheden. Bij een foto van bereid eten zonder recepttekst: maak een plausibel voorstel, maar vermeld in notes duidelijk dat hoeveelheden en samenstelling onzeker zijn. Geef bij lage of middelhoge zekerheid 2 of 3 korte, duidelijk verschillende mogelijke gerechtstitels in alternatives. Als niet duidelijk is wat er staat, kies imageType unclear en geef zo mogelijk 2 of 3 mogelijke titels in alternatives, maar laat ingrediënten en stappen leeg of beperkt in plaats van te gokken."},
+    {role:"user",content:[{type:"text",text:[typeHint,contextHint].filter(Boolean).join("\n\n")},{type:"image_url",image_url:{url:image,detail:"high"}}]}
+   ]
+  });
+  let result=JSON.parse(completion.choices[0]?.message?.content||"{}");
+  result=await translateRecognition(ai,result);
+  const imageType=["recipe_page","food_photo","unclear"].includes(String(result.imageType))?String(result.imageType):"unclear";
+  const alternatives=Array.isArray(result.alternatives)?result.alternatives.map(String).map((x:string)=>x.trim()).filter(Boolean).slice(0,3):[];
+  return res.status(200).json({
+   title:String(result.title||"").slice(0,300),
+   ingredients:Array.isArray(result.ingredients)?result.ingredients.map(String):[],
+   steps:Array.isArray(result.steps)?result.steps.map(String):[],
+   notes:String(result.notes||""),
+   confidence:["low","medium","high"].includes(String(result.confidence))?String(result.confidence):"low",
+   imageType,alternatives,
+   method:String(result.method||""),
+   category:String(result.category||""),
+   mainIngredient:String(result.mainIngredient||""),
+   portions:String(result.portions||"").slice(0,100),
+   bookPage:String(result.bookPage||"").slice(0,30),
+   book:String(result.book||"").slice(0,200),
+   sourceKind:["Instagram","TikTok","Facebook","Pinterest","Website","Kookboek","Eigen recept","Anders"].includes(String(result.sourceKind))?String(result.sourceKind):"",
+   sourceAuthor:String(result.sourceAuthor||"").slice(0,300),
+   sourceURL:/^https:\/\//i.test(String(result.sourceURL||""))?String(result.sourceURL).slice(0,2000):""
+  });
+ }catch(e:any){
+  const code=Number(e?.status||0);
+  console.error("Image recipe recognition failed",{status:code,code:e?.code,type:e?.type});
+  if(code===429&&["insufficient_quota","credits_exhausted"].includes(String(e?.code||"")))return res.status(503).json({error:"De AI-fotoherkenning is tijdelijk niet beschikbaar: het OpenAI-project van deze app heeft geen bruikbaar API-tegoed. Je kunt het recept wel handmatig invullen en opslaan."});
+  if(code===429)return res.status(429).json({error:"De AI-dienst is tijdelijk te druk. Probeer het later opnieuw of vul het recept handmatig in."});
+  if(code===401||code===403)return res.status(503).json({error:"De AI-fotoherkenning is niet correct gekoppeld. Vul het recept voorlopig handmatig in."});
+  return res.status(502).json({error:"De foto kon niet worden herkend. Probeer opnieuw of vul het recept handmatig in."});
+ }
+}

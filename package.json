@@ -1,0 +1,27 @@
+{
+  "name": "madebydian-recipes",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "test:storage-integration": "node --experimental-strip-types --test --test-timeout=90000 tests/integration/atomic-save.test.mjs"
+  },
+  "dependencies": {
+    "openai": "^7.10.0",
+    "zod": "^4.6.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "^24.0.0",
+    "jsqr": "1.4.0",
+    "pngjs": "7.0.0",
+    "qrcode": "1.5.4",
+    "typescript": "^5.8.3"
+  }
+}
