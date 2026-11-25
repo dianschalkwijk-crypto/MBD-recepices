@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 test.skip(!process.env.MBD_LIVE_AH_BOOKS_TEST,'Explicit read-only production verification required');
-test('older recipes return to original books and themes; only newly imported 0709 appears in AH after old browser cache reload',async({page})=>{
+test('older recipes return to original books and themes; all AH screenshot imports appear in AH after old browser cache reload',async({page})=>{
  test.setTimeout(60000);
  await page.goto('/api/notion/books');const books=JSON.parse(await page.locator('body').innerText()).books;expect(books.find(b=>b.name==='AH – Allerhande · Deel 1').storedCount).toBe(1);
  await page.goto('/api/notion/catalog?sourceReview=1');const all=JSON.parse(await page.locator('body').innerText()).items;expect(all.filter(x=>x.recipe.ahCookbook).map(x=>x.mdb)).toEqual(['MDB-0709']);
@@ -15,7 +15,7 @@ test('older recipes return to original books and themes; only newly imported 070
   await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(28);
   for(const name of themes){const n=active.filter(x=>{const r=x.recipe;return (r.collections||[]).includes(name)||(name==='HelloFresh'&&/hello\s*[- ]?\s*fresh/i.test([r.book,r.sourceAuthor,r.sourceNotes].join(' ')))||(name==='Uit kookboeken'&&r.sourceKind==='Kookboek')}).length;await expect(tiles.filter({hasText:name})).toContainText(new RegExp('· '+n+' totaal$'))}
   for(const label of ['TikTok','Instagram','Insta','rijst','Rijst','AH – Mijn favorieten','AH – Allerhande · Deel 1'])await expect(tiles.filter({hasText:label})).toHaveCount(0);
-  const ah=tiles.filter({hasText:/^🛒 AH/});await expect(ah).toContainText('1 totaal');await ah.click();await expect(page.locator('#recipeList .recipe-card:visible')).toHaveCount(1);await expect(page.locator('#recipeList')).toContainText('Rijst uit de oven met vis');
+  const ah=tiles.filter({hasText:/^🛒 AH/});const expectedAH=active.filter(x=>x.recipe.platform==='Albert Heijn'||x.recipe.ahRecipeId).length;await expect(ah).toContainText(expectedAH+' totaal');await ah.click();expect(await page.locator('#recipeList .recipe-card:visible').count()).toBeGreaterThan(50);await expect(page.locator('#recipeList')).toContainText('Rijst uit de oven met vis');
   await page.locator('[data-target="collections"]').click();await tiles.filter({hasText:'Gezin'}).click();await expect(page.locator('#recipeList')).toContainText('Groentesoep');
   const after=await page.evaluate(ids=>ids.map(id=>state.recipes.find(r=>r.mdb===id)),ids);for(const r of after){const before=original.find(x=>x.mdb===r.mdb);for(const k of ['title','ingredients','steps','sourceURL','originalSourceURL','contentURL','photoURL','collections','book','bookNo'])expect(r[k]||'').toEqual(before[k]||'')}
  }

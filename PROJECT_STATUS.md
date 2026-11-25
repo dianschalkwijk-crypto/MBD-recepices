@@ -1,3 +1,5 @@
+> Actuele stand 25 november 2026: keukenuitbreiding gepubliceerd via PR #17 op `main` (`2885665`, Vercel READY). Daarna drie bestaande apparaat-MDB’s veilig hersteld: catalogus 805 records, waarvan 787 actief en 18 bestaande quarantainekopieën. Vier andere nummerconflicten blijven behouden. Correctie voor dagelijkse beelden, de 95 AH-recepten en de direct zichtbare boodschappenknop: zie [controleverslag](docs/kitchen/UI-REPAIR-20261125.md). Oude regels zoals “AH alleen 0709” hieronder zijn historische momentopnamen.
+
 > Gepubliceerd en live geverifieerd 24 november 2026: productie `bd0059a`, deployment `dpl_9zZdFbwHXKPPe5taLNfr2z8vUEBZ` READY. Vijf goedgekeurde portiecorrecties en zes AI-beelden opgeslagen; 784 actieve recepten behouden. Zie [definitief publicatieverslag](docs/reviews/release-20261124.md). Eerdere statusregels hieronder zijn historisch.
 
 > Vervolg 24 november 2026: gebruiker heeft portiecorrecties en publicatie goedgekeurd. Zie [publicatieverslag](docs/reviews/release-20261124.md) voor de laatste stand; de eerder afgewezen vijf correcties zijn inmiddels opgeslagen en teruggelezen.
