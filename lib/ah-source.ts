@@ -1,6 +1,6 @@
 // Strict Allerhande extraction: source fields only, no generated ingredients or URLs.
 export const AH_FAVOURITES='AH';
-export const AH_STANDARD_COLLECTIONS=["Uit kookboeken", "HelloFresh", "Gezin", "Airfryer", "Borrel", "Zomer", "Seizoens", "Lunch", "Camping 1pans", "Mealprep", "Easy oven", "Ontbijt", "Vegetarisch", "Aziatisch", "Little Kids", "Salades", "Protein", "Wraps", "Pasta", "Toetjes", "BBQ", "Diepvries", "Overig"];
+export const AH_STANDARD_COLLECTIONS=["Uit kookboeken", "HelloFresh", "Gezin", "Airfryer", "Borrel", "Zomer", "Seizoens", "Lunch", "Camping 1pans", "Mealprep", "Easy oven", "Ontbijt", "Vegetarisch", "Aziatisch", "Little Kids", "Salades", "Protein", "Wraps", "Pasta", "Toetjes", "BBQ", "Diepvries", "Feestdagen", "Overig"];
 export function cleanAHCollections(values:any[]){return [...new Set(['AH',...values.filter(x=>typeof x==='string'&&(AH_STANDARD_COLLECTIONS.includes(x)||['Minder dan 15 minuten','15–35 minuten','Meer dan 35 minuten'].includes(x)))])]}
 export function ahID(raw:string){try{const u=new URL(raw);if(u.protocol!=='https:'||!['ah.nl','www.ah.nl'].includes(u.hostname)||u.username||u.password||u.port)return '';return u.pathname.match(/^\/(?:r\/|allerhande\/recept\/R-R)(\d+)(?:\/|$)/)?.[1]||''}catch{return ''}}
 export const ahKey=(url:string)=>{const id=ahID(url);return id?'ah:'+id:''};

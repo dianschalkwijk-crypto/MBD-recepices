@@ -5,7 +5,7 @@ function loadPreferenceIntegration(){
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',loadPreferenceIntegration,{once:true});return}
  try{
   if(window.__mbdAllergyIntegrated||document.querySelector('script[data-mbd-preferences]'))return;
-  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=56';s.dataset.mbdPreferences='1';
+  const s=document.createElement('script');s.src='/allergy-integration-v2.js?v=58';s.dataset.mbdPreferences='1';
   s.onerror=()=>console.warn('Allergie/eetvoorkeur-integratie kon niet worden geladen');
   document.head.appendChild(s);
  }catch(e){console.warn('Voorkeur-integratie',e)}
@@ -36,6 +36,8 @@ let server=[];try{
 
 }catch(e){tell('Supabase niet bereikbaar: '+e.message,true);return}
 
+let auditEntries={};try{const report=await get('/recipe-review-audit-20261124.json');if(report.run==='2026-11-24'&&report.entries)auditEntries=report.entries}catch(e){console.warn('Controleverslag niet geladen',e)}
+for(const row of server){const entry=auditEntries[row.mdb];if(!row.recipe?.catalogReviewUpdate&&entry?.update&&Object.entries(entry.expected).every(([k,v])=>value(row.recipe?.[k])===value(v)))row.recipe.catalogReviewUpdate=entry.update;}
 // Keep a fresh in-memory copy for THIS sync run. The already-persisted app state remains the durable pre-sync copy until persist() succeeds.
 let preSyncState;
 try {
@@ -43,7 +45,7 @@ try {
  preSyncState=JSON.parse(JSON.stringify(state));
  if(!preSyncState||!Array.isArray(preSyncState.recipes))throw Error('snapshot verification failed');
 }catch(e){tell('Synchronisatie gestopt: veilige tijdelijke back-up niet mogelijk ('+e.message+').',true);return}
-let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
+window.MBDCatalogTotal=server.length;let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 
 // Quarantined catalog rows are preserved but must not pollute the visible recipe library.
 // Only move a local copy when its core content still exactly matches the quarantined server row.
@@ -69,6 +71,8 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false,seedRepair=false;
+ if(window.MBDRecipeReview){const reviewed=MBDRecipeReview.apply(old,r);if(reviewed.changed)c=true;}
+ for(const k of ['estimatedRecipeScore','nutriScore','nutriScoreEstimated','nutriScoreSourceURL'])if(r[k]!==undefined&&JSON.stringify(old[k])!==JSON.stringify(r[k])){old[k]=r[k];c=true;}
  if(r.bookRestore&&old.bookRestore?.version!==r.bookRestore.version){
   const fix=r.bookRestore;
   if(!old.book||old.book===fix.from.book||old.book===r.book){
@@ -101,9 +105,9 @@ if(old){
  }
  for(const p of ['title','originalTitle','ingredients','steps','sourceURL','originalSourceURL','originalSourceRef','contentURL','contentSourceURL','socialURL','socialSourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
   if(p==='title'&&name(old.title)===name(r.title))continue;
-  if(present(r[p])&&!present(old[p])){old[p]=r[p];c=true}
+  if(present(r[p])&&!present(old[p])){old[p]=['ingredients','steps'].includes(p)?value(r[p]):r[p];c=true}
   else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p])){
-   if(canRepairSeed&&['title','originalTitle','ingredients','steps'].includes(p)&&clearerDutch(old[p],r[p])){old[p]=r[p];c=true;seedRepair=true}
+   if(canRepairSeed&&['title','originalTitle','ingredients','steps'].includes(p)&&clearerDutch(old[p],r[p])){old[p]=['ingredients','steps'].includes(p)?value(r[p]):r[p];c=true;seedRepair=true}
    else console.warn('MDB veldconflict: bestaande waarde behouden',id,p,origin);
   }
  }
@@ -116,6 +120,7 @@ if(old){
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
 for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');
+for(const recipe of state.recipes)if(window.MBDRecipeReview&&auditEntries[recipe.mdb]){MBDRecipeReview.audit(recipe,auditEntries[recipe.mdb]);changed=true;}
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
 if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){
  const quota=e?.name==='QuotaExceededError'||e?.code===22||e?.code===1014||/quota|storage.*full|exceed/i.test(String(e?.message||e||''));
