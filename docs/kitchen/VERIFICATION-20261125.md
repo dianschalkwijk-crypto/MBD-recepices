@@ -27,4 +27,8 @@ De Supabase CLI kon in deze omgeving geen migrationbestand aanmaken vanwege de a
 
 ## Publicatiestatus
 
-Nog niet gepubliceerd; deze sectie wordt na de concrete preview- en productiecontroles bijgewerkt.
+Preview `dpl_5GTiMU9ovnt6NHWKdhejTaG4EwSM` (0ea3f0a) is READY. In een echte browser op iPhone-formaat geladen: keuken zichtbaar, geen JavaScript-fouten, geen horizontale overloop; privé-API geeft zonder aanmelding 401 met private/no-store. 69 unit-/API-tests slagen. De regressiereeks had 60 geslaagde tests en vier fouten in verouderde testaannames (ingeklapte oude planner en een authmock met maar één callback); alle 12 betrokken tests slagen na aanpassing op beide schermformaten. De verder uitgebreide keukenacceptatie (bewuste menukeuze, mealprep, alternatieven en dubbele productimport) slaagt ook op beide formaten.
+
+Migratie `20261125141327_household_kitchen` is via Supabase toegepast. De privé-import is volledig en veld voor veld teruggelezen. Een ander bestaand account ziet nul keukenrecords; anon heeft geen tabel-/RPC-toegang. Catalogus vóór en na: 802, fingerprint `01ff18c0896fdd7e5992daf8d46b3ebd`; sterrenfingerprint `68505877444c4d49c24ecec690a03fed`; archieven 25 en bestaande week_menus 0 blijven behouden.
+
+Productiepublicatie volgt na het samenvoegen van de geverifieerde PR. Persoonlijke productregels blijven buiten GitHub.

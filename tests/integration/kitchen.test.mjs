@@ -11,7 +11,7 @@ try {
 for(let n=0;n<100;n++){try{docker(['exec',container,'pg_isready','-h','127.0.0.1','-U','postgres']);break}catch{Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,100)}}
 const bootstrap=q=>docker(['exec','-i',container,'psql','-h','127.0.0.1','-U','postgres','-v','ON_ERROR_STOP=1'],q);
 bootstrap(readFileSync(new URL('../fixtures/kitchen/schema.sql',import.meta.url),'utf8'));
-const migration=readFileSync(new URL('../../migrations/20261125140413_household_kitchen.sql',import.meta.url),'utf8');bootstrap(migration);bootstrap(migration);
+const migration=readFileSync(new URL('../../migrations/20261125141327_household_kitchen.sql',import.meta.url),'utf8');bootstrap(migration);bootstrap(migration);
 const sql=q=>execFileSync('docker',['--host=unix:///var/run/docker.sock','exec','-i',container,'psql','-h','127.0.0.1','-U','postgres','-qAt','-v','ON_ERROR_STOP=1'],{input:q,encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim();
 const quote=x=>"'"+JSON.stringify(x).replaceAll("'","''")+"'::jsonb";
 const auth=q=>sql(`BEGIN; SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claim.sub='${owner}'; ${q}; COMMIT;`);
