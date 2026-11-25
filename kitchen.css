@@ -4,3 +4,5 @@
 
 .kitchen-shortcuts{padding:10px 20px;display:flex;justify-content:flex-end;background:#fff;border-bottom:1px solid #e6ddd5}.kitchen-shortcuts button{font-weight:650;min-width:160px}.mbd-kitchen .idea img{display:block;aspect-ratio:4/3;height:auto;min-height:110px}.mbd-kitchen .idea h3{line-height:1.35;overflow-wrap:anywhere}
 @media print{.kitchen-shortcuts{display:none}}
+.mbd-kitchen .needed-line{padding:10px 0;border-bottom:1px solid var(--line)}.mbd-kitchen .needed-line button{font-size:13px;margin:3px 6px 3px 0}.mbd-kitchen .needed-line p{margin:6px 0;line-height:1.5}
+@media print{body:has(dialog.mbd-kitchen[open]) .app-shell{display:none!important}dialog.mbd-kitchen[open]{display:block!important;position:static;width:100%;margin:0;border:0}dialog.mbd-kitchen::backdrop{background:none}}
