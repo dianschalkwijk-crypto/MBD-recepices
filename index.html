@@ -203,7 +203,7 @@ const STORAGE_KEY = 'madebydian-recipes-filled-copy-v0.5';
 const COLLECTIONS = [
   ['Uit kookboeken','📚'],['HelloFresh','🥗'],['AH','🛒'],['Gezin','👨‍👩‍👦'],['Airfryer','⚡'],['Borrel','🥂'],['Zomer','☀️'],['Seizoens','🍂'],['Lunch','🥪'],
   ['Camping 1pans','⛺'],['Mealprep','🧊'],['Easy oven','🔥'],['Ontbijt','🥣'],['Vegetarisch','🥬'],['Aziatisch','🍜'],
-  ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Feestdagen','🎄'],['Overig','📌']
+  ['Little Kids','🧒'],['Salades','🥗'],['Protein','💪'],['Wraps','🌯'],['Pasta','🍝'],['Toetjes','🍰'],['BBQ','♨️'],['Diepvries','❄️'],['Feestdagen','🎄'],['Gourmet','🍽️'],['Overig','📌']
 ];
 
 function recipeCollections(r){return window.MBDTimeCore?MBDTimeCore.collections(r):(r.collections||[])}
@@ -739,6 +739,7 @@ async function syncCatalogRecipes() {
       };
 
       const local = byMdb.get(row.mdb);
+      if (local && Array.isArray(remote.collections) && remote.collections.includes('Gourmet')) local.collections = [...new Set([...(Array.isArray(local.collections)?local.collections:[]),'Gourmet'])];
 
       if (local) {
         // Alleen ontbrekende gegevens aanvullen.
