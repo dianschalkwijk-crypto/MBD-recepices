@@ -11,7 +11,7 @@ test('original theme memberships survive old cached AH migration and source labe
  await page.goto('/index.html');await page.waitForFunction(()=>state.recipes.find(r=>r.mdb==='MDB-0164')?.book==='Gezin');
  for(let round=0;round<2;round++){
   if(round){await page.reload();await page.waitForFunction(()=>!!window.__mbdAllergyIntegrated)}
-  await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(28);
+  await page.locator('[data-target="collections"]').click();const tiles=page.locator('.collection-card');await expect(tiles).toHaveCount(29);
   for(const label of ['TikTok','Instagram','Insta','rijst','Rijst','AH – Mijn favorieten','AH – Allerhande · Deel 1'])await expect(tiles.filter({hasText:label})).toHaveCount(0);
   for(const theme of ['Gezin','Pasta','AH']){const tile=tiles.filter({hasText:theme==='AH'?/^🛒 AH/:theme});await expect(tile).toContainText('1 totaal');await tile.click();await expect(page.locator('#recipeList .recipe-card:visible')).toHaveCount(1);await page.locator('[data-target="collections"]').click()}
   const after=await page.evaluate(()=>state.recipes);expect(after).toHaveLength(3);for(const r of old)expect(after.find(x=>x.mdb===r.mdb).collections).toEqual(r.collections);

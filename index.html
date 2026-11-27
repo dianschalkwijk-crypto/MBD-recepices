@@ -193,7 +193,7 @@ button{cursor:pointer}.primary,.secondary,.ghost{width:100%;border:0;border-radi
       <button class="tab" data-target="settings"><span>⚙️</span>Meer</button>
     </nav>
   </div>
-  <script src="/recipe-time-core.js?v=61"></script><script src="/recipe-review-core.js?v=58"></script><script src="/person-ratings-core.js?v=59"></script>
+  <script src="/recipe-time-core.js?v=61"></script><script src="/recipe-review-core.js?v=58"></script><script src="/person-ratings-core.js?v=59"></script><script src="/catalog-reconcile-core.js?v=63"></script><script src="/gourmet-core.js?v=63"></script>
   <script>
 const APP_VARIANT = 'GEVULDE KOPIE v0.7 HTTPS';
 const LIBRARY_SEED_VERSION = 'MRB-2026-09-10';
@@ -530,21 +530,23 @@ async function mbdSyncRatings(){
  }catch(err){console.warn('Beoordelingen synchroniseren:',err.message)}finally{mbdRatingsBusy=false;if(mbdRatingsQueued){mbdRatingsQueued=false;setTimeout(mbdSyncRatings,0)}}
 }
 function mbdRatingPanel(recipe,body){
- const key=recipe.mdb||recipe.id,all=mbdRatingsRead(),data=all[key]||{},people=['Mama','Jake','Mace','Gast'];
+ if(recipe.catalogPendingUpdate?.fields){const warning=document.createElement('section');warning.className='detail-section';const text=document.createElement('p');text.textContent='Online correcties verschillen van jouw lokale wijzigingen: '+Object.keys(recipe.catalogPendingUpdate.fields).join(', ')+'. Je lokale inhoud blijft behouden.';warning.append(text);for(const [label,remote] of [['Gebruik online correctie',true],['Behoud mijn lokale versie',false]]){const btn=document.createElement('button');btn.textContent=label;btn.onclick=()=>{if(!confirm(label+' voor deze afwijkende velden?'))return;for(const [key,values] of Object.entries(recipe.catalogPendingUpdate.fields)){recipe.catalogFieldVersions[key]=MBDCatalogReconcile.hash(values.remote);if(remote)recipe[key]=values.remote}delete recipe.catalogPendingUpdate;persist();showRecipeDetails(recipe.id)};warning.append(btn)}body.append(warning)}
+
+ const key=recipe.mdb||recipe.id,all=mbdRatingsRead(),data=all[key]||{},people=['Mama','Jake','Mace','Opa','Oma','Gast'];
  const panel=document.createElement('section');panel.className='detail-section';
  const heading=document.createElement('h3');heading.textContent='⭐ Beoordelingen per persoon';panel.append(heading);
  people.forEach((person,index)=>{const row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:1px solid #eee';
- const saved=data[person]||{};const label=document.createElement('label');label.style.cssText='display:block;font-weight:600;margin-bottom:5px';label.textContent=index===3?'Vierde persoon (naam per gerecht)':'Beoordeling '+person;row.append(label);
- if(index===3){const name=document.createElement('input');name.placeholder='Naam invullen';name.value=saved.name||'';name.setAttribute('aria-label','Naam vierde persoon');row.append(name);name.addEventListener('change',()=>update('name',name.value.trim()));}
+ const saved=data[person]||{};const label=document.createElement('label');label.style.cssText='display:block;font-weight:600;margin-bottom:5px';label.textContent=person==='Gast'?'Vierde persoon (naam per gerecht)':'Beoordeling '+person;row.append(label);
+ if(person==='Gast'){const name=document.createElement('input');name.placeholder='Naam invullen';name.value=saved.name||'';name.setAttribute('aria-label','Naam vierde persoon');row.append(name);name.addEventListener('change',()=>update('name',name.value.trim()));}
  const stars=document.createElement('div');stars.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
  const update=(field,value)=>{const next=mbdRatingsRead();next[key]||={};next[key][person]||={};next[key][person][field]=value;mbdRatingsSave(next);if(field==='stars')renderStars(value)};
  const renderStars=value=>{stars.replaceChildren();for(let n=1;n<=5;n++){const button=document.createElement('button');button.type='button';button.textContent=n<=Number(value||0)?'★':'☆';button.title=n+' sterren';button.setAttribute('aria-label',person+': '+n+' sterren');button.style.cssText='padding:5px 9px;font-size:23px;min-width:40px';button.onclick=()=>update('stars',n);stars.append(button)}};
  renderStars(saved.stars);row.append(stars);
- const note=document.createElement('textarea');note.placeholder='Opmerking voor '+(index===3?'deze persoon':person);note.value=saved.note||'';note.rows=2;note.style.cssText='width:100%;margin-top:7px';note.addEventListener('change',()=>update('note',note.value));row.append(note);panel.append(row)});
+ const note=document.createElement('textarea');note.placeholder='Opmerking voor '+(person==='Gast'?'deze persoon':person);note.value=saved.note||'';note.rows=2;note.style.cssText='width:100%;margin-top:7px';note.addEventListener('change',()=>update('note',note.value));row.append(note);panel.append(row)});
  body.append(panel);
 }
 function showRecipeDetails(id){
-  const r=state.recipes.find(x=>x.id===id); if(!r) return;
+  const r=state.recipes.find(x=>x.id===id)||state.quarantinedRecipes?.find(x=>x.id===id||x.mdb===id); if(!r) return;
   const previousPhoto=document.querySelector('#mbd-detail-photo');if(previousPhoto&&previousPhoto.dataset.mdb!==r.mdb)previousPhoto.remove();
   document.querySelector('#modalRecipeMdb').textContent=[r.mdb,r.book].filter(Boolean).join(' · ');
   document.querySelector('#modalRecipeTitle').textContent=r.title||r.originalTitle||'Recept';
@@ -977,6 +979,6 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
-<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=58'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=59'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=58'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=1'></script><script src="/gourmet-planner.js?v=1"></script>
+<script src='/ah-app-verify.js?v=52'></script><script src='/photo-fix-v10.js?v=58'></script><script src='/save-sync-v10.js?v=38'></script><script src='/catalog-sync-v2.js?v=63'></script><script src='/week-planning-core.js?v=52'></script><script src='/allergy-integration-v2.js?v=58'></script><script src='/push-notifications-v1.js?v=37'></script><script src='/ux-finishing-v1.js?v=39'></script><script src='/scan-enhance-v1.js?v=37'></script><script src='/social-checks.js?v=50'></script><script src='/account-router.js?v=50'></script><script src='/incomplete-review-v1.js?v=63'></script><script src="/gourmet-planner.js?v=63"></script>
 </body>
 </html>

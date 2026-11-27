@@ -45,13 +45,13 @@ try {
  preSyncState=JSON.parse(JSON.stringify(state));
  if(!preSyncState||!Array.isArray(preSyncState.recipes))throw Error('snapshot verification failed');
 }catch(e){tell('Synchronisatie gestopt: veilige tijdelijke back-up niet mogelijk ('+e.message+').',true);return}
-window.MBDCatalogTotal=server.length;let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
+window.MBDCatalogTotal=server.length;if(window.MBDCatalogReconcile)window.MBDCatalogSummary=MBDCatalogReconcile.summary(server);let add=0,fill=0,repair=0,changed=false;const serverIds=new Set(server.map(x=>String(x.mdb||'').toUpperCase()));
 
 // Quarantined catalog rows are preserved but must not pollute the visible recipe library.
 // Only move a local copy when its core content still exactly matches the quarantined server row.
 // If the user changed it locally, keep it visible and log the conflict instead of hiding user work.
 for(const row of server){
- const p=row?.recipe||{};if(p.syncStatus!=='duplicate-quarantined'||!p.duplicateOf)continue;
+ const p=row?.recipe||{};if(p.recordStatus==='archived-test'||p.isTest){const idx=state.recipes.findIndex(r=>r.mdb===row.mdb);if(idx>=0){state.archivedTestRecipes||=[];if(!state.archivedTestRecipes.some(r=>r.mdb===row.mdb))state.archivedTestRecipes.push({...state.recipes[idx],recordStatus:'archived-test'});state.recipes.splice(idx,1);by.delete(row.mdb);changed=true;}continue}if(p.syncStatus!=='duplicate-quarantined'||!p.duplicateOf)continue;
  const id=String(row.mdb||'').toUpperCase(),canonical=String(p.duplicateOf||'').toUpperCase();
  const idx=state.recipes.findIndex(r=>String(r?.mdb||'').toUpperCase()===id);
  if(idx<0)continue;
@@ -62,6 +62,7 @@ for(const row of server){
  if(!state.quarantinedRecipes.some(r=>String(r?.mdb||'').toUpperCase()===id)){
   state.quarantinedRecipes.push({...local,syncStatus:'duplicate-quarantined',duplicateOf:canonical,quarantinedAt:p.quarantinedAt||new Date().toISOString()});
  }
+ const master=by.get(canonical);if(master)for(const flag of ['favorite','favourite','isFavorite','isFavourite'])if(local[flag]===true)master[flag]=true;
  state.recipes.splice(idx,1);by.delete(id);
  if(state.week&&typeof state.week==='object')for(const d of Object.keys(state.week))if(state.week[d]===local.id||state.week[d]===id)state.week[d]=canonical;
  repair++;changed=true;
@@ -71,6 +72,8 @@ const id=String(r.mdb||'').toUpperCase();if(!/^MDB-\d{4,}$/.test(id)||!present(r
 const old=by.get(id);
 if(old){
  let c=false,seedRepair=false;
+ if(window.MBDCatalogReconcile){const fresh=MBDCatalogReconcile.reconcile(old,r);if(fresh.changed){Object.assign(old,fresh.recipe);c=true;}if(fresh.conflicts.length)console.warn('Lokale receptwijziging behouden; online correctie controleren',id,fresh.conflicts.join(', '));}
+
  if(window.MBDRecipeReview){const reviewed=MBDRecipeReview.apply(old,r);if(reviewed.changed)c=true;}
  for(const k of ['estimatedRecipeScore','nutriScore','nutriScoreEstimated','nutriScoreSourceURL'])if(r[k]!==undefined&&JSON.stringify(old[k])!==JSON.stringify(r[k])){old[k]=r[k];c=true;}
  if(r.bookRestore&&old.bookRestore?.version!==r.bookRestore.version){
@@ -104,6 +107,7 @@ if(old){
   else{console.warn('MDB titelconflict: bestaande waarde behouden',id,origin)}
  }
  for(const p of ['title','originalTitle','ingredients','steps','sourceURL','originalSourceURL','originalSourceRef','contentURL','contentSourceURL','socialURL','socialSourceURL','notionURL','category','book','bookNo','portions','time','imageURL','photoURL']){
+  if(old.catalogPendingUpdate?.fields?.[p])continue;
   if(p==='title'&&name(old.title)===name(r.title))continue;
   if(present(r[p])&&!present(old[p])){old[p]=['ingredients','steps'].includes(p)?value(r[p]):r[p];c=true}
   else if(present(r[p])&&present(old[p])&&JSON.stringify(old[p])!==JSON.stringify(r[p])){
@@ -119,7 +123,7 @@ if(old){
  const n={...r,id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',originalSourceURL:r.originalSourceURL||'',originalSourceRef:r.originalSourceRef||'',contentURL:r.contentURL||'',contentSourceURL:r.contentSourceURL||'',socialURL:r.socialURL||'',socialSourceURL:r.socialSourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
-for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined')merge({...row.recipe,mdb:row.mdb},'Supabase');
+for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined'&&row.recipe.recordStatus!=='archived-test'&&!row.recipe.isTest)merge({...row.recipe,mdb:row.mdb},'Supabase');
 for(const recipe of state.recipes)if(window.MBDRecipeReview&&auditEntries[recipe.mdb]){MBDRecipeReview.audit(recipe,auditEntries[recipe.mdb]);changed=true;}
 // Notion is a backup only. Do not pull Notion into the app or overwrite app data.
 if(changed){try{persist();if(typeof renderAll==='function')renderAll()}catch(e){
