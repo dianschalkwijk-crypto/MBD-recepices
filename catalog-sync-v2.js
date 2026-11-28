@@ -121,6 +121,7 @@ if(old){
 
 }else{
  const n={...r,id,mdb:id,title:r.title,originalTitle:r.originalTitle||r.title,ingredients:value(r.ingredients),steps:value(r.steps),sourceURL:r.sourceURL||'',originalSourceURL:r.originalSourceURL||'',originalSourceRef:r.originalSourceRef||'',contentURL:r.contentURL||'',contentSourceURL:r.contentSourceURL||'',socialURL:r.socialURL||'',socialSourceURL:r.socialSourceURL||'',notionURL:r.notionURL||'',category:r.category||'',book:r.book||'',bookNo:r.bookNo||null,collections:Array.isArray(r.collections)?r.collections:[],imageURL:r.imageURL||'',photoURL:r.photoURL||'',hasPhoto:!!r.hasPhoto,contentSynced:present(r.ingredients)&&present(r.steps),portions:r.portions||'',time:r.time||'',warnings:r.warnings||[],syncedFrom:origin};
+ const archived=Array.isArray(state.quarantinedRecipes)?state.quarantinedRecipes.find(x=>x.mdb===id):null;if(archived&&window.MBDCatalogReconcile?.restorePersonal)Object.assign(n,MBDCatalogReconcile.restorePersonal(archived,n));
  state.recipes.push(n);by.set(id,n);add++;changed=true
 }};
 for(const row of server)if(row?.recipe&&row.recipe.syncStatus!=='duplicate-quarantined'&&row.recipe.recordStatus!=='archived-test'&&!row.recipe.isTest)merge({...row.recipe,mdb:row.mdb},'Supabase');
